@@ -2,7 +2,15 @@
 
 open System
 open System.Drawing
+open System.Runtime.CompilerServices
 open Loana.Core
+
+[<Extension>]
+type StringExtensions =
+
+    [<Extension>]
+    static member WithColor(text: string, color: Color) : string =
+        sprintf "\u001b[38;2;%d;%d;%dm%s\u001b[0m" color.R color.G color.B text
 
 module Quiz =
 
@@ -113,7 +121,6 @@ module Quiz =
             let mutable p = 0
             for frag in line do
                 s <- s + String.replicate (frag.Start - p) " "
-                s <- s +  sprintf "\u001b[38;2;%d;%d;%dm" frag.Color.R frag.Color.G frag.Color.B
 
                 if frag.Layer = 0 then s <- s + frag.Text
                 else
@@ -124,8 +131,7 @@ module Quiz =
                             String.replicate lpadding "-" + frag.Text + String.replicate rpadding "-"
                         else
                             frag.Text.Substring(0, frag.Finish - frag.Start)
-                    s <- s + padded
-                s <- s + "\u001b[0m"
+                    s <- s + padded.WithColor(frag.Color)
                 p <- frag.Finish
             s
         lines |> Array.map format_line
@@ -155,4 +161,24 @@ module Quiz =
             let success = display_card next_card
             if not success then
                 cards.Insert(min cards.Count 5, next_card)
-        printfn "All done!"
+        printfn "%s" ("All done!".WithColor(Color.Green))
+
+    let mutable selected = 0
+    let pick_mode(modes: Map<string, _>) : string * _ =
+        let keys = Array.ofSeq modes.Keys
+        selected <- selected % keys.Length
+        let mutable chosen = false
+
+        while not chosen do
+            Console.Clear()
+            for i = 0 to keys.Length - 1 do
+                if i = selected then
+                    printfn " > %s <" (keys.[i].WithColor(Color.Yellow))
+                else
+                    printfn "%02i %s" ((keys.Length + i - selected) % keys.Length) keys.[i]
+            let choice = Console.ReadLine()
+            match Int32.TryParse(choice) with
+            | true, n -> selected <- ((selected + n) % keys.Length + keys.Length) % keys.Length
+            | false, _ -> chosen <- true
+
+        keys.[selected], modes.[keys.[selected]]
