@@ -4,7 +4,7 @@ open Loana.Core
 
 module Deutsch =
 
-    let strong_ending (gender: Gender) (case: Case) : string =
+    let strong_adjective_ending (gender: Gender) (case: Case) : string =
         match gender, case with
         | Gender.Masculine, Case.Nominative -> "er"
         | Gender.Masculine, Case.Accusative -> "en"
@@ -26,7 +26,7 @@ module Deutsch =
         | Gender.Plural, Case.Dative -> "en"
         | Gender.Plural, Case.Genitive -> "er"
 
-    let weak_ending (gender: Gender) (case: Case) : string =
+    let weak_adjective_ending (gender: Gender) (case: Case) : string =
         match gender, case with
         | Gender.Masculine, Case.Nominative -> "e"
         | Gender.Masculine, Case.Accusative -> "en"
@@ -48,7 +48,7 @@ module Deutsch =
         | Gender.Plural, Case.Dative -> "en"
         | Gender.Plural, Case.Genitive -> "en"
 
-    let indefinite_article (gender: Gender) (case: Case) : AnnotationTree * bool =
+    let ein_declension (gender: Gender) (case: Case) : AnnotationTree * bool =
         let ending, needs_strong_declension =
             match gender, case with
             | Gender.Masculine, Case.Nominative -> "", true
@@ -66,11 +66,21 @@ module Deutsch =
             | Gender.Neuter, Case.Dative -> "em", false
             | Gender.Neuter, Case.Genitive -> "es", false
 
-            | Gender.Plural, _ -> failwith "This noun is plural, there is no definite article"
+            | Gender.Plural, Case.Nominative -> "e", false
+            | Gender.Plural, Case.Accusative -> "e", false
+            | Gender.Plural, Case.Dative -> "en", false // unverified
+            | Gender.Plural, Case.Genitive -> "er", false // unverified
         if ending <> "" then
-            [Gender(gender, [Text "ein"; StrongDeclension [Text ending]])], needs_strong_declension
+            [(if needs_strong_declension then ArticleDeclension else StrongDeclension) [Text ending]], needs_strong_declension
         else
-            [Gender(gender, [Text "ein"])], needs_strong_declension
+            [], needs_strong_declension
+
+    let indefinite_article (gender: Gender) (case: Case) : AnnotationTree * bool =
+        let ending, needs_strong_declension =
+            match gender, case with
+            | Gender.Plural, _ -> failwith "This noun is plural, there is no definite article"
+            | _ -> ein_declension gender case
+        [Gender(gender, [Text "ein"] @ ending)], needs_strong_declension
 
     let definite_article (gender: Gender) (case: Case) : AnnotationTree =
         match gender, case with
@@ -95,6 +105,60 @@ module Deutsch =
         | Gender.Plural, Case.Genitive -> "der"
         |> fun x -> [Gender(gender, [Text x])]
 
+    let personal_pronoun (person: Person) (case: Case) : AnnotationTree =
+        match person, case with
+        | _, Case.Genitive -> failwith "Genitive does not have personal pronouns, use the possessive pronoun"
+
+        | Person.First false, Case.Nominative -> Text "ich"
+        | Person.First false, Case.Accusative -> Text "mich"
+        | Person.First false, Case.Dative -> Text "mir"
+
+        | Person.First true, Case.Nominative -> Text "wir"
+        | Person.First true, Case.Accusative -> Text "uns"
+        | Person.First true, Case.Dative -> Text "uns"
+
+        | Person.Second false, Case.Nominative -> Text "du"
+        | Person.Second false, Case.Accusative -> Text "dich"
+        | Person.Second false, Case.Dative -> Text "dir"
+
+        | Person.Second true, Case.Nominative -> Text "ihr"
+        | Person.Second true, Case.Accusative -> Text "euch"
+        | Person.Second true, Case.Dative -> Text "euch"
+
+        | Person.Third Gender.Masculine, Case.Nominative -> Text "er"
+        | Person.Third Gender.Masculine, Case.Accusative -> Text "ihn"
+        | Person.Third Gender.Masculine, Case.Dative -> Text "ihm"
+        | Person.Third Gender.Feminine, Case.Nominative -> Text "sie"
+        | Person.Third Gender.Feminine, Case.Accusative -> Text "sie"
+        | Person.Third Gender.Feminine, Case.Dative -> Text "ihr"
+        | Person.Third Gender.Neuter, Case.Nominative -> Text "es"
+        | Person.Third Gender.Neuter, Case.Accusative -> Text "es"
+        | Person.Third Gender.Neuter, Case.Dative -> Text "ihm"
+
+        | Person.Third Gender.Plural, Case.Nominative -> Text "sie"
+        | Person.Third Gender.Plural, Case.Accusative -> Text "sie"
+        | Person.Third Gender.Plural, Case.Dative -> Text "ihnen"
+
+        | Person.Formal, Case.Nominative -> Text "Sie"
+        | Person.Formal, Case.Accusative -> Text "Sie"
+        | Person.Formal, Case.Dative -> Text "Ihnen"
+        |> fun x -> [Case(case, [x])]
+
+    let possessive_pronoun (person: Person) (gender: Gender) (case: Case) : AnnotationTree * bool =
+        let ending, needs_strong_declension = ein_declension gender case
+        let stem =
+            match person with
+            | Person.First false -> "mein"
+            | Person.First true -> "unser"
+            | Person.Second false -> "dein"
+            | Person.Second true -> if AnnotationTree.flatten_tree ending = "e" then "eur" else "euer"
+            | Person.Third Gender.Masculine -> "sein"
+            | Person.Third Gender.Feminine -> "ihr"
+            | Person.Third Gender.Neuter -> "sein"
+            | Person.Third Gender.Plural -> "ihr"
+            | Person.Formal -> "Ihr"
+        [Text stem] @ ending, needs_strong_declension
+
     let decline_noun (noun: Noun) (case: Case) : AnnotationTree =
         match noun.Guts with
         | Plural _ when case.IsDative ->
@@ -111,10 +175,10 @@ module Deutsch =
         | _ -> [Text noun.Deutsch]
 
     let decline_adjective_strong (adjective: Adjective) (gender: Gender) (case: Case) : AnnotationTree =
-        [Text adjective.Deutsch; StrongDeclension [Text (strong_ending gender case)]]
+        [Text adjective.Deutsch; StrongDeclension [Text (strong_adjective_ending gender case)]]
 
     let decline_adjective_weak (adjective: Adjective) (gender: Gender) (case: Case) : AnnotationTree =
-        [Text adjective.Deutsch; WeakDeclension [Text (weak_ending gender case)]]
+        [Text adjective.Deutsch; WeakDeclension [Text (weak_adjective_ending gender case)]]
 
     let definite_fragment (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
         let the = definite_article noun.Guts.Gender case
@@ -135,3 +199,14 @@ module Deutsch =
             | None -> []
         let f_noun = decline_noun noun case
         [Case(case, a @ f_adjective @ [Text " "] @ f_noun)]
+
+    let possessive_fragment (person: Person) (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
+        let my, needs_strong_declension = possessive_pronoun person noun.Guts.Gender case
+        let f_adjective =
+            match adjective with
+            | Some adjective ->
+                let declension = if needs_strong_declension then decline_adjective_strong else decline_adjective_weak
+                [Text " "] @ declension adjective noun.Guts.Gender case
+            | None -> []
+        let f_noun = decline_noun noun case
+        [Case(case, my @ f_adjective @ [Text " "] @ f_noun)]

@@ -4,7 +4,7 @@ open Loana.Interface
 CardPool.generate_card_pool ()
 
 // Place your filters here to design a quiz
-|> Seq.filter (fun card -> card.Adjective.IsSome)
+|> Seq.filter (fun card -> card.Type.IsPossessive)
 
 |> Seq.randomShuffle
 |> Seq.map _.Generate

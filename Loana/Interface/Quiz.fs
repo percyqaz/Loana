@@ -63,7 +63,7 @@ module Quiz =
                         let start = position
                         let layer = 1 + walk children
                         output.Add {
-                            Text = "Strong"
+                            Text = "S"
                             Start = start
                             Finish = position
                             Color = Color.Red
@@ -74,10 +74,21 @@ module Quiz =
                         let start = position
                         let layer = 1 + walk children
                         output.Add {
-                            Text = "Weak"
+                            Text = "W"
                             Start = start
                             Finish = position
                             Color = Color.DarkCyan
+                            Layer = layer
+                        }
+                        layer
+                    | ArticleDeclension children ->
+                        let start = position
+                        let layer = 1 + walk children
+                        output.Add {
+                            Text = "D"
+                            Start = start
+                            Finish = position
+                            Color = Color.OrangeRed
                             Layer = layer
                         }
                         layer

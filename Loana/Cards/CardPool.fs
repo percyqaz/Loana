@@ -53,38 +53,69 @@ module CardPool =
 
     [<RequireQualifiedAccess>]
     type CardType =
-        | Indefinite
-        | Definite
+        | Indefinite of Adjective option * Noun
+        | Definite of Adjective option * Noun
+        | Possessive of Person * Adjective option * Noun
+        | Person of Person
 
     type CardPermutation =
         {
-            Noun: Noun
-            Adjective: Adjective option
             Case: Case
             Type: CardType
         }
         member this.IsValid =
-            // Don't try to generate "a blue houses", etc!
-            not this.Noun.Guts.Gender.IsPlural || this.Type.IsDefinite
+            match this.Type with
+            | CardType.Indefinite (_, noun) when noun.Guts.IsPlural -> false
+            | CardType.Person _ when this.Case.IsGenitive -> false
+            | _ -> true
         member this.Generate =
-            if this.Type.IsDefinite then
+            match this.Type with
+            | CardType.Definite (adjective, noun) ->
                 {
-                    Front = English.definite_fragment this.Adjective this.Noun this.Case
-                    Back = Deutsch.definite_fragment this.Adjective this.Noun this.Case
+                    Front = English.definite_fragment adjective noun this.Case
+                    Back = Deutsch.definite_fragment adjective noun this.Case
                 }
-            else
+            | CardType.Indefinite (adjective, noun) ->
                 {
-                    Front = English.indefinite_fragment this.Adjective this.Noun this.Case
-                    Back = Deutsch.indefinite_fragment this.Adjective this.Noun this.Case
+                    Front = English.indefinite_fragment adjective noun this.Case
+                    Back = Deutsch.indefinite_fragment adjective noun this.Case
+                }
+            | CardType.Possessive (person, adjective, noun) ->
+                {
+                    Front = English.possessive_fragment person adjective noun this.Case
+                    Back = Deutsch.possessive_fragment person adjective noun this.Case
+                }
+            | CardType.Person person ->
+                {
+                    Front = English.personal_pronoun person this.Case
+                    Back = Deutsch.personal_pronoun person this.Case
                 }
 
     let generate_card_pool () =
         seq {
             for case in [|Case.Nominative; Case.Accusative; Case.Dative; Case.Genitive|] do
-                for card_type in [|CardType.Definite; CardType.Indefinite|] do
+                for person in [Person.First false; Person.First true; Person.Second false; Person.Second true; Person.Formal] do
                     for noun in NOUNS do
                         for adjective in ADJECTIVES do
-                            yield { Noun = noun; Adjective = Some adjective; Case = case; Type = card_type }
-                        yield { Noun = noun; Adjective = None; Case = case; Type = card_type }
+                            yield {
+                                Case = case
+                                Type = CardType.Definite(Some adjective, noun)
+                            }
+                            yield {
+                                Case = case
+                                Type = CardType.Possessive(person, Some adjective, noun)
+                            }
+                        yield {
+                            Case = case
+                            Type = CardType.Definite(None, noun)
+                        }
+                        yield {
+                            Case = case
+                            Type = CardType.Possessive(person, None, noun)
+                        }
+                    yield {
+                        Case = case
+                        Type = CardType.Person person
+                    }
         }
         |> Seq.filter _.IsValid

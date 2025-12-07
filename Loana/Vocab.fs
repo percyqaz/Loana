@@ -26,6 +26,13 @@ type Case =
         | Dative -> "Dat."
         | Genitive -> "Gen."
 
+[<RequireQualifiedAccess>]
+type Person =
+    | First of plural: bool
+    | Second of plural: bool
+    | Third of Gender
+    | Formal
+
 type SingularNounGuts = {
     Plural: string option
 }
