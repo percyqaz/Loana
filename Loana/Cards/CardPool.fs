@@ -51,6 +51,20 @@ module CardPool =
             }
         |]
 
+    let PEOPLE = [
+        Person.First false
+        Person.First true
+        Person.Second false
+        Person.Second true
+        Person.Third Gender.Masculine
+        Person.Third Gender.Feminine
+        Person.Third Gender.Neuter
+        Person.Third Gender.Plural
+        Person.Formal
+    ]
+
+    let CASES = [ Case.Nominative; Case.Accusative; Case.Dative; Case.Genitive ]
+
     [<RequireQualifiedAccess>]
     type CardType =
         | Indefinite of Adjective option * Noun
@@ -99,8 +113,8 @@ module CardPool =
 
     let generate_card_pool () =
         seq {
-            for case in [|Case.Nominative; Case.Accusative; Case.Dative; Case.Genitive|] do
-                for person in [Person.First false; Person.First true; Person.Second false; Person.Second true; Person.Formal] do
+            for case in CASES do
+                for person in PEOPLE do
                     for noun in NOUNS do
                         for adjective in ADJECTIVES do
                             if person = Person.Formal then
@@ -142,13 +156,13 @@ module CardPool =
         "[2*] 'the'", fun card ->
             card.Type.IsDefinite && not card.Type.HasAdjective
         "[4*] 'the' + adjective", fun card ->
-            card.Type.IsDefinite
+            card.Type.IsDefinite && card.Type.HasAdjective
         "[1*] basic 'a'", fun card ->
             card.Type.IsIndefinite && not card.Type.HasAdjective && card.Case.IsNominative
         "[2*] 'a'", fun card ->
             card.Type.IsIndefinite && not card.Type.HasAdjective
         "[4*] 'a' + adjective", fun card ->
-            card.Type.IsIndefinite
+            card.Type.IsIndefinite && card.Type.HasAdjective
         "[3*] 'a' + 'the' combo", fun card ->
             (card.Type.IsDefinite || card.Type.IsIndefinite) && not card.Type.HasAdjective
         "[5*] 'a' + 'the' adjective combo", fun card ->
@@ -162,8 +176,10 @@ module CardPool =
         "[4*] possessive pronouns", fun card ->
             card.Type.IsPossessive && not card.Type.HasAdjective
         "[6*] possessive pronouns + adjective", fun card ->
-            card.Type.IsPossessive
-        "[4*] bit of everything, nominative", fun card ->
+            card.Type.IsPossessive && card.Type.HasAdjective
+        "[4*] tiny bit of everything", fun card ->
+            not card.Type.HasAdjective && card.Case.IsNominative
+        "[6*] tiny bit of everything + adjective", fun card ->
             (card.Type.HasAdjective || card.Type.IsPerson) && card.Case.IsNominative
         "[8*] everything", fun card ->
             card.Type.HasAdjective || card.Type.IsPerson
