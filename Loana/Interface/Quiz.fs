@@ -140,7 +140,7 @@ type MenuContext<'T> =
         this.Output.Clear()
         for i = 0 to keys.Length - 1 do
             if i = this.Selected then
-                this.Output.Write("  > ", Brushes.White)
+                this.Output.Write(" > ", Brushes.White)
                 this.Output.Write(keys.[i], Brushes.Yellow)
                 this.Output.WriteLine(" <", Brushes.White)
             else
@@ -175,34 +175,36 @@ type QuizState =
 
 type QuizContext =
     private {
-        Output: IOutput
+        Log: IOutput
+        Display: IOutput
         Pool: ResizeArray<Card>
         mutable Current: Card
         mutable State: QuizState
     }
 
-    static member Create(pool: ResizeArray<Card>, output: IOutput) : QuizContext =
+    static member Create(pool: ResizeArray<Card>, log: IOutput, display: IOutput) : QuizContext =
         let current = pool.[0]
         pool.RemoveAt(0)
         {
+            Log = log
+            Display = display
             Pool = pool
-            Output = output
             Current = current
             State = QuizState.Start
         }
 
-    static member CreateFromMode(mode: Loana.Cards.CardPool.CardPermutation -> bool, output: IOutput): QuizContext =
+    static member CreateFromMode(mode: Loana.Cards.CardPool.CardPermutation -> bool, log: IOutput, display: IOutput): QuizContext =
         let pool =
             Loana.Cards.CardPool.generate_card_pool ()
             |> Seq.filter mode
             |> Seq.randomShuffle
             |> Seq.map _.Generate
             |> ResizeArray
-        QuizContext.Create(pool, output)
+        QuizContext.Create(pool, log, display)
 
     member private this.DisplayCard (card: Card) : unit =
-        this.Output.Clear()
-        Quiz.render_annotations(card.Front, this.Output)
+        this.Display.Clear()
+        Quiz.render_annotations(card.Front, this.Display)
 
     member private this.NextCard() : bool =
         if this.Pool.Count > 0 then
@@ -213,13 +215,13 @@ type QuizContext =
             true
         else
             this.State <- QuizState.Complete
-            this.Output.WriteLine("All done!", null)
+            this.Log.WriteLine("All done!", Brushes.Green)
             false
 
     member this.Next(user_input: string) : bool =
         match this.State with
         | QuizState.Start ->
-            this.Output.WriteLine(sprintf "Beginning quiz consisting of %i cards" (this.Pool.Count + 1), null)
+            this.Log.WriteLine(sprintf "Beginning quiz consisting of %i cards" (this.Pool.Count + 1), Brushes.Wheat)
             this.DisplayCard(this.Current)
             this.State <- QuizState.ShowingFront
             true
@@ -230,13 +232,14 @@ type QuizContext =
                 // Allow this card to be discarded
                 this.NextCard()
             else
-                this.Output.WriteLine(user_input, Brushes.LightPink)
-                Quiz.render_annotations(this.Current.Back, this.Output)
+                this.Display.WriteLine(user_input, Brushes.LightPink)
+                Quiz.render_annotations(this.Current.Back, this.Display)
                 this.State <- QuizState.ShowingBack
                 true
         | QuizState.ShowingBack ->
             // todo: based on user input certain commands could bury, skip, or allow the mistake
             // Reinsert the card into the pool
+            this.Log.WriteLine("Requeueing failed card", Brushes.LightPink)
             this.Pool.Insert(min this.Pool.Count 5, this.Current)
             this.NextCard()
         | QuizState.Complete -> false
