@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Media;
-using Loana.Cards;
+using Loana.Interface;
 using System.Linq;
 
 namespace Loana.GUI;
@@ -14,7 +14,10 @@ public partial class MainWindow : Window
         var terminal = this.FindControl<Terminal>("Terminal")!;
 
         terminal.WriteLine("Welcome to Loana!", Brushes.Wheat);
-        var quiz = Interface.QuizContext.CreateExample(terminal);
+
+        QuizContext? quiz = null;
+        var menu = MenuContext.CreateModePicker(mode => { quiz = QuizContext.CreateFromMode(mode, terminal); quiz.Next(""); }, terminal);
+        menu.Draw();
 
         Input.KeyDown += (sender, e) =>
         {
@@ -22,7 +25,18 @@ public partial class MainWindow : Window
             {
                 string command = Input.Text ?? "";
                 Input.Text = "";
-                quiz.Next(command);
+                if (quiz is not null)
+                {
+                    if (!quiz.Next(command))
+                    {
+                        quiz = null;
+                        menu.Draw();
+                    }
+                }
+                else
+                {
+                    menu.Next(command);
+                }
             }
         };
     }

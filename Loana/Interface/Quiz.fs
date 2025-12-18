@@ -4,9 +4,9 @@ open System
 open Avalonia.Media
 open Loana.Core
 
-module internal Quiz =
+module Quiz =
 
-    type ConsoleAnnotationFragment = {
+    type internal ConsoleAnnotationFragment = {
         Text: string
         Start: int
         Finish: int
@@ -14,7 +14,7 @@ module internal Quiz =
         Layer: int
     }
 
-    let render_annotations (annotations: AnnotationTree, output: IOutput) : unit =
+    let internal render_annotations (annotations: AnnotationTree, output: IOutput) : unit =
         let frags = ResizeArray<ConsoleAnnotationFragment>()
 
         let mutable position = 0
@@ -127,25 +127,44 @@ module internal Quiz =
             output.WriteLine("", null)
         lines |> Array.iter render_line
 
-    let mutable selected = 0
-    let pick_mode(modes: Map<string, _>) : string * _ =
-        let keys = Array.ofSeq modes.Keys
-        selected <- selected % keys.Length
-        let mutable chosen = false
+type MenuContext<'T> =
+    private {
+        Output: IOutput
+        Options: Map<string, 'T>
+        Callback: Action<'T>
+        mutable Selected: int
+    }
 
-        while not chosen do
-            Console.Clear()
-            for i = 0 to keys.Length - 1 do
-                if i = selected then
-                    printfn " > %s <" (keys.[i])
-                else
-                    printfn "%02i %s" ((keys.Length + i - selected) % keys.Length) keys.[i]
-            let choice = Console.ReadLine()
-            match Int32.TryParse(choice) with
-            | true, n -> selected <- ((selected + n) % keys.Length + keys.Length) % keys.Length
-            | false, _ -> chosen <- true
+    member this.Draw() : unit =
+        let keys = Array.ofSeq this.Options.Keys
+        this.Output.Clear()
+        for i = 0 to keys.Length - 1 do
+            if i = this.Selected then
+                this.Output.Write("  > ", Brushes.White)
+                this.Output.Write(keys.[i], Brushes.Yellow)
+                this.Output.WriteLine(" <", Brushes.White)
+            else
+                this.Output.WriteLine(sprintf "%02i %s" ((keys.Length + i - this.Selected) % keys.Length) keys.[i], Brushes.LightGray)
 
-        keys.[selected], modes.[keys.[selected]]
+    member this.Next(user_input: string) : unit =
+        let keys = Array.ofSeq this.Options.Keys
+        match Int32.TryParse(user_input) with
+        | true, n ->
+            this.Selected <- ((this.Selected + n) % keys.Length + keys.Length) % keys.Length
+            this.Draw()
+        | false, _ -> this.Callback.Invoke(this.Options.[keys.[this.Selected]])
+
+type MenuContext =
+    static member Create(options: Map<string, 'T>, callback: Action<'T>, output: IOutput) : MenuContext<'T> =
+        {
+            Output = output
+            Options = options
+            Callback = callback
+            Selected = 0
+        }
+
+    static member CreateModePicker(callback: Action<(Loana.Cards.CardPool.CardPermutation -> bool)>, output: IOutput) : MenuContext<Loana.Cards.CardPool.CardPermutation -> bool> =
+        MenuContext.Create(Loana.Cards.CardPool.MODES, callback, output)
 
 [<RequireQualifiedAccess>]
 type QuizState =
@@ -172,10 +191,10 @@ type QuizContext =
             State = QuizState.Start
         }
 
-    static member CreateExample(output: IOutput): QuizContext =
+    static member CreateFromMode(mode: Loana.Cards.CardPool.CardPermutation -> bool, output: IOutput): QuizContext =
         let pool =
             Loana.Cards.CardPool.generate_card_pool ()
-            |> Seq.filter Loana.Cards.CardPool.MODES.[Loana.Cards.CardPool.MODES.Keys |> Seq.head]
+            |> Seq.filter mode
             |> Seq.randomShuffle
             |> Seq.map _.Generate
             |> ResizeArray
@@ -214,7 +233,7 @@ type QuizContext =
                 this.Output.WriteLine(user_input, Brushes.LightPink)
                 Quiz.render_annotations(this.Current.Back, this.Output)
                 this.State <- QuizState.ShowingBack
-                false
+                true
         | QuizState.ShowingBack ->
             // todo: based on user input certain commands could bury, skip, or allow the mistake
             // Reinsert the card into the pool
