@@ -11,8 +11,13 @@
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
     <Compile Include="Cards\CardPool.fs" />
+    <Compile Include="interface\IOutput.fs" />
     <Compile Include="Interface\Quiz.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="11.3.10" />
   </ItemGroup>
 
 </Project>
