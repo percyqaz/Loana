@@ -13,8 +13,8 @@ public partial class MainWindow : Window
 
         var terminal = this.FindControl<Terminal>("Terminal")!;
 
-        var cards = Interface.Quiz.example();
-        Interface.Quiz.display_card(cards.First(), terminal);
+        terminal.WriteLine("Welcome to Loana!", Brushes.Wheat);
+        var quiz = Interface.QuizContext.CreateExample(terminal);
 
         Input.KeyDown += (sender, e) =>
         {
@@ -22,7 +22,7 @@ public partial class MainWindow : Window
             {
                 string command = Input.Text ?? "";
                 Input.Text = "";
-                terminal.WriteLine(command, Brushes.Wheat);
+                quiz.Next(command);
             }
         };
     }

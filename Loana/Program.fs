@@ -1,16 +1,7 @@
 ﻿open Loana.Cards
 open Loana.Interface
 
-while true do
-
-    let mode_label, mode = Quiz.pick_mode(CardPool.MODES)
-
-    CardPool.generate_card_pool ()
-    |> Seq.filter mode
-    |> Seq.randomShuffle
-    |> Seq.map _.Generate
-    |> ResizeArray
-    |> Quiz.run_quiz
+()
 
 // Roadmap
 // Tools for mass management of tab-separated-data for nouns, verbs, adjectives

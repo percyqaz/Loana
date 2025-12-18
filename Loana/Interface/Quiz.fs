@@ -4,15 +4,15 @@ open System
 open Avalonia.Media
 open Loana.Core
 
-type ConsoleAnnotationFragment = {
-    Text: string
-    Start: int
-    Finish: int
-    Color: IBrush
-    Layer: int
-}
+module internal Quiz =
 
-module Quiz =
+    type ConsoleAnnotationFragment = {
+        Text: string
+        Start: int
+        Finish: int
+        Color: IBrush
+        Layer: int
+    }
 
     let render_annotations (annotations: AnnotationTree, output: IOutput) : unit =
         let frags = ResizeArray<ConsoleAnnotationFragment>()
@@ -127,36 +127,6 @@ module Quiz =
             output.WriteLine("", null)
         lines |> Array.iter render_line
 
-    let display_card (card: Card, output: IOutput) : bool =
-        output.Clear()
-        render_annotations(card.Front, output)
-        let user_answer = Console.ReadLine()
-        let correct_answer = AnnotationTree.flatten_tree card.Back
-        if user_answer = correct_answer then true
-        else
-            render_annotations(card.Back, output)
-            Console.ReadLine() |> ignore
-            false
-
-    type ConsoleOutput() =
-        interface IOutput with
-            member this.Write(text, brush) = Console.Write(text)
-            member this.WriteLine(text, brush) = Console.WriteLine(text)
-            member this.Clear() = Console.Clear()
-
-    let run_quiz (cards: ResizeArray<Card>) =
-        let output = ConsoleOutput() :> IOutput
-        output.WriteLine(sprintf "Beginning quiz consisting of %i cards" cards.Count, null)
-        Console.ReadLine() |> ignore
-
-        while cards.Count > 0 do
-            let next_card = cards.[0]
-            cards.RemoveAt(0)
-            let success = display_card(next_card, output)
-            if not success then
-                cards.Insert(min cards.Count 5, next_card)
-        output.WriteLine("All done!", null)
-
     let mutable selected = 0
     let pick_mode(modes: Map<string, _>) : string * _ =
         let keys = Array.ofSeq modes.Keys
@@ -177,9 +147,77 @@ module Quiz =
 
         keys.[selected], modes.[keys.[selected]]
 
-    let example() =
-        Loana.Cards.CardPool.generate_card_pool ()
-        |> Seq.filter Loana.Cards.CardPool.MODES.[Loana.Cards.CardPool.MODES.Keys |> Seq.head]
-        |> Seq.randomShuffle
-        |> Seq.map _.Generate
-        |> ResizeArray
+[<RequireQualifiedAccess>]
+type QuizState =
+    | Start
+    | ShowingFront
+    | ShowingBack
+    | Complete
+
+type QuizContext =
+    private {
+        Output: IOutput
+        Pool: ResizeArray<Card>
+        mutable Current: Card
+        mutable State: QuizState
+    }
+
+    static member Create(pool: ResizeArray<Card>, output: IOutput) : QuizContext =
+        let current = pool.[0]
+        pool.RemoveAt(0)
+        {
+            Pool = pool
+            Output = output
+            Current = current
+            State = QuizState.Start
+        }
+
+    static member CreateExample(output: IOutput): QuizContext =
+        let pool =
+            Loana.Cards.CardPool.generate_card_pool ()
+            |> Seq.filter Loana.Cards.CardPool.MODES.[Loana.Cards.CardPool.MODES.Keys |> Seq.head]
+            |> Seq.randomShuffle
+            |> Seq.map _.Generate
+            |> ResizeArray
+        QuizContext.Create(pool, output)
+
+    member private this.DisplayCard (card: Card) : unit =
+        this.Output.Clear()
+        Quiz.render_annotations(card.Front, this.Output)
+
+    member private this.NextCard() : bool =
+        if this.Pool.Count > 0 then
+            this.Current <- this.Pool.[0]
+            this.State <- QuizState.ShowingFront
+            this.Pool.RemoveAt(0)
+            this.DisplayCard(this.Current)
+            true
+        else
+            this.State <- QuizState.Complete
+            this.Output.WriteLine("All done!", null)
+            false
+
+    member this.Next(user_input: string) : bool =
+        match this.State with
+        | QuizState.Start ->
+            this.Output.WriteLine(sprintf "Beginning quiz consisting of %i cards" (this.Pool.Count + 1), null)
+            this.DisplayCard(this.Current)
+            this.State <- QuizState.ShowingFront
+            true
+        | QuizState.ShowingFront ->
+            let correct_answer = AnnotationTree.flatten_tree this.Current.Back
+            // todo: rules on case-sensitivity
+            if user_input = correct_answer then
+                // Allow this card to be discarded
+                this.NextCard()
+            else
+                this.Output.WriteLine(user_input, Brushes.LightPink)
+                Quiz.render_annotations(this.Current.Back, this.Output)
+                this.State <- QuizState.ShowingBack
+                false
+        | QuizState.ShowingBack ->
+            // todo: based on user input certain commands could bury, skip, or allow the mistake
+            // Reinsert the card into the pool
+            this.Pool.Insert(min this.Pool.Count 5, this.Current)
+            this.NextCard()
+        | QuizState.Complete -> false
