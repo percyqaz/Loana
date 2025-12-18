@@ -1,10 +1,20 @@
 ﻿namespace Loana.Interface
 
 open System
+open Avalonia
 open Avalonia.Media
 open Loana.Core
 
 module Quiz =
+
+    let internal gradient (start: Color) (finish: Color) : IBrush =
+        let brush = LinearGradientBrush()
+        brush.StartPoint <- RelativePoint(0, 0, RelativeUnit.Relative)
+        brush.StartPoint <- RelativePoint(1, 0, RelativeUnit.Relative)
+        brush.GradientStops <- GradientStops()
+        brush.GradientStops.Add(GradientStop(start, 0.0))
+        brush.GradientStops.Add(GradientStop(finish, 1.0))
+        brush
 
     type internal ConsoleAnnotationFragment = {
         Text: string
@@ -36,10 +46,10 @@ module Quiz =
                             Finish = position
                             Color =
                                 match gender with
-                                | Gender.Masculine -> Brushes.Blue
-                                | Gender.Neuter -> Brushes.Gray
-                                | Gender.Feminine -> Brushes.Magenta
-                                | Gender.Plural -> Brushes.Yellow
+                                | Gender.Masculine -> gradient Colors.Blue Colors.Purple
+                                | Gender.Neuter -> gradient Colors.Gray Colors.LightGray
+                                | Gender.Feminine -> gradient Colors.Magenta Colors.Pink
+                                | Gender.Plural -> gradient Colors.Yellow Colors.Wheat
                             Layer = layer
                         }
                         layer
@@ -221,7 +231,7 @@ type QuizContext =
     member this.Next(user_input: string) : bool =
         match this.State with
         | QuizState.Start ->
-            this.Log.WriteLine(sprintf "Beginning quiz consisting of %i cards" (this.Pool.Count + 1), Brushes.Wheat)
+            this.Log.WriteLine(sprintf "Beginning quiz consisting of %i cards" (this.Pool.Count + 1), Brushes.LightGreen)
             this.DisplayCard(this.Current)
             this.State <- QuizState.ShowingFront
             true

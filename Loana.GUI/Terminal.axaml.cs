@@ -47,17 +47,6 @@ public class DirectColorizer : DocumentColorizingTransformer
 
 public partial class Terminal : UserControl, Interface.IOutput
 {
-    private IBrush gradient = new LinearGradientBrush
-    {
-        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-        EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
-        GradientStops = new GradientStops
-    {
-        new GradientStop(Colors.Red, 0.0),   // start color at offset 0
-        new GradientStop(Colors.Blue, 1.0)   // end color at offset 1
-    }
-    };
-
     private List<StyledSpan> styledSpans = [];
 
     public Terminal()
