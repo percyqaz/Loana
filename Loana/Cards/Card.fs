@@ -12,10 +12,10 @@ type Card(key: string, front: AnnotationTree, back: AnnotationTree, spacing_rule
         member this.DisplayFront(output: IOutput) : unit =
             output.Clear()
             AnnotationTree.render(front, output)
-            output.Write("-> English", AnnotationTree.gradient Colors.Red Colors.Black, Brushes.White)
+            output.Write(" -> English ", AnnotationTree.gradient Colors.Red Colors.Black, Brushes.White)
             output.Write(" ")
             if (this :> ICard).Schedule.LearningStep.IsSome then
-                output.WriteLine("Learning", Brushes.Black, Brushes.Cyan)
+                output.WriteLine(" Learning ", Brushes.Black, Brushes.Cyan)
 
         member this.DisplayBack(output: IOutput): unit =
             AnnotationTree.render(back, output)
@@ -24,7 +24,7 @@ type Card(key: string, front: AnnotationTree, back: AnnotationTree, spacing_rule
             if user_input = AnnotationTree.flatten_tree back then
                 Some CardEase.Okay
             else
-                output.WriteLine("Mistake! See below:", Brushes.Black, Brushes.Red)
+                output.WriteLine(" Mistake! See below: ", Brushes.Black, Brushes.Red)
                 output.WriteLine(user_input, Brushes.LightPink)
                 None
 

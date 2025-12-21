@@ -25,6 +25,13 @@ type Case =
         | Accusative -> "acc"
         | Dative -> "dat"
         | Genitive -> "gen"
+    static member LIST =
+        [
+            Nominative
+            Accusative
+            Dative
+            Genitive
+        ]
 
 [<RequireQualifiedAccess>]
 type Person =
@@ -40,6 +47,18 @@ type Person =
         | Second true -> "2p"
         | Third g -> "3" + g.ToString()
         | Formal -> "F"
+    static member LIST =
+        [
+            First false
+            First true
+            Second false
+            Second true
+            Third Gender.Masculine
+            Third Gender.Feminine
+            Third Gender.Neuter
+            Third Gender.Plural
+            Formal
+        ]
 
 type SingularNounGuts = {
     Plural: string option

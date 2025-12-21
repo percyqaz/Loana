@@ -4,36 +4,40 @@ open System
 open Avalonia.Media
 open Loana
 
+type MenuItem<'T> =
+    {
+        Name: string
+        Value: 'T
+    }
+
 type MenuContext<'T> =
     private {
         Output: IOutput
-        Options: Map<string, 'T>
+        Options: MenuItem<'T> array
         Callback: Action<'T>
         mutable Selected: int
     }
 
     member this.Draw() : unit =
-        let keys = Array.ofSeq this.Options.Keys
         this.Output.Clear()
-        for i = 0 to keys.Length - 1 do
+        for i = 0 to this.Options.Length - 1 do
             if i = this.Selected then
                 this.Output.Write(" > ")
-                this.Output.Write(keys.[i], Brushes.Yellow)
+                this.Output.Write(this.Options.[i].Name, Brushes.Yellow)
                 this.Output.WriteLine(" <")
             else
-                this.Output.WriteLine(sprintf "%02i %s" ((keys.Length + i - this.Selected) % keys.Length) keys.[i], Brushes.LightGray)
+                this.Output.WriteLine(sprintf "%02i %s" ((this.Options.Length + i - this.Selected) % this.Options.Length) this.Options.[i].Name, Brushes.LightGray)
 
     member this.Next(user_input: string) : unit =
-        let keys = Array.ofSeq this.Options.Keys
         match Int32.TryParse(user_input) with
         | true, n ->
-            this.Selected <- ((this.Selected + n) % keys.Length + keys.Length) % keys.Length
+            this.Selected <- ((this.Selected + n) % this.Options.Length + this.Options.Length) % this.Options.Length
             this.Draw()
-        | false, _ -> this.Callback.Invoke(this.Options.[keys.[this.Selected]])
+        | false, _ -> this.Callback.Invoke(this.Options.[this.Selected].Value)
 
 type MenuContext =
 
-    static member Create(options: Map<string, 'T>, callback: Action<'T>, output: IOutput) : MenuContext<'T> =
+    static member Create(options: MenuItem<'T> array, callback: Action<'T>, output: IOutput) : MenuContext<'T> =
         {
             Output = output
             Options = options
@@ -41,5 +45,5 @@ type MenuContext =
             Selected = 0
         }
 
-    static member CreateDeckPicker(callback: Action<(Cards.CardPool.CardPermutation -> bool)>, output: IOutput) : MenuContext<Cards.CardPool.CardPermutation -> bool> =
-        MenuContext.Create(Cards.CardPool.DECKS, callback, output)
+    static member Create(options: 'T array, labels: Func<'T, string>, callback: Action<'T>, output: IOutput) : MenuContext<'T> =
+        MenuContext.Create(options |> Array.map (fun x -> { Name = labels.Invoke(x); Value = x }), callback, output)

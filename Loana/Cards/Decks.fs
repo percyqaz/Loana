@@ -4,7 +4,8 @@ open Loana
 open Loana.Declension
 open Loana.Scheduler
 
-module CardPool =
+[<AutoOpen>]
+module internal CardPool =
 
     let NOUNS : Noun array =
         [|
@@ -40,192 +41,138 @@ module CardPool =
             }
         |]
 
-    let ADJECTIVES : Adjective array =
-        [|
-            //{
-            //    Deutsch = "groß"
-            //    English = "big"
-            //}
-            {
-                Deutsch = "klein"
-                English = "small"
-            }
-        |]
+    let KLEIN = { Deutsch = "klein"; English = "small" }
 
-    let PEOPLE = [
-        Person.First false
-        Person.First true
-        Person.Second false
-        Person.Second true
-        Person.Third Gender.Masculine
-        Person.Third Gender.Feminine
-        Person.Third Gender.Neuter
-        Person.Third Gender.Plural
-        Person.Formal
-    ]
+[<AbstractClass>]
+type Deck() =
+    abstract member Name : string
+    abstract member Build : CardScheduler -> Card seq
 
-    let CASES = [ Case.Nominative; Case.Accusative; Case.Dative; Case.Genitive ]
+type Pronouns() =
+    inherit Deck()
 
-    [<RequireQualifiedAccess>]
-    type CardType =
-        | Indefinite of Adjective option * Noun
-        | Definite of Adjective option * Noun
-        | Possessive of Person * Adjective option * Noun
-        | Person of Person
-        member this.HasAdjective =
-            match this with
-            | Indefinite (Some _, _) -> true
-            | Definite (Some _, _) -> true
-            | Possessive (_, Some _, _) -> true
-            | _ -> false
-        member this.Key =
-            match this with
-            | Indefinite (None, noun) -> $"indefinite-article-{noun.Key}"
-            | Indefinite (Some adj, noun) -> $"indefinite-article-adj-{adj.Key}-{noun.Key}"
-            | Definite (None, noun) -> $"definite-article-{noun.Key}"
-            | Definite (Some adj, noun) -> $"definite-article-adj-{adj.Key}-{noun.Key}"
-            | Possessive (person, None, noun) -> $"possessive-{person.Shorthand}-{noun.Key}"
-            | Possessive (person, Some adj, noun) -> $"possessive-{person.Shorthand}-adj-{adj.Key}-{noun.Key}"
-            | Person person -> $"person-{person.Shorthand}"
+    let spacing = CardSpacingRule.Familiarise
 
-    type CardPermutation =
-        {
-            Case: Case
-            Type: CardType
-        }
-        member this.IsValid =
-            match this.Type with
-            | CardType.Indefinite (_, noun) when noun.Guts.IsPlural -> false
-            | CardType.Person _ when this.Case.IsGenitive -> false
-            | _ -> true
-        member this.Key = $"{this.Type.Key}-{this.Case.Shorthand}"
-
-    let generate_card_pool () =
+    override this.Name = "Personal Pronouns"
+    override this.Build(scheduler: CardScheduler) : Card seq =
         seq {
-            for case in CASES do
-                for person in PEOPLE do
-                    for noun in NOUNS do
-                        for adjective in ADJECTIVES do
-                            if person = Person.Formal then
-                                yield {
-                                    Case = case
-                                    Type = CardType.Definite(Some adjective, noun)
-                                }
-                                yield {
-                                    Case = case
-                                    Type = CardType.Indefinite(Some adjective, noun)
-                                }
-                            yield {
-                                Case = case
-                                Type = CardType.Possessive(person, Some adjective, noun)
-                            }
-                        if person = Person.Formal then
-                            yield {
-                                Case = case
-                                Type = CardType.Definite(None, noun)
-                            }
-                            yield {
-                                Case = case
-                                Type = CardType.Indefinite(None, noun)
-                            }
-                        yield {
-                            Case = case
-                            Type = CardType.Possessive(person, None, noun)
-                        }
-                    yield {
-                        Case = case
-                        Type = CardType.Person person
-                    }
+            for person in Person.LIST do
+                for case in [Case.Nominative; Case.Accusative; Case.Dative] do
+                    yield
+                        Card(
+                            $"person-{person.Shorthand}-{case.Shorthand}",
+                            English.personal_pronoun person case,
+                            Deutsch.personal_pronoun person case,
+                            spacing,
+                            scheduler
+                        )
+        } |> Seq.cache
+
+type PossessivePronouns() =
+    inherit Deck()
+
+    let spacing = CardSpacingRule.Familiarise
+
+    override this.Name = "Possessive Pronouns"
+    override this.Build(scheduler: CardScheduler) : Card seq =
+        seq {
+            for person in Person.LIST do
+                for noun in NOUNS do
+                    for case in Case.LIST do
+                        yield
+                            Card(
+                                $"possessive-{person.Shorthand}-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
+                                English.possessive_fragment person (Some KLEIN) noun case,
+                                Deutsch.possessive_fragment person (Some KLEIN) noun case,
+                                spacing,
+                                scheduler
+                            )
+                        yield
+                            Card(
+                                $"possessive-{person.Shorthand}-{noun.Key}-{case.Shorthand}",
+                                English.possessive_fragment person None noun case,
+                                Deutsch.possessive_fragment person None noun case,
+                                spacing,
+                                scheduler
+                            )
+        } |> Seq.cache
+
+type Articles() =
+    inherit Deck()
+
+    let spacing = CardSpacingRule.Familiarise
+
+    override this.Name = "Articles"
+    override this.Build(scheduler: CardScheduler) : Card seq =
+        seq {
+            for noun in NOUNS do
+                for case in Case.LIST do
+                    yield
+                        Card(
+                            $"definite-article-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
+                            English.definite_fragment (Some KLEIN) noun case,
+                            Deutsch.definite_fragment (Some KLEIN) noun case,
+                            spacing,
+                            scheduler
+                        )
+                    yield
+                        Card(
+                            $"definite-article-{noun.Key}-{case.Shorthand}",
+                            English.definite_fragment None noun case,
+                            Deutsch.definite_fragment None noun case,
+                            spacing,
+                            scheduler
+                        )
+                    if not noun.Guts.IsPlural then
+                        yield
+                            Card(
+                                $"indefinite-article-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
+                                English.indefinite_fragment (Some KLEIN) noun case,
+                                Deutsch.indefinite_fragment (Some KLEIN) noun case,
+                                spacing,
+                                scheduler
+                            )
+                        yield
+                            Card(
+                                $"indefinite-article-{noun.Key}-{case.Shorthand}",
+                                English.indefinite_fragment None noun case,
+                                Deutsch.indefinite_fragment None noun case,
+                                spacing,
+                                scheduler
+                            )
         }
-        |> Seq.filter _.IsValid
 
-    type Deck =
-        {
-            Scheduler: CardScheduler
-            SpacingRule: CardSpacingRule
-            Cards: CardPermutation seq
-        }
-
-        member this.ToCard(card: CardPermutation) : Card =
-            match card.Type with
-            | CardType.Definite (adjective, noun) ->
-                Card(
-                    card.Key,
-                    English.definite_fragment adjective noun card.Case,
-                    Deutsch.definite_fragment adjective noun card.Case,
-                    this.SpacingRule,
-                    this.Scheduler
-                )
-            | CardType.Indefinite (adjective, noun) ->
-                Card(
-                    card.Key,
-                    English.indefinite_fragment adjective noun card.Case,
-                    Deutsch.indefinite_fragment adjective noun card.Case,
-                    this.SpacingRule,
-                    this.Scheduler
-                )
-            | CardType.Possessive (person, adjective, noun) ->
-                Card(
-                    card.Key,
-                    English.possessive_fragment person adjective noun card.Case,
-                    Deutsch.possessive_fragment person adjective noun card.Case,
-                    this.SpacingRule,
-                    this.Scheduler
-                )
-            | CardType.Person person ->
-                Card(
-                    card.Key,
-                    English.personal_pronoun person card.Case,
-                    Deutsch.personal_pronoun person card.Case,
-                    this.SpacingRule,
-                    this.Scheduler
-                )
-
-        member this.Build : Card seq =
-            this.Cards
-            |> Seq.map this.ToCard
-
-    let DECKS : Map<string, CardPermutation -> bool> = Map.ofList [
-        "[1*] basic 'the'", fun card ->
-            card.Type.IsDefinite && not card.Type.HasAdjective && card.Case.IsNominative
-        "[2*] 'the'", fun card ->
-            card.Type.IsDefinite && not card.Type.HasAdjective
-        "[4*] 'the' + adjective", fun card ->
-            card.Type.IsDefinite && card.Type.HasAdjective
-        "[1*] basic 'a'", fun card ->
-            card.Type.IsIndefinite && not card.Type.HasAdjective && card.Case.IsNominative
-        "[2*] 'a'", fun card ->
-            card.Type.IsIndefinite && not card.Type.HasAdjective
-        "[4*] 'a' + adjective", fun card ->
-            card.Type.IsIndefinite && card.Type.HasAdjective
-        "[3*] 'a' + 'the' combo", fun card ->
-            (card.Type.IsDefinite || card.Type.IsIndefinite) && not card.Type.HasAdjective
-        "[5*] 'a' + 'the' adjective combo", fun card ->
-            (card.Type.IsDefinite || card.Type.IsIndefinite)
-        "[1*] basic personal pronouns", fun card ->
-            card.Type.IsPerson && card.Case.IsNominative
-        "[2*] personal pronouns", fun card ->
-            card.Type.IsPerson
-        "[3*] basic possessive pronouns", fun card ->
-            card.Type.IsPossessive && not card.Type.HasAdjective && card.Case.IsNominative
-        "[4*] possessive pronouns", fun card ->
-            card.Type.IsPossessive && not card.Type.HasAdjective
-        "[6*] possessive pronouns + adjective", fun card ->
-            card.Type.IsPossessive && card.Type.HasAdjective
-        "[4*] tiny bit of everything", fun card ->
-            not card.Type.HasAdjective && card.Case.IsNominative
-        "[6*] tiny bit of everything + adjective", fun card ->
-            (card.Type.HasAdjective || card.Type.IsPerson) && card.Case.IsNominative
-        "[8*] everything", fun card ->
-            card.Type.HasAdjective || card.Type.IsPerson
-    ]
-
-    let build_from_filter(filter: CardPermutation -> bool, rule: CardSpacingRule, scheduler: CardScheduler) : Card seq =
-        {
-            Scheduler = scheduler
-            SpacingRule = rule
-            Cards =
-                generate_card_pool()
-                |> Seq.filter filter
-        }
-            .Build
+    //let DECKS : Map<string, CardPermutation -> bool> = Map.ofList [
+    //    "[1*] basic 'the'", fun card ->
+    //        card.Type.IsDefinite && not card.Type.HasAdjective && card.Case.IsNominative
+    //    "[2*] 'the'", fun card ->
+    //        card.Type.IsDefinite && not card.Type.HasAdjective
+    //    "[4*] 'the' + adjective", fun card ->
+    //        card.Type.IsDefinite && card.Type.HasAdjective
+    //    "[1*] basic 'a'", fun card ->
+    //        card.Type.IsIndefinite && not card.Type.HasAdjective && card.Case.IsNominative
+    //    "[2*] 'a'", fun card ->
+    //        card.Type.IsIndefinite && not card.Type.HasAdjective
+    //    "[4*] 'a' + adjective", fun card ->
+    //        card.Type.IsIndefinite && card.Type.HasAdjective
+    //    "[3*] 'a' + 'the' combo", fun card ->
+    //        (card.Type.IsDefinite || card.Type.IsIndefinite) && not card.Type.HasAdjective
+    //    "[5*] 'a' + 'the' adjective combo", fun card ->
+    //        (card.Type.IsDefinite || card.Type.IsIndefinite)
+    //    "[1*] basic personal pronouns", fun card ->
+    //        card.Type.IsPerson && card.Case.IsNominative
+    //    "[2*] personal pronouns", fun card ->
+    //        card.Type.IsPerson
+    //    "[3*] basic possessive pronouns", fun card ->
+    //        card.Type.IsPossessive && not card.Type.HasAdjective && card.Case.IsNominative
+    //    "[4*] possessive pronouns", fun card ->
+    //        card.Type.IsPossessive && not card.Type.HasAdjective
+    //    "[6*] possessive pronouns + adjective", fun card ->
+    //        card.Type.IsPossessive && card.Type.HasAdjective
+    //    "[4*] tiny bit of everything", fun card ->
+    //        not card.Type.HasAdjective && card.Case.IsNominative
+    //    "[6*] tiny bit of everything + adjective", fun card ->
+    //        (card.Type.HasAdjective || card.Type.IsPerson) && card.Case.IsNominative
+    //    "[8*] everything", fun card ->
+    //        card.Type.HasAdjective || card.Type.IsPerson
+    //]

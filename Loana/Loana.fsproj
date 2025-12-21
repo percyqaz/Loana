@@ -8,18 +8,19 @@
   <PropertyGroup Label="Avalonia">
     <AvaloniaNameGeneratorIsEnabled>False</AvaloniaNameGeneratorIsEnabled>
     <EnableAvaloniaXamlCompilation>False</EnableAvaloniaXamlCompilation>
+    <AvaloniaXamlReportImportance>High</AvaloniaXamlReportImportance>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="IOutput.fs" />
     <Compile Include="Vocab.fs" />
     <Compile Include="Annotations.fs" />
-    <Compile Include="scheduler\CardScheduler.fs" />
+    <Compile Include="Scheduler\CardScheduler.fs" />
     <Compile Include="Scheduler\CardStack.fs" />
-    <Compile Include="scheduler\ReviewSession.fs" />
+    <Compile Include="Scheduler\ReviewSession.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
-    <Compile Include="cards\Card.fs" />
+    <Compile Include="Cards\Card.fs" />
     <Compile Include="Cards\Decks.fs" />
     <Compile Include="Interface\Menu.fs" />
   </ItemGroup>
