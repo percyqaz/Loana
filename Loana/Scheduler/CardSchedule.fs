@@ -1,7 +1,6 @@
 namespace Loana.Scheduler
 
 open System
-open Avalonia.Media
 open Loana
 
 [<RequireQualifiedAccess>]
@@ -16,8 +15,8 @@ type ICard =
     abstract member ScheduledTime: int64 with get
     abstract member DisplayFront: IOutput -> unit
     abstract member DisplayBack: IOutput -> unit
-    abstract member FrontInput: string -> CardResult option // None = show back
-    abstract member BackInput: string -> CardResult
+    abstract member FrontInput: string * IOutput -> CardResult option // None = show back
+    abstract member BackInput: string * IOutput -> CardResult
     abstract member Reschedule: CardResult * int64 -> unit
 
 type CardSchedule =
@@ -76,57 +75,3 @@ type CardSchedule =
             Some card
         else
             None
-
-type QuizState =
-    | Start
-    | ShowingFront of ICard
-    | ShowingBack of ICard
-    | Complete
-
-type QuizContext =
-    private {
-        Log: IOutput
-        Display: IOutput
-        Deck: CardSchedule
-        mutable State: QuizState
-    }
-
-    static member Create(deck: CardSchedule, log: IOutput, display: IOutput) : QuizContext =
-        {
-            Log = log
-            Display = display
-            Deck = deck
-            State = Start
-        }
-
-    member private this.NextCard() : bool =
-        match this.Deck.GetNextCard() with
-        | Some x ->
-            this.State <- ShowingFront x
-            x.DisplayFront(this.Display)
-            true
-        | None ->
-            this.State <- Complete
-            false
-
-    member this.Next(user_input: string) : bool =
-        match this.State with
-        | Start ->
-            this.Log.WriteLine(sprintf "Beginning quiz consisting of %i cards" this.Deck.Remaining, Brushes.LightGreen)
-            this.NextCard()
-
-        | ShowingFront card ->
-            match card.FrontInput user_input with
-            | Some result ->
-                this.Deck.ReplaceCard(card, result)
-                this.NextCard()
-            | None ->
-                this.State <- ShowingBack card
-                card.DisplayBack(this.Display)
-                true
-
-        | ShowingBack card ->
-            this.Deck.ReplaceCard(card, user_input |> card.BackInput)
-            this.NextCard()
-
-        | Complete -> false

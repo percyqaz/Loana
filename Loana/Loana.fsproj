@@ -14,12 +14,14 @@
     <Compile Include="IOutput.fs" />
     <Compile Include="Vocab.fs" />
     <Compile Include="Annotations.fs" />
-    <Compile Include="Scheduler\QuizSchedule.fs" />
+    <Compile Include="Scheduler\CardSchedule.fs" />
+    <Compile Include="scheduler\ReviewSession.fs" />
+    <Compile Include="scheduler\CardHistory.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
     <Compile Include="cards\Card.fs" />
     <Compile Include="Cards\CardPool.fs" />
-    <Compile Include="Interface\Quiz.fs" />
+    <Compile Include="Interface\Menu.fs" />
   </ItemGroup>
 
   <ItemGroup>

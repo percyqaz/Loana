@@ -17,13 +17,13 @@ public partial class MainWindow : Window
 
         log.WriteLine("Welcome to Loana!", Brushes.Wheat);
 
-        QuizContext? quiz = null;
+        ReviewSession? session = null;
         var menu = MenuContext.CreateModePicker(
             mode =>
             {
                 var deck = CardSchedule.Build(CardPool.build_from_mode(mode), true, 50);
-                quiz = QuizContext.Create(deck, log, display);
-                quiz.Next("");
+                session = ReviewSession.Create(deck, log, display);
+                session.Next("");
             },
             display
         );
@@ -35,11 +35,11 @@ public partial class MainWindow : Window
             {
                 string command = Input.Text ?? "";
                 Input.Text = "";
-                if (quiz is not null)
+                if (session is not null)
                 {
-                    if (!quiz.Next(command))
+                    if (!session.Next(command))
                     {
-                        quiz = null;
+                        session = null;
                         menu.Draw();
                     }
                 }

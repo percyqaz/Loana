@@ -1,20 +1,24 @@
 namespace Loana.Cards
 
 open System
+open Avalonia.Media
 open Loana
 open Loana.Scheduler
 
 module CardMemory =
 
-    let private mem = Collections.Generic.Dictionary<string, int64>()
+    let private mem = Collections.Generic.Dictionary<string, CardHistory>()
 
-    let schedule_for (key: string, time: int64) =
-        mem.[key] <- time
+    let RULE = CardSpacingRule.Familiarise
 
-    let get_schedule (key: string) : int64 =
+    let get_schedule (key: string) : CardHistory =
         match mem.TryGetValue(key) with
         | true, time -> time
-        | false, _ -> 0L
+        | false, _ -> CardHistory.Initial
+
+    let review (key: string, ease: CardResult, now: int64) =
+        mem.[key] <- RULE.Next(get_schedule key, ease, now)
+        printfn "Card '%s' reviewed with result %A. Next review at %A" key ease (mem.[key].NextReview)
 
 type Card =
     {
@@ -26,29 +30,28 @@ type Card =
         AnnotationTree.flatten_tree this.Front
 
     interface ICard with
-        member this.ScheduledTime : int64 = CardMemory.get_schedule(this.Key)
+        member this.ScheduledTime : int64 = CardMemory.get_schedule(this.Key).NextReview
 
         member this.DisplayFront(output: IOutput) : unit =
             output.Clear()
             AnnotationTree.render(this.Front, output)
+            output.Write("-> English", AnnotationTree.gradient Colors.Red Colors.Black, Brushes.White)
+            output.Write(" ")
+            if CardMemory.get_schedule(this.Key).LearningStep.IsSome then
+                output.WriteLine("Learning", Brushes.Black, Brushes.Cyan)
 
         member this.DisplayBack(output: IOutput): unit =
             AnnotationTree.render(this.Back, output)
 
-        member this.FrontInput(user_input: string) : CardResult option =
+        member this.FrontInput(user_input: string, output: IOutput) : CardResult option =
             if user_input = AnnotationTree.flatten_tree this.Back then
                 Some CardResult.Okay
             else
-                // output.WriteLine(user_input, Brushes.LightPink)
+                output.WriteLine("Mistake! See below:", Brushes.Black, Brushes.Red)
+                output.WriteLine(user_input, Brushes.LightPink)
                 None
 
-        member this.BackInput(user_input: string) : CardResult = CardResult.Forgot
+        member this.BackInput(user_input: string, output: IOutput) : CardResult = CardResult.Forgot
 
         member this.Reschedule(result: CardResult, now: int64) : unit =
-            match result with
-            | CardResult.Forgot
-            | CardResult.Bad ->
-                CardMemory.schedule_for(this.Key, now + TimeSpan.TicksPerSecond * 10L)
-            | CardResult.Okay
-            | CardResult.Easy ->
-                CardMemory.schedule_for(this.Key, now + TimeSpan.TicksPerMinute * 10L)
+            CardMemory.review(this.Key, result, now)
