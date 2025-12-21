@@ -4,7 +4,7 @@ open Avalonia.Media
 open Loana
 open Loana.Scheduler
 
-type Card(key: string, front: AnnotationTree, back: AnnotationTree, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
+type Card(key: string, tags: string list, spacing_rule: CardSpacingRule, scheduler: CardScheduler, front: AnnotationTree, back: AnnotationTree) =
 
     interface ICard with
         member this.Schedule : CardScheduleData = scheduler.Get(key)
@@ -16,6 +16,10 @@ type Card(key: string, front: AnnotationTree, back: AnnotationTree, spacing_rule
             output.Write(" ")
             if (this :> ICard).Schedule.LearningStep.IsSome then
                 output.WriteLine(" Learning ", Brushes.Black, Brushes.Cyan)
+            for tag in tags do
+                output.Write($" {tag} ", Brushes.Black, Brushes.LightGray)
+                output.Write(" ")
+            output.WriteLine("")
 
         member this.DisplayBack(output: IOutput): unit =
             AnnotationTree.render(back, output)

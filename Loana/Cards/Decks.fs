@@ -61,10 +61,11 @@ type Pronouns() =
                     yield
                         Card(
                             $"person-{person.Shorthand}-{case.Shorthand}",
-                            English.personal_pronoun person case,
-                            Deutsch.personal_pronoun person case,
+                            [ person.Shorthand; case.Shorthand ],
                             spacing,
-                            scheduler
+                            scheduler,
+                            English.personal_pronoun person case,
+                            Deutsch.personal_pronoun person case
                         )
         } |> Seq.cache
 
@@ -82,18 +83,20 @@ type PossessivePronouns() =
                         yield
                             Card(
                                 $"possessive-{person.Shorthand}-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
-                                English.possessive_fragment person (Some KLEIN) noun case,
-                                Deutsch.possessive_fragment person (Some KLEIN) noun case,
+                                [ person.Shorthand; "adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
                                 spacing,
-                                scheduler
+                                scheduler,
+                                English.possessive_fragment person (Some KLEIN) noun case,
+                                Deutsch.possessive_fragment person (Some KLEIN) noun case
                             )
                         yield
                             Card(
                                 $"possessive-{person.Shorthand}-{noun.Key}-{case.Shorthand}",
-                                English.possessive_fragment person None noun case,
-                                Deutsch.possessive_fragment person None noun case,
+                                [ person.Shorthand; "no-adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
                                 spacing,
-                                scheduler
+                                scheduler,
+                                English.possessive_fragment person None noun case,
+                                Deutsch.possessive_fragment person None noun case
                             )
         } |> Seq.cache
 
@@ -110,35 +113,39 @@ type Articles() =
                     yield
                         Card(
                             $"definite-article-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
-                            English.definite_fragment (Some KLEIN) noun case,
-                            Deutsch.definite_fragment (Some KLEIN) noun case,
+                            [ "definite"; "adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
                             spacing,
-                            scheduler
+                            scheduler,
+                            English.definite_fragment (Some KLEIN) noun case,
+                            Deutsch.definite_fragment (Some KLEIN) noun case
                         )
                     yield
                         Card(
                             $"definite-article-{noun.Key}-{case.Shorthand}",
-                            English.definite_fragment None noun case,
-                            Deutsch.definite_fragment None noun case,
+                            [ "definite"; "no-adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
                             spacing,
-                            scheduler
+                            scheduler,
+                            English.definite_fragment None noun case,
+                            Deutsch.definite_fragment None noun case
                         )
                     if not noun.Guts.IsPlural then
                         yield
                             Card(
                                 $"indefinite-article-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
-                                English.indefinite_fragment (Some KLEIN) noun case,
-                                Deutsch.indefinite_fragment (Some KLEIN) noun case,
+                                [ "indefinite"; "adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
                                 spacing,
-                                scheduler
+                                scheduler,
+                                English.indefinite_fragment (Some KLEIN) noun case,
+                                Deutsch.indefinite_fragment (Some KLEIN) noun case
                             )
                         yield
                             Card(
                                 $"indefinite-article-{noun.Key}-{case.Shorthand}",
-                                English.indefinite_fragment None noun case,
-                                Deutsch.indefinite_fragment None noun case,
+                                [ "indefinite"; "no-adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
                                 spacing,
-                                scheduler
+                                scheduler,
+                                English.indefinite_fragment None noun case,
+                                Deutsch.indefinite_fragment None noun case
                             )
         }
 
