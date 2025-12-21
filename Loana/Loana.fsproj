@@ -11,17 +11,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="IOutput.fs" />
     <Compile Include="Vocab.fs" />
-    <Compile Include="Cards.fs" />
+    <Compile Include="Annotations.fs" />
+    <Compile Include="Scheduler\QuizSchedule.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
+    <Compile Include="cards\Card.fs" />
     <Compile Include="Cards\CardPool.fs" />
-    <Compile Include="interface\IOutput.fs" />
     <Compile Include="Interface\Quiz.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless" Version="11.3.10" />
   </ItemGroup>
+
+  <ItemGroup />
 
 </Project>

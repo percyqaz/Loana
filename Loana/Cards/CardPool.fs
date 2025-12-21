@@ -1,7 +1,7 @@
 ﻿namespace Loana.Cards
 
-open Loana.Core
-open Loana.Core.Declension
+open Loana
+open Loana.Declension
 
 module CardPool =
 
@@ -184,3 +184,8 @@ module CardPool =
         "[8*] everything", fun card ->
             card.Type.HasAdjective || card.Type.IsPerson
     ]
+
+    let build_from_mode(mode: CardPermutation -> bool) : Card seq =
+        generate_card_pool()
+        |> Seq.filter mode
+        |> Seq.map _.Generate

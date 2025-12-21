@@ -45,7 +45,7 @@ public class DirectColorizer : DocumentColorizingTransformer
     }
 }
 
-public partial class Terminal : UserControl, Interface.IOutput
+public partial class Terminal : UserControl, IOutput
 {
     private List<StyledSpan> styledSpans = [];
 
@@ -56,16 +56,11 @@ public partial class Terminal : UserControl, Interface.IOutput
         TextEditor.TextArea.TextView.PointerWheelChanged += (_, e) => e.Handled = true;
     }
 
-    public void WriteLine(string text, IBrush? foreground)
-    {
-        Write(text + "\n", foreground);
-    }
-
-    public void Write(string text, IBrush? foreground)
+    public void Write(string text, IBrush? foreground, IBrush? background)
     {
         var offset = TextEditor.Document.TextLength;
         TextEditor.Document.Insert(offset, text);
-        var span = new StyledSpan(offset, text.Length, foreground ?? Brushes.LightGray, Brushes.Black);
+        var span = new StyledSpan(offset, text.Length, foreground ?? Brushes.LightGray, background ?? Brushes.Black);
         styledSpans.Add(span);
         TextEditor.TextArea.TextView.Redraw();
         TextEditor.TextArea.Caret.BringCaretToView(-10.0);

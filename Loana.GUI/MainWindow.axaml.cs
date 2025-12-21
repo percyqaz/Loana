@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Media;
+using Loana.Scheduler;
 using Loana.Interface;
+using Loana.Cards;
 
 namespace Loana.GUI;
 
@@ -16,7 +18,15 @@ public partial class MainWindow : Window
         log.WriteLine("Welcome to Loana!", Brushes.Wheat);
 
         QuizContext? quiz = null;
-        var menu = MenuContext.CreateModePicker(mode => { quiz = QuizContext.CreateFromMode(mode, log, display); quiz.Next(""); }, display);
+        var menu = MenuContext.CreateModePicker(
+            mode =>
+            {
+                var deck = CardSchedule.Build(CardPool.build_from_mode(mode), true, 50);
+                quiz = QuizContext.Create(deck, log, display);
+                quiz.Next("");
+            },
+            display
+        );
         menu.Draw();
 
         Input.KeyDown += (sender, e) =>

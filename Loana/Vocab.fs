@@ -1,4 +1,4 @@
-﻿namespace Loana.Core
+﻿namespace Loana
 
 [<RequireQualifiedAccess>]
 type Gender =

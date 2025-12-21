@@ -1,6 +1,6 @@
-﻿namespace Loana.Core.Declension
+﻿namespace Loana.Declension
 
-open Loana.Core
+open Loana
 
 module Deutsch =
 
