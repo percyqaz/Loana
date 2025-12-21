@@ -13,11 +13,11 @@ type ReviewSession =
     private {
         Log: IOutput
         Display: IOutput
-        Deck: CardSchedule
+        Deck: CardStack
         mutable State: ReviewSessionState
     }
 
-    static member Create(deck: CardSchedule, log: IOutput, display: IOutput) : ReviewSession =
+    static member Create(deck: CardStack, log: IOutput, display: IOutput) : ReviewSession =
         {
             Log = log
             Display = display

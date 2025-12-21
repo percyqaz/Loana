@@ -16,7 +16,7 @@ module CardMemory =
         | true, time -> time
         | false, _ -> CardHistory.Initial
 
-    let review (key: string, ease: CardResult, now: int64) =
+    let review (key: string, ease: CardEase, now: int64) =
         mem.[key] <- RULE.Next(get_schedule key, ease, now)
         printfn "Card '%s' reviewed with result %A. Next review at %A" key ease (mem.[key].NextReview)
 
@@ -43,15 +43,15 @@ type Card =
         member this.DisplayBack(output: IOutput): unit =
             AnnotationTree.render(this.Back, output)
 
-        member this.FrontInput(user_input: string, output: IOutput) : CardResult option =
+        member this.FrontInput(user_input: string, output: IOutput) : CardEase option =
             if user_input = AnnotationTree.flatten_tree this.Back then
-                Some CardResult.Okay
+                Some CardEase.Okay
             else
                 output.WriteLine("Mistake! See below:", Brushes.Black, Brushes.Red)
                 output.WriteLine(user_input, Brushes.LightPink)
                 None
 
-        member this.BackInput(user_input: string, output: IOutput) : CardResult = CardResult.Forgot
+        member this.BackInput(user_input: string, output: IOutput) : CardEase = CardEase.Forgot
 
-        member this.Reschedule(result: CardResult, now: int64) : unit =
+        member this.Reschedule(result: CardEase, now: int64) : unit =
             CardMemory.review(this.Key, result, now)

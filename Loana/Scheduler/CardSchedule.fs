@@ -1,77 +1,176 @@
 namespace Loana.Scheduler
 
 open System
-open Loana
 
-[<RequireQualifiedAccess>]
-type CardResult =
-    | Forgot
-    | Bad
-    | Okay
-    | Easy
-
-[<Interface>]
-type ICard =
-    abstract member ScheduledTime: int64 with get
-    abstract member DisplayFront: IOutput -> unit
-    abstract member DisplayBack: IOutput -> unit
-    abstract member FrontInput: string * IOutput -> CardResult option // None = show back
-    abstract member BackInput: string * IOutput -> CardResult
-    abstract member Reschedule: CardResult * int64 -> unit
-
-type CardSchedule =
-    private {
-        Source: ICard seq
-        Stack: ResizeArray<ICard>
-        TimeStart: int64
-        TimeOffset: int64
-        AllowReplacement: bool
+type CardHistory =
+    {
+        Reviews: int
+        Streak: int
+        LearningStep: int option
+        LastReviewed: int64 option
+        NextReview: int64
+        Interval: int64
     }
 
-    static member GetDueCards (source: ICard seq, now: int64) : ICard seq =
-        source
-        |> Seq.filter (fun card -> card.ScheduledTime <= now)
-        |> Seq.sortBy (fun card -> card.ScheduledTime)
-
-    static member Build(source: ICard seq, allow_replacement: bool, limit: int, offset: int64) : CardSchedule =
-        let start = DateTime.UtcNow.Ticks
-        let now = start + offset
-
-        let due_cards =
-            CardSchedule.GetDueCards(source, now)
-            |> Seq.truncate limit
-            |> Array.ofSeq
-
-        Random().Shuffle(due_cards)
+    static member Initial : CardHistory =
         {
-            Source = source
-            Stack = ResizeArray<ICard>(due_cards)
-            TimeStart = start
-            TimeOffset = offset
-            AllowReplacement = allow_replacement
+            Reviews = 0
+            LearningStep = Some 0
+            Streak = 0
+            LastReviewed = None
+            NextReview = 0L
+            Interval = CardHistory.DEFAULT_INTERVAL
         }
 
-    static member Build(source: ICard seq, allow_replacement: bool, limit: int) : CardSchedule =
-        CardSchedule.Build(source, allow_replacement, limit, 0L)
+    static member DEFAULT_INTERVAL: int64 = TimeSpan.TicksPerSecond * 10L
 
-    static let SIX_SECONDS_PER_CARD = TimeSpan.TicksPerSecond * 6L
-    static let THIRTY_SECONDS_IN_CARDS = 5
+type CardSpacingRule =
+    {
+        LearningSteps: int64 array
+        GraduatingInterval: int64
+        Fuzz: int64 -> int64
+        Bad: int64 -> int64
+        Okay: int64 -> int64
+        Easy: int64 -> int64
+    }
 
-    member this.Remaining = this.Stack.Count
+    static member HighRetention : CardSpacingRule =
+        let rand = Random()
+        let multiply (factor: float) (interval: int64) : int64 =
+            int64 (float interval * factor)
 
-    member this.ReplaceCard (card: ICard, result: CardResult) : unit =
-        let now = DateTime.UtcNow.Ticks + this.TimeOffset
-        card.Reschedule(result, now)
-        if this.AllowReplacement then
-            let how_far_in_future = card.ScheduledTime - now
-            let cards_in_future = how_far_in_future / SIX_SECONDS_PER_CARD |> int
-            if cards_in_future <= THIRTY_SECONDS_IN_CARDS || cards_in_future < this.Stack.Count then
-                this.Stack.Insert(min this.Stack.Count (max cards_in_future THIRTY_SECONDS_IN_CARDS), card)
+        let fuzz (interval: int64) : int64 =
+            multiply (1.0 + (rand.NextDouble() * 0.2 - 0.1)) interval
+        {
+            LearningSteps =
+                [|
+                    TimeSpan.TicksPerSecond * 10L
+                    TimeSpan.TicksPerSecond * 30L
+                    TimeSpan.TicksPerMinute * 1L
+                    TimeSpan.TicksPerMinute * 2L
+                    TimeSpan.TicksPerMinute * 5L
+                    TimeSpan.TicksPerMinute * 10L
+                |]
+            GraduatingInterval = TimeSpan.TicksPerHour * 12L
+            Fuzz = fuzz
+            Bad = multiply 0.5 >> min (TimeSpan.TicksPerDay * 3L)
+            Okay = multiply 1.1
+            Easy = multiply 1.6
+        }
 
-    member this.GetNextCard () : ICard option =
-        if this.Stack.Count > 0 then
-            let card = this.Stack.[0]
-            this.Stack.RemoveAt(0)
-            Some card
+    static member Familiarise : CardSpacingRule =
+        let rand = Random()
+        let multiply (factor: float) (interval: int64) : int64 =
+            int64 (float interval * factor)
+
+        let fuzz (interval: int64) : int64 =
+            multiply (1.0 + (rand.NextDouble() * 0.2 - 0.1)) interval
+        {
+            LearningSteps =
+                [|
+                    TimeSpan.TicksPerMinute * 2L
+                |]
+            GraduatingInterval = TimeSpan.TicksPerHour * 3L
+            Fuzz = fuzz
+            Bad = multiply 0.5
+            Okay = multiply 1.5
+            Easy = multiply 2.0
+        }
+
+    member private this.NextLearning(history: CardHistory, ease: CardEase, now: int64, step: int): CardHistory =
+        if step >= this.LearningSteps.Length then
+            match ease with
+            | CardEase.Forgot ->
+                { history with
+                    LearningStep = Some 0
+                    Streak = 0
+                    NextReview = now + this.Fuzz (Array.tryHead this.LearningSteps |> Option.defaultValue 0L)
+                }
+
+            | CardEase.Bad ->
+                { history with
+                    LearningStep = None
+                    NextReview = now + this.Fuzz this.GraduatingInterval
+                    Interval = this.GraduatingInterval
+                }
+
+            | CardEase.Okay
+            | CardEase.Easy ->
+
+                { history with
+                    Streak = history.Streak + 1
+                    LearningStep = None
+                    NextReview = now + this.Fuzz this.GraduatingInterval
+                    Interval = this.GraduatingInterval
+                }
         else
-            None
+            match ease with
+            | CardEase.Forgot ->
+                { history with
+                    LearningStep = Some 0
+                    Streak = 0
+                    NextReview = now + (Array.tryHead this.LearningSteps |> Option.defaultValue 0L)
+                }
+
+            | CardEase.Bad ->
+                { history with
+                    NextReview = now + this.Fuzz history.Interval
+                }
+
+            | CardEase.Okay ->
+                { history with
+                    Streak = history.Streak + 1
+                    LearningStep = Some (step + 1)
+                    NextReview = now + this.Fuzz this.LearningSteps.[step]
+                }
+
+            | CardEase.Easy ->
+                { history with
+                    Streak = history.Streak + 1
+                    LearningStep = None
+                    NextReview = now + this.Fuzz this.GraduatingInterval
+                    Interval = this.GraduatingInterval
+                }
+
+    member this.Next(history: CardHistory, ease: CardEase, now: int64) : CardHistory =
+
+        let history = { history with LastReviewed = Some now; Reviews = history.Reviews + 1 }
+
+        match history.LearningStep with
+        | Some step -> this.NextLearning(history, ease, now, step)
+        | None ->
+            match ease with
+            | CardEase.Forgot ->
+                { history with
+                    LearningStep = Some 0
+                    Streak = 0
+                    NextReview = now + this.Fuzz (Array.tryHead this.LearningSteps |> Option.defaultValue 0L)
+                }
+
+            | CardEase.Bad ->
+                let interval = this.Bad history.Interval
+                { history with
+                    NextReview = now + this.Fuzz interval
+                    Interval = interval
+                }
+
+            | CardEase.Okay ->
+                let interval = this.Okay history.Interval
+                { history with
+                    Streak = history.Streak + 1
+                    NextReview = now + this.Fuzz interval
+                    Interval = interval
+                }
+
+            | CardEase.Easy ->
+                { history with
+                    Streak = history.Streak + 1
+                    LearningStep = None
+                    NextReview = now + this.Fuzz this.GraduatingInterval
+                    Interval = this.GraduatingInterval
+                }
+
+type NoteHistory =
+    {
+        Level: int
+    }
