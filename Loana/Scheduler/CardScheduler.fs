@@ -1,9 +1,17 @@
 namespace Loana.Scheduler
 
 open System
+open Avalonia.Media
 open Loana
 
-type CardHistory =
+[<RequireQualifiedAccess>]
+type CardEase =
+    | Forgot
+    | Bad
+    | Okay
+    | Easy
+
+type CardScheduleData =
     {
         Reviews: int
         Streak: int
@@ -13,14 +21,14 @@ type CardHistory =
         Interval: int64
     }
 
-    static member Initial : CardHistory =
+    static member Initial : CardScheduleData =
         {
             Reviews = 0
             LearningStep = Some 0
             Streak = 0
             LastReviewed = None
             NextReview = 0L
-            Interval = CardHistory.DEFAULT_INTERVAL
+            Interval = CardScheduleData.DEFAULT_INTERVAL
         }
 
     static member DEFAULT_INTERVAL: int64 = 10L
@@ -78,7 +86,7 @@ type CardSpacingRule =
             Easy = multiply 2.0
         }
 
-    member private this.NextLearning(history: CardHistory, ease: CardEase, now: int64, step: int): CardHistory =
+    member private this.NextLearning(history: CardScheduleData, ease: CardEase, now: int64, step: int): CardScheduleData =
         if step >= this.LearningSteps.Length then
             match ease with
             | CardEase.Forgot ->
@@ -133,7 +141,7 @@ type CardSpacingRule =
                     Interval = this.GraduatingInterval
                 }
 
-    member this.Next(history: CardHistory, ease: CardEase, now: int64) : CardHistory =
+    member this.Next(history: CardScheduleData, ease: CardEase, now: int64) : CardScheduleData =
 
         let history = { history with LastReviewed = Some now; Reviews = history.Reviews + 1 }
 
@@ -171,18 +179,29 @@ type CardSpacingRule =
                     Interval = this.GraduatingInterval
                 }
 
-type CardSchedule(rule: CardSpacingRule, output: IOutput) =
+type CardScheduler(output: IOutput) =
 
-    let mem = Collections.Generic.Dictionary<string, CardHistory>()
+    let mem = Collections.Generic.Dictionary<string, CardScheduleData>()
 
-    member this.Get(key: string) : CardHistory =
+    member this.Get(key: string) : CardScheduleData =
         match mem.TryGetValue(key) with
         | true, time -> time
-        | false, _ -> CardHistory.Initial
+        | false, _ -> CardScheduleData.Initial
 
-    member this.Review(key: string, ease: CardEase, now: int64) =
-        mem.[key] <- rule.Next(this.Get key, ease, now)
-        output.WriteLine(sprintf "%s: %A, Scheduled for %O" key ease (DateTimeOffset.FromUnixTimeSeconds(mem.[key].NextReview)))
+    member this.Review(key: string, spacing_rule: CardSpacingRule, ease: CardEase, now: int64) =
+        let new_schedule = spacing_rule.Next(this.Get key, ease, now)
+        mem.[key] <- new_schedule
+        let ease_color =
+            match ease with
+            | CardEase.Forgot -> Brushes.DarkRed
+            | CardEase.Bad -> Brushes.OrangeRed
+            | CardEase.Okay -> Brushes.YellowGreen
+            | CardEase.Easy -> Brushes.Green
+        output.Write(sprintf "%A" ease, ease_color)
+        output.Write(", ")
+        match new_schedule.LearningStep with
+        | Some step -> output.WriteLine(sprintf "'%s' scheduled at %O (%i/%i)" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)) step spacing_rule.LearningSteps.Length, Brushes.LightBlue)
+        | None -> output.WriteLine(sprintf "'%s' scheduled at %O" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)))
 
 type NoteHistory =
     {

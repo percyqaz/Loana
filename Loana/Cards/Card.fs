@@ -4,13 +4,13 @@ open Avalonia.Media
 open Loana
 open Loana.Scheduler
 
-type Card(front: AnnotationTree, back: AnnotationTree, scheduler: CardSchedule) =
+type Card(front: AnnotationTree, back: AnnotationTree, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
 
     member this.Key : string =
         AnnotationTree.flatten_tree front
 
     interface ICard with
-        member this.ScheduledTime : int64 = scheduler.Get(this.Key).NextReview
+        member this.Schedule : CardScheduleData = scheduler.Get(this.Key)
 
         member this.DisplayFront(output: IOutput) : unit =
             output.Clear()
@@ -34,4 +34,4 @@ type Card(front: AnnotationTree, back: AnnotationTree, scheduler: CardSchedule) 
         member this.BackInput(user_input: string, output: IOutput) : CardEase = CardEase.Forgot
 
         member this.Reschedule(result: CardEase, now: int64) : unit =
-            scheduler.Review(this.Key, result, now)
+            scheduler.Review(this.Key, spacing_rule, result, now)

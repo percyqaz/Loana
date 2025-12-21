@@ -41,5 +41,5 @@ type MenuContext =
             Selected = 0
         }
 
-    static member CreateModePicker(callback: Action<(Cards.CardPool.CardPermutation -> bool)>, output: IOutput) : MenuContext<Cards.CardPool.CardPermutation -> bool> =
-        MenuContext.Create(Cards.CardPool.MODES, callback, output)
+    static member CreateDeckPicker(callback: Action<(Cards.CardPool.CardPermutation -> bool)>, output: IOutput) : MenuContext<Cards.CardPool.CardPermutation -> bool> =
+        MenuContext.Create(Cards.CardPool.DECKS, callback, output)

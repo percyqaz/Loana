@@ -3,16 +3,9 @@ namespace Loana.Scheduler
 open System
 open Loana
 
-[<RequireQualifiedAccess>]
-type CardEase =
-    | Forgot
-    | Bad
-    | Okay
-    | Easy
-
 [<Interface>]
 type ICard =
-    abstract member ScheduledTime: int64 with get
+    abstract member Schedule: CardScheduleData with get
     abstract member DisplayFront: IOutput -> unit
     abstract member DisplayBack: IOutput -> unit
     abstract member FrontInput: string * IOutput -> CardEase option // None = show back
@@ -30,8 +23,8 @@ type CardStack =
 
     static member GetDueCards (source: ICard seq, now: int64) : ICard seq =
         source
-        |> Seq.filter (fun card -> card.ScheduledTime <= now)
-        |> Seq.sortBy (fun card -> card.ScheduledTime)
+        |> Seq.filter (fun card -> card.Schedule.NextReview <= now)
+        |> Seq.sortBy (fun card -> card.Schedule.NextReview)
 
     static member Build(source: ICard seq, allow_replacement: bool, limit: int, offset: int64) : CardStack =
         let start = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
@@ -63,9 +56,12 @@ type CardStack =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + this.TimeOffset
         card.Reschedule(result, now)
         if this.AllowReplacement then
-            let how_far_in_future = card.ScheduledTime - now
+
+            let schedule = card.Schedule
+            let how_far_in_future = schedule.NextReview - now
             let cards_in_future = how_far_in_future / SECONDS_PER_CARD |> int
-            if cards_in_future <= THIRTY_SECONDS_IN_CARDS || cards_in_future < this.Stack.Count then
+
+            if schedule.LearningStep.IsSome || cards_in_future <= THIRTY_SECONDS_IN_CARDS || cards_in_future < this.Stack.Count then
                 this.Stack.Insert(min this.Stack.Count (max cards_in_future THIRTY_SECONDS_IN_CARDS), card)
 
     member this.GetNextCard () : ICard option =

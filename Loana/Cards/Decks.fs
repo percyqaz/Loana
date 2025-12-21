@@ -89,32 +89,6 @@ module CardPool =
             | CardType.Indefinite (_, noun) when noun.Guts.IsPlural -> false
             | CardType.Person _ when this.Case.IsGenitive -> false
             | _ -> true
-        member this.ToCard(scheduler: CardSchedule) =
-            match this.Type with
-            | CardType.Definite (adjective, noun) ->
-                Card(
-                    English.definite_fragment adjective noun this.Case,
-                    Deutsch.definite_fragment adjective noun this.Case,
-                    scheduler
-                )
-            | CardType.Indefinite (adjective, noun) ->
-                Card(
-                    English.indefinite_fragment adjective noun this.Case,
-                    Deutsch.indefinite_fragment adjective noun this.Case,
-                    scheduler
-                )
-            | CardType.Possessive (person, adjective, noun) ->
-                Card(
-                    English.possessive_fragment person adjective noun this.Case,
-                    Deutsch.possessive_fragment person adjective noun this.Case,
-                    scheduler
-                )
-            | CardType.Person person ->
-                Card(
-                    English.personal_pronoun person this.Case,
-                    Deutsch.personal_pronoun person this.Case,
-                    scheduler
-                )
 
     let generate_card_pool () =
         seq {
@@ -155,7 +129,49 @@ module CardPool =
         }
         |> Seq.filter _.IsValid
 
-    let MODES : Map<string, CardPermutation -> bool> = Map.ofList [
+    type Deck =
+        {
+            Scheduler: CardScheduler
+            SpacingRule: CardSpacingRule
+            Cards: CardPermutation seq
+        }
+
+        member this.ToCard(card: CardPermutation) : Card =
+            match card.Type with
+            | CardType.Definite (adjective, noun) ->
+                Card(
+                    English.definite_fragment adjective noun card.Case,
+                    Deutsch.definite_fragment adjective noun card.Case,
+                    this.SpacingRule,
+                    this.Scheduler
+                )
+            | CardType.Indefinite (adjective, noun) ->
+                Card(
+                    English.indefinite_fragment adjective noun card.Case,
+                    Deutsch.indefinite_fragment adjective noun card.Case,
+                    this.SpacingRule,
+                    this.Scheduler
+                )
+            | CardType.Possessive (person, adjective, noun) ->
+                Card(
+                    English.possessive_fragment person adjective noun card.Case,
+                    Deutsch.possessive_fragment person adjective noun card.Case,
+                    this.SpacingRule,
+                    this.Scheduler
+                )
+            | CardType.Person person ->
+                Card(
+                    English.personal_pronoun person card.Case,
+                    Deutsch.personal_pronoun person card.Case,
+                    this.SpacingRule,
+                    this.Scheduler
+                )
+
+        member this.Build : Card seq =
+            this.Cards
+            |> Seq.map this.ToCard
+
+    let DECKS : Map<string, CardPermutation -> bool> = Map.ofList [
         "[1*] basic 'the'", fun card ->
             card.Type.IsDefinite && not card.Type.HasAdjective && card.Case.IsNominative
         "[2*] 'the'", fun card ->
@@ -190,7 +206,12 @@ module CardPool =
             card.Type.HasAdjective || card.Type.IsPerson
     ]
 
-    let build_from_mode(mode: CardPermutation -> bool, scheduler: CardSchedule) : Card seq =
-        generate_card_pool()
-        |> Seq.filter mode
-        |> Seq.map (fun x -> x.ToCard scheduler)
+    let build_from_filter(filter: CardPermutation -> bool, rule: CardSpacingRule, scheduler: CardScheduler) : Card seq =
+        {
+            Scheduler = scheduler
+            SpacingRule = rule
+            Cards =
+                generate_card_pool()
+                |> Seq.filter filter
+        }
+            .Build
