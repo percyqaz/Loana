@@ -21,10 +21,10 @@ type Case =
     | Genitive
     member this.Shorthand =
         match this with
-        | Nominative -> "Nom."
-        | Accusative -> "Acc."
-        | Dative -> "Dat."
-        | Genitive -> "Gen."
+        | Nominative -> "nom"
+        | Accusative -> "acc"
+        | Dative -> "dat"
+        | Genitive -> "gen"
 
 [<RequireQualifiedAccess>]
 type Person =
@@ -32,6 +32,14 @@ type Person =
     | Second of plural: bool
     | Third of Gender
     | Formal
+    member this.Shorthand =
+        match this with
+        | First false -> "1"
+        | First true -> "1p"
+        | Second false -> "2"
+        | Second true -> "2p"
+        | Third g -> "3" + g.ToString()
+        | Formal -> "F"
 
 type SingularNounGuts = {
     Plural: string option
@@ -53,13 +61,31 @@ type NounGuts =
         | Neuter _ -> Gender.Neuter
         | Plural _ -> Gender.Plural
 
-type Noun = {
-    Deutsch: string
-    English: string
-    Guts: NounGuts
-}
+type Noun =
+    {
+        Deutsch: string
+        English: string
+        Guts: NounGuts
+    }
+    member this.Key =
+        this.Deutsch
+            .ToLowerInvariant()
+            .Replace("ö", "oe")
+            .Replace("ä", "ae")
+            .Replace("ü", "ue")
+            .Replace("ß", "ss")
+            .Replace("-", "_")
 
-type Adjective = {
-    Deutsch: string
-    English: string
-}
+type Adjective =
+    {
+        Deutsch: string
+        English: string
+    }
+    member this.Key =
+        this.Deutsch
+            .ToLowerInvariant()
+            .Replace("ö", "oe")
+            .Replace("ä", "ae")
+            .Replace("ü", "ue")
+            .Replace("ß", "ss")
+            .Replace("-", "_")

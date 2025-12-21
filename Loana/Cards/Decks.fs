@@ -78,6 +78,15 @@ module CardPool =
             | Definite (Some _, _) -> true
             | Possessive (_, Some _, _) -> true
             | _ -> false
+        member this.Key =
+            match this with
+            | Indefinite (None, noun) -> $"indefinite-article-{noun.Key}"
+            | Indefinite (Some adj, noun) -> $"indefinite-article-adj-{adj.Key}-{noun.Key}"
+            | Definite (None, noun) -> $"definite-article-{noun.Key}"
+            | Definite (Some adj, noun) -> $"definite-article-adj-{adj.Key}-{noun.Key}"
+            | Possessive (person, None, noun) -> $"possessive-{person.Shorthand}-{noun.Key}"
+            | Possessive (person, Some adj, noun) -> $"possessive-{person.Shorthand}-adj-{adj.Key}-{noun.Key}"
+            | Person person -> $"person-{person.Shorthand}"
 
     type CardPermutation =
         {
@@ -89,6 +98,7 @@ module CardPool =
             | CardType.Indefinite (_, noun) when noun.Guts.IsPlural -> false
             | CardType.Person _ when this.Case.IsGenitive -> false
             | _ -> true
+        member this.Key = $"{this.Type.Key}-{this.Case.Shorthand}"
 
     let generate_card_pool () =
         seq {
@@ -140,6 +150,7 @@ module CardPool =
             match card.Type with
             | CardType.Definite (adjective, noun) ->
                 Card(
+                    card.Key,
                     English.definite_fragment adjective noun card.Case,
                     Deutsch.definite_fragment adjective noun card.Case,
                     this.SpacingRule,
@@ -147,6 +158,7 @@ module CardPool =
                 )
             | CardType.Indefinite (adjective, noun) ->
                 Card(
+                    card.Key,
                     English.indefinite_fragment adjective noun card.Case,
                     Deutsch.indefinite_fragment adjective noun card.Case,
                     this.SpacingRule,
@@ -154,6 +166,7 @@ module CardPool =
                 )
             | CardType.Possessive (person, adjective, noun) ->
                 Card(
+                    card.Key,
                     English.possessive_fragment person adjective noun card.Case,
                     Deutsch.possessive_fragment person adjective noun card.Case,
                     this.SpacingRule,
@@ -161,6 +174,7 @@ module CardPool =
                 )
             | CardType.Person person ->
                 Card(
+                    card.Key,
                     English.personal_pronoun person card.Case,
                     Deutsch.personal_pronoun person card.Case,
                     this.SpacingRule,

@@ -4,20 +4,17 @@ open Avalonia.Media
 open Loana
 open Loana.Scheduler
 
-type Card(front: AnnotationTree, back: AnnotationTree, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
-
-    member this.Key : string =
-        AnnotationTree.flatten_tree front
+type Card(key: string, front: AnnotationTree, back: AnnotationTree, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
 
     interface ICard with
-        member this.Schedule : CardScheduleData = scheduler.Get(this.Key)
+        member this.Schedule : CardScheduleData = scheduler.Get(key)
 
         member this.DisplayFront(output: IOutput) : unit =
             output.Clear()
             AnnotationTree.render(front, output)
             output.Write("-> English", AnnotationTree.gradient Colors.Red Colors.Black, Brushes.White)
             output.Write(" ")
-            if scheduler.Get(this.Key).LearningStep.IsSome then
+            if (this :> ICard).Schedule.LearningStep.IsSome then
                 output.WriteLine("Learning", Brushes.Black, Brushes.Cyan)
 
         member this.DisplayBack(output: IOutput): unit =
@@ -34,4 +31,4 @@ type Card(front: AnnotationTree, back: AnnotationTree, spacing_rule: CardSpacing
         member this.BackInput(user_input: string, output: IOutput) : CardEase = CardEase.Forgot
 
         member this.Reschedule(result: CardEase, now: int64) : unit =
-            scheduler.Review(this.Key, spacing_rule, result, now)
+            scheduler.Review(key, spacing_rule, result, now)
