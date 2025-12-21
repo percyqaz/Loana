@@ -1,6 +1,7 @@
 namespace Loana.Scheduler
 
 open System
+open Loana
 
 type CardHistory =
     {
@@ -22,7 +23,7 @@ type CardHistory =
             Interval = CardHistory.DEFAULT_INTERVAL
         }
 
-    static member DEFAULT_INTERVAL: int64 = TimeSpan.TicksPerSecond * 10L
+    static member DEFAULT_INTERVAL: int64 = 10L
 
 type CardSpacingRule =
     {
@@ -44,16 +45,16 @@ type CardSpacingRule =
         {
             LearningSteps =
                 [|
-                    TimeSpan.TicksPerSecond * 10L
-                    TimeSpan.TicksPerSecond * 30L
-                    TimeSpan.TicksPerMinute * 1L
-                    TimeSpan.TicksPerMinute * 2L
-                    TimeSpan.TicksPerMinute * 5L
-                    TimeSpan.TicksPerMinute * 10L
+                    10L
+                    30L
+                    TimeSpan.SecondsPerMinute * 1L
+                    TimeSpan.SecondsPerMinute * 2L
+                    TimeSpan.SecondsPerMinute * 5L
+                    TimeSpan.SecondsPerMinute * 10L
                 |]
-            GraduatingInterval = TimeSpan.TicksPerHour * 12L
+            GraduatingInterval = TimeSpan.SecondsPerHour * 12L
             Fuzz = fuzz
-            Bad = multiply 0.5 >> min (TimeSpan.TicksPerDay * 3L)
+            Bad = multiply 0.5 >> min (TimeSpan.SecondsPerDay * 3L)
             Okay = multiply 1.1
             Easy = multiply 1.6
         }
@@ -68,9 +69,9 @@ type CardSpacingRule =
         {
             LearningSteps =
                 [|
-                    TimeSpan.TicksPerMinute * 2L
+                    TimeSpan.SecondsPerMinute * 2L
                 |]
-            GraduatingInterval = TimeSpan.TicksPerHour * 3L
+            GraduatingInterval = TimeSpan.SecondsPerHour * 3L
             Fuzz = fuzz
             Bad = multiply 0.5
             Okay = multiply 1.5
@@ -169,6 +170,19 @@ type CardSpacingRule =
                     NextReview = now + this.Fuzz this.GraduatingInterval
                     Interval = this.GraduatingInterval
                 }
+
+type CardSchedule(rule: CardSpacingRule, output: IOutput) =
+
+    let mem = Collections.Generic.Dictionary<string, CardHistory>()
+
+    member this.Get(key: string) : CardHistory =
+        match mem.TryGetValue(key) with
+        | true, time -> time
+        | false, _ -> CardHistory.Initial
+
+    member this.Review(key: string, ease: CardEase, now: int64) =
+        mem.[key] <- rule.Next(this.Get key, ease, now)
+        output.WriteLine(sprintf "%s: %A, Scheduled for %O" key ease (DateTimeOffset.FromUnixTimeSeconds(mem.[key].NextReview)))
 
 type NoteHistory =
     {

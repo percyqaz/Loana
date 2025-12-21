@@ -34,7 +34,7 @@ type CardStack =
         |> Seq.sortBy (fun card -> card.ScheduledTime)
 
     static member Build(source: ICard seq, allow_replacement: bool, limit: int, offset: int64) : CardStack =
-        let start = DateTime.UtcNow.Ticks
+        let start = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         let now = start + offset
 
         let due_cards =
@@ -54,17 +54,17 @@ type CardStack =
     static member Build(source: ICard seq, allow_replacement: bool, limit: int) : CardStack =
         CardStack.Build(source, allow_replacement, limit, 0L)
 
-    static let SIX_SECONDS_PER_CARD = TimeSpan.TicksPerSecond * 6L
+    static let SECONDS_PER_CARD = 6L
     static let THIRTY_SECONDS_IN_CARDS = 5
 
     member this.Remaining = this.Stack.Count
 
     member this.ReplaceCard (card: ICard, result: CardEase) : unit =
-        let now = DateTime.UtcNow.Ticks + this.TimeOffset
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + this.TimeOffset
         card.Reschedule(result, now)
         if this.AllowReplacement then
             let how_far_in_future = card.ScheduledTime - now
-            let cards_in_future = how_far_in_future / SIX_SECONDS_PER_CARD |> int
+            let cards_in_future = how_far_in_future / SECONDS_PER_CARD |> int
             if cards_in_future <= THIRTY_SECONDS_IN_CARDS || cards_in_future < this.Stack.Count then
                 this.Stack.Insert(min this.Stack.Count (max cards_in_future THIRTY_SECONDS_IN_CARDS), card)
 

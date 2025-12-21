@@ -17,11 +17,12 @@ public partial class MainWindow : Window
 
         log.WriteLine("Welcome to Loana!", Brushes.Wheat);
 
+        CardSchedule scheduler = new CardSchedule(CardSpacingRule.Familiarise, log);
         ReviewSession? session = null;
         var menu = MenuContext.CreateModePicker(
             mode =>
             {
-                var deck = CardSchedule.Build(CardPool.build_from_mode(mode), true, 50);
+                var deck = CardStack.Build(CardPool.build_from_mode(mode, scheduler), true, 50);
                 session = ReviewSession.Create(deck, log, display);
                 session.Next("");
             },

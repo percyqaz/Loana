@@ -2,6 +2,7 @@
 
 open Loana
 open Loana.Declension
+open Loana.Scheduler
 
 module CardPool =
 
@@ -88,28 +89,32 @@ module CardPool =
             | CardType.Indefinite (_, noun) when noun.Guts.IsPlural -> false
             | CardType.Person _ when this.Case.IsGenitive -> false
             | _ -> true
-        member this.Generate =
+        member this.ToCard(scheduler: CardSchedule) =
             match this.Type with
             | CardType.Definite (adjective, noun) ->
-                {
-                    Front = English.definite_fragment adjective noun this.Case
-                    Back = Deutsch.definite_fragment adjective noun this.Case
-                }
+                Card(
+                    English.definite_fragment adjective noun this.Case,
+                    Deutsch.definite_fragment adjective noun this.Case,
+                    scheduler
+                )
             | CardType.Indefinite (adjective, noun) ->
-                {
-                    Front = English.indefinite_fragment adjective noun this.Case
-                    Back = Deutsch.indefinite_fragment adjective noun this.Case
-                }
+                Card(
+                    English.indefinite_fragment adjective noun this.Case,
+                    Deutsch.indefinite_fragment adjective noun this.Case,
+                    scheduler
+                )
             | CardType.Possessive (person, adjective, noun) ->
-                {
-                    Front = English.possessive_fragment person adjective noun this.Case
-                    Back = Deutsch.possessive_fragment person adjective noun this.Case
-                }
+                Card(
+                    English.possessive_fragment person adjective noun this.Case,
+                    Deutsch.possessive_fragment person adjective noun this.Case,
+                    scheduler
+                )
             | CardType.Person person ->
-                {
-                    Front = English.personal_pronoun person this.Case
-                    Back = Deutsch.personal_pronoun person this.Case
-                }
+                Card(
+                    English.personal_pronoun person this.Case,
+                    Deutsch.personal_pronoun person this.Case,
+                    scheduler
+                )
 
     let generate_card_pool () =
         seq {
@@ -185,7 +190,7 @@ module CardPool =
             card.Type.HasAdjective || card.Type.IsPerson
     ]
 
-    let build_from_mode(mode: CardPermutation -> bool) : Card seq =
+    let build_from_mode(mode: CardPermutation -> bool, scheduler: CardSchedule) : Card seq =
         generate_card_pool()
         |> Seq.filter mode
-        |> Seq.map _.Generate
+        |> Seq.map (fun x -> x.ToCard scheduler)
