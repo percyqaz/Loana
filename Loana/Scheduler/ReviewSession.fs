@@ -5,8 +5,8 @@ open Loana
 
 type private ReviewSessionState =
     | Start
-    | ShowingFront of ICard
-    | ShowingBack of ICard
+    | ShowingFront of Card
+    | ShowingBack of Card
     | Complete
 
 type ReviewSession =
@@ -29,6 +29,8 @@ type ReviewSession =
         match this.Deck.GetNextCard() with
         | Some x ->
             this.State <- ShowingFront x
+            this.Display.Clear()
+            this.Display.WriteLine($" {this.Deck.Remaining + 1} remaining ", Brushes.LimeGreen, Brushes.DarkGreen)
             x.DisplayFront(this.Display)
             true
         | None ->

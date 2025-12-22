@@ -4,7 +4,7 @@ open System
 open Loana
 
 [<AbstractClass>]
-type ICard(key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
+type Card(key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
 
     member this.Schedule : CardScheduleData = scheduler.Get(key)
     member this.Reschedule(result: CardEase, now: int64) : unit =
@@ -17,19 +17,19 @@ type ICard(key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler)
 
 type CardStack =
     private {
-        Source: ICard seq
-        Stack: ResizeArray<ICard>
+        Source: Card seq
+        Stack: ResizeArray<Card>
         TimeStart: int64
         TimeOffset: int64
         AllowReplacement: bool
     }
 
-    static member GetDueCards (source: ICard seq, now: int64) : ICard seq =
+    static member GetDueCards (source: Card seq, now: int64) : Card seq =
         source
         |> Seq.filter (fun card -> card.Schedule.NextReview <= now)
         |> Seq.sortBy (fun card -> card.Schedule.NextReview)
 
-    static member Build(source: ICard seq, allow_replacement: bool, limit: int, offset: int64) : CardStack =
+    static member Build(source: Card seq, allow_replacement: bool, limit: int, offset: int64) : CardStack =
         let start = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         let now = start + offset
 
@@ -41,13 +41,13 @@ type CardStack =
         Random().Shuffle(due_cards)
         {
             Source = source
-            Stack = ResizeArray<ICard>(due_cards)
+            Stack = ResizeArray<Card>(due_cards)
             TimeStart = start
             TimeOffset = offset
             AllowReplacement = allow_replacement
         }
 
-    static member Build(source: ICard seq, allow_replacement: bool, limit: int) : CardStack =
+    static member Build(source: Card seq, allow_replacement: bool, limit: int) : CardStack =
         CardStack.Build(source, allow_replacement, limit, 0L)
 
     static let SECONDS_PER_CARD = 6L
@@ -55,7 +55,7 @@ type CardStack =
 
     member this.Remaining = this.Stack.Count
 
-    member this.ReplaceCard (card: ICard, result: CardEase) : unit =
+    member this.ReplaceCard (card: Card, result: CardEase) : unit =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + this.TimeOffset
         card.Reschedule(result, now)
         if this.AllowReplacement then
@@ -67,7 +67,7 @@ type CardStack =
             if schedule.LearningStep.IsSome || cards_in_future <= THIRTY_SECONDS_IN_CARDS || cards_in_future < this.Stack.Count then
                 this.Stack.Insert(min this.Stack.Count (max cards_in_future THIRTY_SECONDS_IN_CARDS), card)
 
-    member this.GetNextCard () : ICard option =
+    member this.GetNextCard () : Card option =
         if this.Stack.Count > 0 then
             let card = this.Stack.[0]
             this.Stack.RemoveAt(0)

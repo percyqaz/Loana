@@ -20,8 +20,10 @@
     <Compile Include="Scheduler\ReviewSession.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
-    <Compile Include="Decks\Card.fs" />
-    <Compile Include="Decks\Decks.fs" />
+    <Compile Include="Decks\Shared.fs" />
+    <Compile Include="Decks\PersonalPronouns.fs" />
+    <Compile Include="Decks\PossessivePronouns.fs" />
+    <Compile Include="Decks\Articles.fs" />
     <Compile Include="Interface\Menu.fs" />
   </ItemGroup>
 

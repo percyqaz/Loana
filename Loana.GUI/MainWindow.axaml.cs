@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Loana.Scheduler;
 using Loana.Interface;
-using Loana.Cards;
+using Loana.Decks;
 
 namespace Loana.GUI;
 
@@ -19,7 +19,7 @@ public partial class MainWindow : Window
 
         log.WriteLine("Welcome to Loana!", Brushes.Wheat);
 
-        Deck[] decks = [new Pronouns(), new Articles(), new PossessivePronouns()];
+        Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck()];
         CardScheduler scheduler = new CardScheduler(log);
         ReviewSession? session = null;
         var menu = MenuContext.Create(
