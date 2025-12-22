@@ -3,6 +3,7 @@ using Avalonia.Media;
 using Loana.Scheduler;
 using Loana.Interface;
 using Loana.Decks;
+using System.Linq;
 
 namespace Loana.GUI;
 
@@ -20,23 +21,19 @@ public partial class MainWindow : Window
         log.WriteLine("Welcome to Loana!", Brushes.Wheat);
 
         Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck()];
-        CardScheduler scheduler = new CardScheduler(log);
-        ReviewSession? session = null;
-        var menu = MenuContext.Create(
-            decks,
-            x => x.Name,
-            deck =>
-            {
-                var stack = CardStack.Build(deck.Build(scheduler), true, 50);
-                session = ReviewSession.Create(stack, log, display);
-                if (!session.Next(""))
+        CardScheduler scheduler = new(log);
+        var menu = new SelectMenu(
+            [.. decks.Select(deck => new SelectMenuOption(
+                deck.Name,
+                () =>
                 {
-                    session = null;
+                    var stack = CardStack.Build(deck.Build(scheduler), true, 50);
+                    return new ReviewSession(stack, log, display);
                 }
-            },
+            ))],
             display
         );
-        menu.Draw();
+        menu.Start();
 
         Input.KeyDown += (sender, e) =>
         {
@@ -44,18 +41,7 @@ public partial class MainWindow : Window
             {
                 string command = Input.Text ?? "";
                 Input.Text = "";
-                if (session is not null)
-                {
-                    if (!session.Next(command))
-                    {
-                        session = null;
-                        menu.Draw();
-                    }
-                }
-                else
-                {
-                    menu.Next(command);
-                }
+                menu.Next(command);
             }
         };
     }

@@ -6,6 +6,7 @@ type Gender =
     | Feminine
     | Neuter
     | Plural
+
     override this.ToString() =
         match this with
         | Masculine -> "m"
@@ -19,12 +20,14 @@ type Case =
     | Accusative
     | Dative
     | Genitive
+
     override this.ToString() =
         match this with
         | Nominative -> "nom"
         | Accusative -> "acc"
         | Dative -> "dat"
         | Genitive -> "gen"
+
     static member LIST =
         [
             Nominative
@@ -39,6 +42,7 @@ type Person =
     | Second of plural: bool
     | Third of Gender
     | Formal
+
     override this.ToString() =
         match this with
         | First false -> "1"
@@ -47,6 +51,7 @@ type Person =
         | Second true -> "2p"
         | Third g -> "3" + g.ToString()
         | Formal -> "F"
+
     static member LIST =
         [
             First false
@@ -73,6 +78,7 @@ type NounGuts =
     | Feminine of SingularNounGuts
     | Neuter of SingularNounGuts
     | Plural of PluralNounGuts
+
     member this.Gender =
         match this with
         | Masculine _ -> Gender.Masculine
@@ -86,6 +92,7 @@ type Noun =
         English: string
         Guts: NounGuts
     }
+
     override this.ToString() =
         this.Guts.Gender.ToString() + "_" +
         this.Deutsch
@@ -101,6 +108,7 @@ type Adjective =
         Deutsch: string
         English: string
     }
+
     override this.ToString() =
         this.Deutsch
             .ToLowerInvariant()

@@ -2,6 +2,7 @@ namespace Loana.Scheduler
 
 open Avalonia.Media
 open Loana
+open Loana.Interface
 
 type private ReviewSessionState =
     | Start
@@ -9,52 +10,43 @@ type private ReviewSessionState =
     | ShowingBack of Card
     | Complete
 
-type ReviewSession =
-    private {
-        Log: IOutput
-        Display: IOutput
-        Deck: CardStack
-        mutable State: ReviewSessionState
-    }
+type ReviewSession(deck: CardStack, log: IOutput, display: IOutput) =
+    inherit Menu(display)
 
-    static member Create(deck: CardStack, log: IOutput, display: IOutput) : ReviewSession =
-        {
-            Log = log
-            Display = display
-            Deck = deck
-            State = Start
-        }
+    let mutable state = Start
 
     member private this.NextCard() : bool =
-        match this.Deck.GetNextCard() with
+        match deck.GetNextCard() with
         | Some x ->
-            this.State <- ShowingFront x
-            this.Display.Clear()
-            this.Display.WriteLine($" {this.Deck.Remaining + 1} remaining ", Brushes.LimeGreen, Brushes.DarkGreen)
-            x.DisplayFront(this.Display)
+            state <- ShowingFront x
+            display.Clear()
+            display.WriteLine($" {deck.Remaining + 1} remaining ", Brushes.LimeGreen, Brushes.DarkGreen)
+            x.DisplayFront(display)
             true
         | None ->
-            this.State <- Complete
+            state <- Complete
             false
 
-    member this.Next(user_input: string) : bool =
-        match this.State with
+    override this.Start() : bool = state.IsStart && this.Next("")
+
+    override this.Next(user_input: string) : bool =
+        match state with
         | Start ->
-            this.Log.WriteLine(sprintf "Beginning quiz consisting of %i cards" this.Deck.Remaining, Brushes.LightGreen)
+            log.WriteLine(sprintf "Beginning quiz consisting of %i cards" deck.Remaining, Brushes.LightGreen)
             this.NextCard()
 
         | ShowingFront card ->
-            match card.FrontInput(user_input, this.Display) with
+            match card.FrontInput(user_input, display) with
             | Some result ->
-                this.Deck.ReplaceCard(card, result)
+                deck.ReplaceCard(card, result)
                 this.NextCard()
             | None ->
-                this.State <- ShowingBack card
-                card.DisplayBack(this.Display)
+                state <- ShowingBack card
+                card.DisplayBack(display)
                 true
 
         | ShowingBack card ->
-            this.Deck.ReplaceCard(card, card.BackInput(user_input, this.Display))
+            deck.ReplaceCard(card, card.BackInput(user_input, display))
             this.NextCard()
 
         | Complete -> false

@@ -13,6 +13,11 @@ type ArticlesCard(definite: bool, adjective: Adjective option, noun: Noun, case:
         scheduler
     )
 
+    member this.IsDefinite = definite
+    member this.Case = case
+    member this.HasAdjective = adjective.IsSome
+    member this.Gender = noun.Guts.Gender
+
 type ArticlesDeck() =
     inherit Deck()
 

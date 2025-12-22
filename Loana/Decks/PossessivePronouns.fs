@@ -13,6 +13,11 @@ type PossessivePronounsCard(person: Person, adjective: Adjective option, noun: N
         scheduler
     )
 
+    member this.Person = person
+    member this.Case = case
+    member this.HasAdjective = adjective.IsSome
+    member this.Gender = noun.Guts.Gender
+
 type PossessivePronounsDeck() =
     inherit Deck()
 

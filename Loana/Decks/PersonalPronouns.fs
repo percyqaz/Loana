@@ -13,6 +13,9 @@ type PersonalPronounsCard(person: Person, case: Case, spacing_rule: CardSpacingR
         scheduler
     )
 
+    member this.Person = person
+    member this.Case = case
+
 type PersonalPronounsDeck() =
     inherit Deck()
 
