@@ -3,14 +3,17 @@ namespace Loana.Scheduler
 open System
 open Loana
 
-[<Interface>]
-type ICard =
-    abstract member Schedule: CardScheduleData with get
+[<AbstractClass>]
+type ICard(key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
+
+    member this.Schedule : CardScheduleData = scheduler.Get(key)
+    member this.Reschedule(result: CardEase, now: int64) : unit =
+            scheduler.Review(key, spacing_rule, result, now)
+
     abstract member DisplayFront: IOutput -> unit
     abstract member DisplayBack: IOutput -> unit
     abstract member FrontInput: string * IOutput -> CardEase option // None = show back
     abstract member BackInput: string * IOutput -> CardEase
-    abstract member Reschedule: CardEase * int64 -> unit
 
 type CardStack =
     private {

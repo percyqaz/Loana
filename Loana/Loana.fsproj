@@ -20,8 +20,8 @@
     <Compile Include="Scheduler\ReviewSession.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
-    <Compile Include="Cards\Card.fs" />
-    <Compile Include="Cards\Decks.fs" />
+    <Compile Include="Decks\Card.fs" />
+    <Compile Include="Decks\Decks.fs" />
     <Compile Include="Interface\Menu.fs" />
   </ItemGroup>
 
