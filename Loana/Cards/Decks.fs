@@ -41,7 +41,7 @@ module internal CardPool =
             }
         |]
 
-    let KLEIN = { Deutsch = "klein"; English = "small" }
+    let KLEIN : Adjective = { Deutsch = "klein"; English = "small" }
 
 [<AbstractClass>]
 type Deck() =
@@ -60,8 +60,8 @@ type Pronouns() =
                 for case in [Case.Nominative; Case.Accusative; Case.Dative] do
                     yield
                         Card(
-                            $"person-{person.Shorthand}-{case.Shorthand}",
-                            [ person.Shorthand; case.Shorthand ],
+                            $"person-{person}-{case}",
+                            [ person.ToString(); case.ToString() ],
                             spacing,
                             scheduler,
                             English.personal_pronoun person case,
@@ -82,8 +82,8 @@ type PossessivePronouns() =
                     for case in Case.LIST do
                         yield
                             Card(
-                                $"possessive-{person.Shorthand}-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
-                                [ person.Shorthand; "adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
+                                $"possessive-{person}-adj-{KLEIN}-{noun}-{case}",
+                                [ person.ToString(); "adj"; noun.Guts.Gender.ToString(); case.ToString() ],
                                 spacing,
                                 scheduler,
                                 English.possessive_fragment person (Some KLEIN) noun case,
@@ -91,8 +91,8 @@ type PossessivePronouns() =
                             )
                         yield
                             Card(
-                                $"possessive-{person.Shorthand}-{noun.Key}-{case.Shorthand}",
-                                [ person.Shorthand; "no-adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
+                                $"possessive-{person}-{noun}-{case}",
+                                [ person.ToString(); "no-adj"; noun.Guts.Gender.ToString(); case.ToString() ],
                                 spacing,
                                 scheduler,
                                 English.possessive_fragment person None noun case,
@@ -112,8 +112,8 @@ type Articles() =
                 for case in Case.LIST do
                     yield
                         Card(
-                            $"definite-article-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
-                            [ "definite"; "adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
+                            $"definite-article-adj-{KLEIN}-{noun}-{case}",
+                            [ "definite"; "adj"; noun.Guts.Gender.ToString(); case.ToString() ],
                             spacing,
                             scheduler,
                             English.definite_fragment (Some KLEIN) noun case,
@@ -121,8 +121,8 @@ type Articles() =
                         )
                     yield
                         Card(
-                            $"definite-article-{noun.Key}-{case.Shorthand}",
-                            [ "definite"; "no-adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
+                            $"definite-article-{noun}-{case}",
+                            [ "definite"; "no-adj"; noun.Guts.Gender.ToString(); case.ToString() ],
                             spacing,
                             scheduler,
                             English.definite_fragment None noun case,
@@ -131,8 +131,8 @@ type Articles() =
                     if not noun.Guts.IsPlural then
                         yield
                             Card(
-                                $"indefinite-article-adj-{KLEIN.Key}-{noun.Key}-{case.Shorthand}",
-                                [ "indefinite"; "adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
+                                $"indefinite-article-adj-{KLEIN}-{noun}-{case}",
+                                [ "indefinite"; "adj"; noun.Guts.Gender.ToString(); case.ToString() ],
                                 spacing,
                                 scheduler,
                                 English.indefinite_fragment (Some KLEIN) noun case,
@@ -140,14 +140,14 @@ type Articles() =
                             )
                         yield
                             Card(
-                                $"indefinite-article-{noun.Key}-{case.Shorthand}",
-                                [ "indefinite"; "no-adj"; noun.Guts.Gender.ToString(); case.Shorthand ],
+                                $"indefinite-article-{noun}-{case}",
+                                [ "indefinite"; "no-adj"; noun.Guts.Gender.ToString(); case.ToString() ],
                                 spacing,
                                 scheduler,
                                 English.indefinite_fragment None noun case,
                                 Deutsch.indefinite_fragment None noun case
                             )
-        }
+        } |> Seq.cache
 
     //let DECKS : Map<string, CardPermutation -> bool> = Map.ofList [
     //    "[1*] basic 'the'", fun card ->

@@ -81,7 +81,7 @@ module AnnotationTree =
                         let start = position
                         let layer = 1 + walk children
                         frags.Add {
-                            Text = case.Shorthand
+                            Text = case.ToString()
                             Start = start
                             Finish = position
                             Color =

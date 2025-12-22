@@ -19,7 +19,7 @@ type Case =
     | Accusative
     | Dative
     | Genitive
-    member this.Shorthand =
+    override this.ToString() =
         match this with
         | Nominative -> "nom"
         | Accusative -> "acc"
@@ -39,7 +39,7 @@ type Person =
     | Second of plural: bool
     | Third of Gender
     | Formal
-    member this.Shorthand =
+    override this.ToString() =
         match this with
         | First false -> "1"
         | First true -> "1p"
@@ -86,7 +86,8 @@ type Noun =
         English: string
         Guts: NounGuts
     }
-    member this.Key =
+    override this.ToString() =
+        this.Guts.Gender.ToString() + "_" +
         this.Deutsch
             .ToLowerInvariant()
             .Replace("ö", "oe")
@@ -100,7 +101,7 @@ type Adjective =
         Deutsch: string
         English: string
     }
-    member this.Key =
+    override this.ToString() =
         this.Deutsch
             .ToLowerInvariant()
             .Replace("ö", "oe")
