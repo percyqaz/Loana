@@ -1,37 +1,17 @@
 ﻿namespace Loana.Decks
 
-open Avalonia.Media
 open Loana
 open Loana.Scheduler
 open Loana.Declension
 
 type ArticlesCard(definite: bool, adjective: Adjective option, noun: Noun, case: Case, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
-    inherit Card($"""{(if definite then "" else "in")}definite-article-{(if adjective.IsSome then "-adj" else "")}-{noun}-{case}""", spacing_rule, scheduler)
-
-    let front = (if definite then English.definite_fragment else English.indefinite_fragment) adjective noun case
-    let back = (if definite then Deutsch.definite_fragment else Deutsch.indefinite_fragment) adjective noun case
-
-    override this.DisplayFront(output: IOutput) : unit =
-
-        AnnotationTree.render(front, output)
-
-        output.Write(" -> English ", AnnotationTree.gradient Colors.Red Colors.Black, Brushes.White)
-        output.Write(" ")
-        if this.Schedule.LearningStep.IsSome then
-            output.WriteLine(" Learning ", Brushes.Black, Brushes.Cyan)
-
-    override this.DisplayBack(output: IOutput): unit =
-        AnnotationTree.render(back, output)
-
-    override this.FrontInput(user_input: string, output: IOutput) : CardEase option =
-        if user_input = AnnotationTree.flatten_tree back then
-            Some CardEase.Okay
-        else
-            output.WriteLine(" Mistake! See below: ", Brushes.Black, Brushes.Red)
-            output.WriteLine(user_input, Brushes.LightPink)
-            None
-
-    override this.BackInput(user_input: string, output: IOutput) : CardEase = CardEase.Forgot
+    inherit EnglishToGermanCard(
+        (if definite then English.definite_fragment else English.indefinite_fragment) adjective noun case,
+        (if definite then Deutsch.definite_fragment else Deutsch.indefinite_fragment) adjective noun case,
+        $"""{(if definite then "" else "in")}definite-article-{(if adjective.IsSome then "-adj" else "")}-{noun}-{case}""",
+        spacing_rule,
+        scheduler
+    )
 
 type ArticlesDeck() =
     inherit Deck()

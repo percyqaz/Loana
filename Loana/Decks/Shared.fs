@@ -47,6 +47,33 @@ type Deck() =
     abstract member Name : string
     abstract member Build : CardScheduler -> Card seq
 
+open Avalonia.Media
+
+type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
+    inherit Card(key, spacing_rule, scheduler)
+
+    override this.DisplayFront(output: IOutput) : unit =
+
+        AnnotationTree.render(front, output)
+
+        output.Write(" -> English ", AnnotationTree.gradient Colors.Red Colors.Black, Brushes.White)
+        output.Write(" ")
+        if this.Schedule.LearningStep.IsSome then
+            output.WriteLine(" Learning ", Brushes.Black, Brushes.Cyan)
+
+    override this.DisplayBack(output: IOutput): unit =
+        AnnotationTree.render(back, output)
+
+    override this.FrontInput(user_input: string, output: IOutput) : CardEase option =
+        if user_input = AnnotationTree.flatten_tree back then
+            Some CardEase.Okay
+        else
+            output.WriteLine(" Mistake! See below: ", Brushes.Black, Brushes.Red)
+            output.WriteLine(user_input, Brushes.LightPink)
+            None
+
+    override this.BackInput(user_input: string, output: IOutput) : CardEase = CardEase.Forgot
+
 //let DECKS : Map<string, CardPermutation -> bool> = Map.ofList [
 //    "[1*] basic 'the'", fun card ->
 //        card.Type.IsDefinite && not card.Type.HasAdjective && card.Case.IsNominative
