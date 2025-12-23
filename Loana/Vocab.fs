@@ -1,5 +1,7 @@
 ﻿namespace Loana
 
+open Avalonia.Media
+
 [<RequireQualifiedAccess>]
 type Gender =
     | Masculine
@@ -14,6 +16,13 @@ type Gender =
         | Neuter -> "n"
         | Plural -> "p"
 
+    member this.Color : IBrush =
+        match this with
+        | Masculine -> Brushes.Blue
+        | Neuter -> Brushes.Gray
+        | Feminine -> Brushes.Magenta
+        | Plural -> Brushes.Yellow
+
 [<RequireQualifiedAccess>]
 type Case =
     | Nominative
@@ -27,6 +36,13 @@ type Case =
         | Accusative -> "acc"
         | Dative -> "dat"
         | Genitive -> "gen"
+
+    member this.Color : IBrush =
+        match this with
+        | Nominative -> Brushes.Green
+        | Accusative -> Brushes.Cyan
+        | Dative -> Brushes.DarkMagenta
+        | Genitive -> Brushes.Gold
 
     static member LIST =
         [

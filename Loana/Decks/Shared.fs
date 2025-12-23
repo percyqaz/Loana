@@ -1,7 +1,10 @@
 ﻿namespace Loana.Decks
 
+open System
+open Avalonia.Media
 open Loana
 open Loana.Scheduler
+open Loana.Interface
 
 [<AutoOpen>]
 module internal ArticleConstants =
@@ -42,12 +45,80 @@ module internal ArticleConstants =
 
     let KLEIN : Adjective = { Deutsch = "klein"; English = "small" }
 
+type DeckFilter<'C> =
+    { Label: string; Color: IBrush; Filter: 'C -> bool }
+    static member OfCase(case: Case, filter: 'C -> Case) =
+        { Label = case.ToString(); Color = case.Color; Filter = fun card -> filter card = case }
+    static member OfGender(gender: Gender, filter: 'C -> Gender) =
+        { Label = gender.ToString(); Color = gender.Color; Filter = fun card -> filter card = gender }
+
+type DeckFilterGroup<'C> = 
+    { Label: string; Filters: DeckFilter<'C> list }
+    member this.Pick(from: Collections.Generic.HashSet<DeckFilter<'C>>) =
+        this.Filters |> List.filter (from.Contains)
+
 [<AbstractClass>]
 type Deck() =
     abstract member Name : string
-    abstract member Build : CardScheduler -> Card seq
+    abstract member Menu : CardScheduler * IOutput * IOutput -> Menu
 
-open Avalonia.Media
+[<AbstractClass>]
+type Deck<'C when 'C :> Card>() =
+    inherit Deck()
+    abstract member Filters : DeckFilterGroup<'C> list
+    abstract member Build : DeckFilter<'C> list list * CardScheduler -> Card seq
+
+    override this.Menu(scheduler: CardScheduler, log: IOutput, output: IOutput) : Menu =
+        DeckBuilderMenu(this, scheduler, log, output)
+
+and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler, log: IOutput, output: IOutput) =
+    inherit Menu(output)
+
+    let SESSION_SIZE = 50
+    let session = Submenu.Create()
+    let filters = deck.Filters
+    let enabled_filters = filters |> Seq.map _.Filters |> Seq.concat |> Collections.Generic.HashSet<_>
+
+    member private this.Draw() =
+        output.Clear()
+        output.WriteLine($" {deck.Name} ", Brushes.Black, Brushes.White)
+        output.WriteLine("Filters:")
+        for group in filters do
+            output.Write($" {group.Label}: ")
+            for filter in group.Filters do
+                output.Write($" {filter.Label} ", filter.Color, if enabled_filters.Contains(filter) then Brush.Parse("#303030") else Brush.Parse("#101010"))
+                output.Write(" ")
+            output.WriteLine("")
+        output.WriteLine($"Session size: {SESSION_SIZE}")
+
+        let available = deck.Build(filters |> List.map (fun f -> f.Pick enabled_filters), scheduler)
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        let due = available |> Seq.where (fun card -> card.IsDue now) |> Seq.length
+
+        output.Write($" {available |> Seq.length} available ", Brushes.Black, Brushes.White)
+        output.Write(" ")
+        output.Write($" {due} due ", Brushes.LimeGreen, Brushes.DarkGreen)
+        output.WriteLine(" ")
+
+    override this.Start() : bool = this.Draw(); true
+
+    override this.Next(user_input: string) : bool =
+        if session.HasMenu then
+            session.Next(user_input)
+        else
+            match user_input with
+            | "back" -> false
+            | "ok" ->
+                session.Open(ReviewSession(CardStack.Build(deck.Build(filters |> List.map (fun f -> f.Pick enabled_filters), scheduler), true, SESSION_SIZE), log, output))
+                session.HasMenu
+            | _ ->
+
+                match filters |> Seq.map (fun group -> group.Filters) |> Seq.concat |> Seq.tryFind(fun f -> f.Label.Equals(user_input, StringComparison.InvariantCultureIgnoreCase)) with
+                | Some f ->
+                    if enabled_filters.Contains(f) then enabled_filters.Remove(f) else enabled_filters.Add(f)
+                    |> ignore
+                | None -> ()
+                this.Draw(); true
 
 type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)

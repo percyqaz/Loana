@@ -30,6 +30,7 @@ module AnnotationTree =
         List.map flatten_fragment tree
         |> String.concat ""
 
+    //
     let internal gradient (start: Color) (finish: Color) : IBrush =
         let brush = LinearGradientBrush()
         brush.StartPoint <- RelativePoint(0, 0, RelativeUnit.Relative)
@@ -68,12 +69,7 @@ module AnnotationTree =
                             Text = gender.ToString()
                             Start = start
                             Finish = position
-                            Color =
-                                match gender with
-                                | Gender.Masculine -> gradient Colors.Blue Colors.Purple
-                                | Gender.Neuter -> gradient Colors.Gray Colors.LightGray
-                                | Gender.Feminine -> gradient Colors.Magenta Colors.Pink
-                                | Gender.Plural -> gradient Colors.Yellow Colors.Wheat
+                            Color = gender.Color
                             Layer = layer
                         }
                         layer
@@ -84,12 +80,7 @@ module AnnotationTree =
                             Text = case.ToString()
                             Start = start
                             Finish = position
-                            Color =
-                                match case with
-                                | Case.Nominative -> Brushes.Green
-                                | Case.Accusative -> Brushes.Cyan
-                                | Case.Dative -> Brushes.DarkMagenta
-                                | Case.Genitive -> Brushes.Gold
+                            Color = case.Color
                             Layer = layer
                         }
                         layer

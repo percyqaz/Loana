@@ -9,6 +9,7 @@ type Card(key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) 
     member this.Schedule : CardScheduleData = scheduler.Get(key)
     member this.Reschedule(result: CardEase, now: int64) : unit =
             scheduler.Review(key, spacing_rule, result, now)
+    member this.IsDue(now: int64) = this.Schedule.NextReview <= now
 
     abstract member DisplayFront: IOutput -> unit
     abstract member DisplayBack: IOutput -> unit

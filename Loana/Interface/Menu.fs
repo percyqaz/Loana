@@ -55,13 +55,16 @@ type SelectMenu(options: SelectMenuOption array, output: IOutput) =
             true
         else
 
-        match Int32.TryParse(user_input) with
-        | true, n ->
-            selected <- ((selected + n) % options.Length + options.Length) % options.Length
-            this.Draw()
-            true
-        | false, _ ->
-            submenu.Open(options.[selected].Menu.Invoke())
-            true
+        match user_input with
+        | "back" -> false
+        | _ ->
+            match Int32.TryParse(user_input) with
+            | true, n ->
+                selected <- ((selected + n) % options.Length + options.Length) % options.Length
+                this.Draw()
+                true
+            | false, _ ->
+                submenu.Open(options.[selected].Menu.Invoke())
+                true
 
     override this.Start() : bool = this.Draw(); true
