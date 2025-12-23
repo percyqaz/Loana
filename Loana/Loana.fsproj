@@ -19,6 +19,8 @@
     <Compile Include="Scheduler\CardScheduler.fs" />
     <Compile Include="Scheduler\CardStack.fs" />
     <Compile Include="Scheduler\ReviewSession.fs" />
+    <Compile Include="Database\TabSeparatedValues.fs" />
+    <Compile Include="Database\Nouns.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
     <Compile Include="Decks\Shared.fs" />
@@ -30,7 +32,5 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless" Version="11.3.10" />
   </ItemGroup>
-
-  <ItemGroup />
 
 </Project>

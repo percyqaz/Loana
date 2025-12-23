@@ -23,6 +23,14 @@ type Gender =
         | Feminine -> Brushes.Magenta
         | Plural -> Brushes.Yellow
 
+    static member Parse(string: string) : Gender =
+        match string with
+        | "m" -> Masculine
+        | "f" -> Feminine
+        | "n" -> Neuter
+        | "p" -> Plural
+        | _ -> failwithf "could not parse gender from '%s'" string
+
 [<RequireQualifiedAccess>]
 type Case =
     | Nominative
