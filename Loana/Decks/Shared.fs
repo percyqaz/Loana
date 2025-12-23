@@ -6,53 +6,16 @@ open Loana
 open Loana.Scheduler
 open Loana.Interface
 
-[<AutoOpen>]
-module internal ArticleConstants =
-
-    let NOUNS : Noun array =
-        [|
-            {
-                Deutsch = "Löffel"
-                English = "spoon"
-                Guts = Masculine { Plural = Some "Löffel" }
-            }
-            {
-                Deutsch = "Gabel"
-                English = "fork"
-                Guts = Feminine { Plural = Some "Gabeln" }
-            }
-            {
-                Deutsch = "Messer"
-                English = "knife"
-                Guts = Neuter { Plural = Some "Messer" }
-            }
-            {
-                Deutsch = "Löffel"
-                English = "spoons"
-                Guts = Plural { Singular = Some "Löffel" }
-            }
-            {
-                Deutsch = "Gabeln"
-                English = "forks"
-                Guts = Plural { Singular = Some "Gabel" }
-            }
-            {
-                Deutsch = "Messer"
-                English = "knives"
-                Guts = Plural { Singular = Some "Messer" }
-            }
-        |]
-
-    let KLEIN : Adjective = { Deutsch = "klein"; English = "small" }
-
 type DeckFilter<'C> =
     { Label: string; Color: IBrush; Filter: 'C -> bool }
     static member OfCase(case: Case, filter: 'C -> Case) =
         { Label = case.ToString(); Color = case.Color; Filter = fun card -> filter card = case }
     static member OfGender(gender: Gender, filter: 'C -> Gender) =
         { Label = gender.ToString(); Color = gender.Color; Filter = fun card -> filter card = gender }
+    static member OfPerson(person: Person, filter: 'C -> Person) =
+        { Label = person.ToString(); Color = Brushes.White; Filter = fun card -> filter card = person }
 
-type DeckFilterGroup<'C> = 
+type DeckFilterGroup<'C> =
     { Label: string; Filters: DeckFilter<'C> list }
     member this.Pick(from: Collections.Generic.HashSet<DeckFilter<'C>>) =
         this.Filters |> List.filter (from.Contains)
@@ -119,6 +82,45 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
                     |> ignore
                 | None -> ()
                 this.Draw(); true
+
+[<AutoOpen>]
+module internal ArticleConstants =
+
+    let NOUNS : Noun array =
+        [|
+            {
+                Deutsch = "Löffel"
+                English = "spoon"
+                Guts = Masculine { Plural = Some "Löffel" }
+            }
+            {
+                Deutsch = "Gabel"
+                English = "fork"
+                Guts = Feminine { Plural = Some "Gabeln" }
+            }
+            {
+                Deutsch = "Messer"
+                English = "knife"
+                Guts = Neuter { Plural = Some "Messer" }
+            }
+            {
+                Deutsch = "Löffel"
+                English = "spoons"
+                Guts = Plural { Singular = Some "Löffel" }
+            }
+            {
+                Deutsch = "Gabeln"
+                English = "forks"
+                Guts = Plural { Singular = Some "Gabel" }
+            }
+            {
+                Deutsch = "Messer"
+                English = "knives"
+                Guts = Plural { Singular = Some "Messer" }
+            }
+        |]
+
+    let KLEIN : Adjective = { Deutsch = "klein"; English = "small" }
 
 type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)

@@ -49,15 +49,15 @@ type ArticlesDeck() =
             {
                 Label = "Type"
                 Filters = [
-                    { Label = "Definite"; Color = Brushes.Green; Filter = _.IsDefinite }
-                    { Label = "Indefinite"; Color = Brushes.Yellow; Filter = _.IsDefinite >> not }
+                    { Label = "definite"; Color = Brushes.Green; Filter = _.IsDefinite }
+                    { Label = "indefinite"; Color = Brushes.Yellow; Filter = _.IsDefinite >> not }
                 ]
             }
             {
-                Label = "With Adjective"
+                Label = "Adjective"
                 Filters = [
-                    { Label = "No"; Color = Brushes.Blue; Filter = _.HasAdjective >> not }
-                    { Label = "Yes"; Color = Brushes.Red; Filter = _.HasAdjective }
+                    { Label = "no-adj"; Color = Brushes.Blue; Filter = _.HasAdjective >> not }
+                    { Label = "adj"; Color = Brushes.Red; Filter = _.HasAdjective }
                 ]
             }
         ]

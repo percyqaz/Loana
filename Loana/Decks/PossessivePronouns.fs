@@ -47,10 +47,14 @@ type PossessivePronounsDeck() =
                 ]
             }
             {
-                Label = "With Adjective"
+                Label = "Person"
+                Filters = Person.LIST |> List.map (fun p -> DeckFilter<_>.OfPerson(p, _.Person))
+            }
+            {
+                Label = "Adjective"
                 Filters = [
-                    { Label = "No"; Color = Brushes.Blue; Filter = _.HasAdjective >> not }
-                    { Label = "Yes"; Color = Brushes.Red; Filter = _.HasAdjective }
+                    { Label = "no-adj"; Color = Brushes.Blue; Filter = _.HasAdjective >> not }
+                    { Label = "adj"; Color = Brushes.Red; Filter = _.HasAdjective }
                 ]
             }
         ]
