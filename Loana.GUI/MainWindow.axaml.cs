@@ -43,5 +43,13 @@ public partial class MainWindow : Window
                 }
             }
         };
+
+        display.OnButtonClicked += command =>
+        {
+            if (!menu.Next(command))
+            {
+                Close();
+            }
+        };
     }
 }

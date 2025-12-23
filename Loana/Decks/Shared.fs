@@ -49,9 +49,13 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
         for group in filters do
             output.Write($" {group.Label}: ")
             for filter in group.Filters do
-                output.Write($" {filter.Label} ", filter.Color, if enabled_filters.Contains(filter) then Brush.Parse("#303030") else Brush.Parse("#101010"))
+                if enabled_filters.Contains(filter) then
+                    output.Button($" {filter.Label} ", filter.Label, filter.Color, Brush.Parse("#303030"))
+                    output.Button(" ", filter.Label, filter.Color, filter.Color)
+                else
+                    output.Button($" {filter.Label}  ", filter.Label, filter.Color, Brush.Parse("#101010"))
                 output.Write(" ")
-            output.WriteLine("")
+            output.WriteLine()
         output.WriteLine($"Session size: {SESSION_SIZE}")
 
         let available = deck.Build(filters |> List.map (fun f -> f.Pick enabled_filters), scheduler)
@@ -61,7 +65,11 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
         output.Write($" {available |> Seq.length} available ", Brushes.Black, Brushes.White)
         output.Write(" ")
         output.Write($" {due} due ", Brushes.LimeGreen, Brushes.DarkGreen)
-        output.WriteLine(" ")
+        output.WriteLine()
+        output.WriteLine()
+        output.Button(" ok ", "ok", Brushes.LightGray, Brush.Parse("#101010"))
+        output.Write(" ")
+        output.Button(" back ", "back", Brushes.LightGray, Brush.Parse("#101010"))
 
     override this.Start() : bool = this.Draw(); true
 
@@ -76,7 +84,7 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
                 session.HasMenu
             | _ ->
 
-                match filters |> Seq.map (fun group -> group.Filters) |> Seq.concat |> Seq.tryFind(fun f -> f.Label.Equals(user_input, StringComparison.InvariantCultureIgnoreCase)) with
+                match filters |> Seq.map (fun group -> group.Filters) |> Seq.concat |> Seq.tryFind(fun f -> f.Label.Equals(user_input, StringComparison.Ordinal)) with
                 | Some f ->
                     if enabled_filters.Contains(f) then enabled_filters.Remove(f) else enabled_filters.Add(f)
                     |> ignore
@@ -146,38 +154,3 @@ type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: strin
             None
 
     override this.BackInput(user_input: string, output: IOutput) : CardEase = CardEase.Forgot
-
-//let DECKS : Map<string, CardPermutation -> bool> = Map.ofList [
-//    "[1*] basic 'the'", fun card ->
-//        card.Type.IsDefinite && not card.Type.HasAdjective && card.Case.IsNominative
-//    "[2*] 'the'", fun card ->
-//        card.Type.IsDefinite && not card.Type.HasAdjective
-//    "[4*] 'the' + adjective", fun card ->
-//        card.Type.IsDefinite && card.Type.HasAdjective
-//    "[1*] basic 'a'", fun card ->
-//        card.Type.IsIndefinite && not card.Type.HasAdjective && card.Case.IsNominative
-//    "[2*] 'a'", fun card ->
-//        card.Type.IsIndefinite && not card.Type.HasAdjective
-//    "[4*] 'a' + adjective", fun card ->
-//        card.Type.IsIndefinite && card.Type.HasAdjective
-//    "[3*] 'a' + 'the' combo", fun card ->
-//        (card.Type.IsDefinite || card.Type.IsIndefinite) && not card.Type.HasAdjective
-//    "[5*] 'a' + 'the' adjective combo", fun card ->
-//        (card.Type.IsDefinite || card.Type.IsIndefinite)
-//    "[1*] basic personal pronouns", fun card ->
-//        card.Type.IsPerson && card.Case.IsNominative
-//    "[2*] personal pronouns", fun card ->
-//        card.Type.IsPerson
-//    "[3*] basic possessive pronouns", fun card ->
-//        card.Type.IsPossessive && not card.Type.HasAdjective && card.Case.IsNominative
-//    "[4*] possessive pronouns", fun card ->
-//        card.Type.IsPossessive && not card.Type.HasAdjective
-//    "[6*] possessive pronouns + adjective", fun card ->
-//        card.Type.IsPossessive && card.Type.HasAdjective
-//    "[4*] tiny bit of everything", fun card ->
-//        not card.Type.HasAdjective && card.Case.IsNominative
-//    "[6*] tiny bit of everything + adjective", fun card ->
-//        (card.Type.HasAdjective || card.Type.IsPerson) && card.Case.IsNominative
-//    "[8*] everything", fun card ->
-//        card.Type.HasAdjective || card.Type.IsPerson
-//

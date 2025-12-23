@@ -200,8 +200,8 @@ type CardScheduler(output: IOutput) =
         output.Write(sprintf "%A" ease, ease_color)
         output.Write(", ")
         match new_schedule.LearningStep with
-        | Some step -> output.WriteLine(sprintf "'%s' scheduled at %O (%i/%i)" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)) step spacing_rule.LearningSteps.Length, Brushes.LightBlue)
-        | None -> output.WriteLine(sprintf "'%s' scheduled at %O" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)))
+        | Some step -> output.WriteLine(sprintf "'%s' -> %O (%i/%i)" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)) step spacing_rule.LearningSteps.Length, Brushes.LightBlue)
+        | None -> output.WriteLine(sprintf "'%s' -> %O" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)))
 
 type NoteHistory =
     {

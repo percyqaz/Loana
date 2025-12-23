@@ -43,10 +43,17 @@ type SelectMenu(options: SelectMenuOption array, output: IOutput) =
         for i = 0 to options.Length - 1 do
             if i = selected then
                 this.Output.Write(" > ")
-                this.Output.Write(options.[i].Name, Brushes.Yellow)
+                this.Output.Button(options.[i].Name, "ok", Brushes.Yellow)
                 this.Output.WriteLine(" <")
             else
-                this.Output.WriteLine(sprintf "%02i %s" ((options.Length + i - selected) % options.Length) options.[i].Name, Brushes.LightGray)
+                let offset = (options.Length + i - selected) % options.Length
+                this.Output.Button(sprintf "%02i %s" offset options.[i].Name, sprintf "%i" offset, Brushes.LightGray)
+                this.Output.WriteLine()
+
+        output.WriteLine()
+        output.Button(" ok ", "ok", Brushes.LightGray, Brush.Parse("#101010"))
+        output.Write(" ")
+        output.Button(" back ", "back", Brushes.LightGray, Brush.Parse("#101010"))
 
     override this.Next(user_input: string) : bool =
         if submenu.HasMenu then
@@ -57,14 +64,15 @@ type SelectMenu(options: SelectMenuOption array, output: IOutput) =
 
         match user_input with
         | "back" -> false
+        | "ok" ->
+            submenu.Open(options.[selected].Menu.Invoke())
+            true
         | _ ->
             match Int32.TryParse(user_input) with
             | true, n ->
                 selected <- ((selected + n) % options.Length + options.Length) % options.Length
-                this.Draw()
-                true
-            | false, _ ->
-                submenu.Open(options.[selected].Menu.Invoke())
-                true
+            | false, _ -> ()
+            this.Draw()
+            true
 
     override this.Start() : bool = this.Draw(); true
