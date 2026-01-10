@@ -30,6 +30,12 @@ type Submenu =
                 true
         | None -> false
 
+type DummyMenu(output) =
+    inherit Menu(output)
+
+    override this.Start() = false
+    override this.Next(_) = false
+
 type SelectMenuOption = { Name: string; Menu: Func<Menu> }
 
 type SelectMenu(options: SelectMenuOption array, output: IOutput) =

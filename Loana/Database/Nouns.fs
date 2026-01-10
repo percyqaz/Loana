@@ -171,6 +171,35 @@ module NounBrowser =
 
     let create (nouns: Nouns, output: IOutput) =
 
+        let edit_plural get set =
+            EditorMenu(
+                [|
+                    {
+                        Name = "Deutsch"
+                        Draw = fun (p: Translation) (output: IOutput) -> output.Write p.Deutsch
+                        Menu = fun get set ->
+                            EditTextFieldMenu(
+                                (fun () -> get().Deutsch),
+                                (fun t -> let g = get() in set({ g with Deutsch = t })),
+                                output
+                            )
+                    }
+                    {
+                        Name = "English"
+                        Draw = fun (p: Translation) (output: IOutput) -> output.Write p.English
+                        Menu = fun get set ->
+                            EditTextFieldMenu(
+                                (fun () -> get().English),
+                                (fun t -> let g = get() in set({ g with English = t })),
+                                output
+                            )
+                    }
+                |],
+                get,
+                set,
+                output
+            ) :> Menu
+
         let edit get set =
             EditorMenu(
                 [|
@@ -215,6 +244,37 @@ module NounBrowser =
                                 ),
                                 output
                             )
+                    }
+                    {
+                        Name = "Plural"
+                        Draw = fun (noun: Noun) (output: IOutput) ->
+                            match noun.Guts with
+                            | Masculine plural
+                            | Feminine plural
+                            | Neuter plural ->
+                                match plural with
+                                | Nothing -> output.Write("N/A", Brushes.LightGray)
+                                | ToBeDetermined -> output.Write("???", Brushes.Yellow)
+                                | Something x -> output.Write x.Deutsch
+                            | Plural -> output.Write("--", Brushes.LightGray)
+                        Menu = fun get set ->
+                            if get().Guts.IsPlural then DummyMenu(output) else
+                            edit_plural
+                                (fun () ->
+                                    match get().Guts with
+                                    | Masculine p
+                                    | Feminine p
+                                    | Neuter p ->
+                                        match p with
+                                        | Something a -> a
+                                        | _ -> { Deutsch = ""; English = ""; EnglishAlternatives = [] }
+                                    | _ -> failwith "impossible"
+                                )
+                                (fun x ->
+                                    let x2 = if x.Deutsch <> "" then Something x else Nothing
+                                    let g = get()
+                                    set({ g with Guts = match g.Guts with Masculine _ -> Masculine x2 | Feminine _ -> Feminine x2 | Neuter p -> Neuter x2 | Plural -> Plural}))
+
                     }
                 |],
                 get,
