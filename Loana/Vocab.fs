@@ -2,6 +2,23 @@
 
 open Avalonia.Media
 
+module Key =
+
+    let of_german (text: string) =
+        text
+            .ToLowerInvariant()
+            .Replace("ö", "oe")
+            .Replace("ä", "ae")
+            .Replace("ü", "ue")
+            .Replace("ß", "ss")
+            .Replace("-", "_")
+            .Replace(" ", "_")
+
+type Knowledge<'T> =
+    | ToBeDetermined
+    | Nothing
+    | Something of 'T
+
 [<RequireQualifiedAccess>]
 type Gender =
     | Masculine
@@ -90,11 +107,11 @@ type Person =
         ]
 
 type SingularNounGuts = {
-    Plural: string option
+    Plural: Knowledge<string>
 }
 
 type PluralNounGuts = {
-    Singular: string option
+    Singular: Knowledge<string>
 }
 
 type NounGuts =
@@ -114,30 +131,97 @@ type Noun =
     {
         Deutsch: string
         English: string
+        EnglishAlternatives: string list
         Guts: NounGuts
     }
 
     override this.ToString() =
-        this.Guts.Gender.ToString() + "_" +
-        this.Deutsch
-            .ToLowerInvariant()
-            .Replace("ö", "oe")
-            .Replace("ä", "ae")
-            .Replace("ü", "ue")
-            .Replace("ß", "ss")
-            .Replace("-", "_")
+        this.Guts.Gender.ToString() + "_" + Key.of_german this.Deutsch
 
 type Adjective =
     {
         Deutsch: string
         English: string
+        EnglishAlternatives: string list
     }
 
-    override this.ToString() =
-        this.Deutsch
-            .ToLowerInvariant()
-            .Replace("ö", "oe")
-            .Replace("ä", "ae")
-            .Replace("ü", "ue")
-            .Replace("ß", "ss")
-            .Replace("-", "_")
+    override this.ToString() = Key.of_german this.Deutsch
+
+type VerbPerson =
+    | FirstSingular
+    | FirstThirdPluralFormal
+    | SecondSingular
+    | SecondPlural
+    | ThirdSingular
+
+    static member OfPerson(person: Person) =
+        match person with
+        | Person.First false -> FirstSingular
+        | Person.First true
+        | Person.Third Gender.Plural
+        | Person.Formal -> FirstThirdPluralFormal
+        | Person.Second false -> SecondSingular
+        | Person.Second true -> SecondPlural
+        | Person.Third _ -> ThirdSingular
+
+type VerbInflection =
+    | Present of VerbPerson
+    | SimplePast of VerbPerson
+    | PastParticiple
+    | Imperative
+
+[<RequireQualifiedAccess>]
+type VerbTag =
+    | None
+    | Intransitive
+    | Transitive
+    | Reflexive
+    | Reciprocal
+
+type Verb =
+    {
+        Deutsch: string
+        English: string
+        EnglishAlternatives: string list
+        Tag: VerbTag
+        Separable: bool
+        Inflections: Map<VerbInflection, (string * string) option>
+    }
+
+    member this.Inflection(inflection: VerbInflection) =
+        match Map.tryFind inflection this.Inflections with
+        | Some (None) -> Nothing
+        | Some (Some (de, en)) -> Something {| Deutsch = de; English = en |}
+        | None -> ToBeDetermined
+
+    member this.WithInflection(inflection: VerbInflection, de: string, en: string) =
+        { this with Inflections = this.Inflections.Add(inflection, Some (de, en)) }
+
+    member this.WithoutInflection(inflection: VerbInflection) =
+        { this with Inflections = this.Inflections.Remove inflection }
+
+    static member Regular(infinitive_de: string, infinitive_en: string) =
+        let stem =
+            if infinitive_de.EndsWith "en" then
+                infinitive_de.Substring(0, infinitive_de.Length - 2)
+            elif infinitive_de.EndsWith "eln" then
+                infinitive_de.Substring(0, infinitive_de.Length - 1)
+            elif infinitive_de.EndsWith "ern" then
+                infinitive_de.Substring(0, infinitive_de.Length - 1)
+            else
+                failwithf "Don't know what to do with this verb '%s' if regular? Maybe typo" infinitive_de
+
+        {
+            Deutsch = infinitive_de
+            English = infinitive_en
+            EnglishAlternatives = []
+            Tag = VerbTag.None
+            Separable = false
+            Inflections = Map.empty
+        }
+            .WithInflection(PastParticiple, "ge" + stem + "t", infinitive_en + "ed")
+            .WithInflection(Present FirstSingular, stem + "e", infinitive_en)
+            .WithInflection(Present FirstThirdPluralFormal, stem + "en", infinitive_en)
+            .WithInflection(Present SecondSingular, stem + "st", infinitive_en)
+            .WithInflection(Present SecondPlural, stem + "t", infinitive_en)
+            .WithInflection(Present ThirdSingular, stem + "t", infinitive_en + "s")

@@ -99,36 +99,42 @@ module internal ArticleConstants =
             {
                 Deutsch = "Löffel"
                 English = "spoon"
-                Guts = Masculine { Plural = Some "Löffel" }
+                EnglishAlternatives = []
+                Guts = Masculine { Plural = Something "Löffel" }
             }
             {
                 Deutsch = "Gabel"
                 English = "fork"
-                Guts = Feminine { Plural = Some "Gabeln" }
+                EnglishAlternatives = []
+                Guts = Feminine { Plural = Something "Gabeln" }
             }
             {
                 Deutsch = "Messer"
                 English = "knife"
-                Guts = Neuter { Plural = Some "Messer" }
+                EnglishAlternatives = []
+                Guts = Neuter { Plural = Something "Messer" }
             }
             {
                 Deutsch = "Löffel"
                 English = "spoons"
-                Guts = Plural { Singular = Some "Löffel" }
+                EnglishAlternatives = []
+                Guts = Plural { Singular = Something "Löffel" }
             }
             {
                 Deutsch = "Gabeln"
                 English = "forks"
-                Guts = Plural { Singular = Some "Gabel" }
+                EnglishAlternatives = []
+                Guts = Plural { Singular = Something "Gabel" }
             }
             {
                 Deutsch = "Messer"
                 English = "knives"
-                Guts = Plural { Singular = Some "Messer" }
+                EnglishAlternatives = []
+                Guts = Plural { Singular = Something "Messer" }
             }
         |]
 
-    let KLEIN : Adjective = { Deutsch = "klein"; English = "small" }
+    let KLEIN : Adjective = { Deutsch = "klein"; English = "small"; EnglishAlternatives = [] }
 
 type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)
