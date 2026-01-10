@@ -161,7 +161,7 @@ module Deutsch =
 
     let decline_noun (noun: Noun) (case: Case) : AnnotationTree =
         match noun.Guts with
-        | Plural _ when case.IsDative ->
+        | Plural when case.IsDative ->
             if noun.Deutsch.EndsWith("n") then
                 [Text noun.Deutsch]
             else

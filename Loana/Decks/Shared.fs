@@ -94,47 +94,32 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
 [<AutoOpen>]
 module internal ArticleConstants =
 
+    let SPOON =
+        {
+            Translation = { Deutsch = "Löffel"; English = "spoon"; EnglishAlternatives = [] }
+            Guts = Masculine (Something { Deutsch = "Löffel"; English = "spoons"; EnglishAlternatives = [] })
+        }
+    let FORK =
+        {
+            Translation = { Deutsch = "Gabel"; English = "fork"; EnglishAlternatives = [] }
+            Guts = Feminine (Something { Deutsch = "Gabeln"; English = "forks"; EnglishAlternatives = [] })
+        }
+    let KNIFE =
+        {
+            Translation = { Deutsch = "Messer"; English = "knife"; EnglishAlternatives = [] }
+            Guts = Neuter (Something { Deutsch = "Messer"; English = "knives"; EnglishAlternatives = [] })
+        }
     let NOUNS : Noun array =
         [|
-            {
-                Deutsch = "Löffel"
-                English = "spoon"
-                EnglishAlternatives = []
-                Guts = Masculine { Plural = Something "Löffel" }
-            }
-            {
-                Deutsch = "Gabel"
-                English = "fork"
-                EnglishAlternatives = []
-                Guts = Feminine { Plural = Something "Gabeln" }
-            }
-            {
-                Deutsch = "Messer"
-                English = "knife"
-                EnglishAlternatives = []
-                Guts = Neuter { Plural = Something "Messer" }
-            }
-            {
-                Deutsch = "Löffel"
-                English = "spoons"
-                EnglishAlternatives = []
-                Guts = Plural { Singular = Something "Löffel" }
-            }
-            {
-                Deutsch = "Gabeln"
-                English = "forks"
-                EnglishAlternatives = []
-                Guts = Plural { Singular = Something "Gabel" }
-            }
-            {
-                Deutsch = "Messer"
-                English = "knives"
-                EnglishAlternatives = []
-                Guts = Plural { Singular = Something "Messer" }
-            }
+            SPOON
+            FORK
+            KNIFE
+            SPOON.PluralForm.Value
+            FORK.PluralForm.Value
+            KNIFE.PluralForm.Value
         |]
 
-    let KLEIN : Adjective = { Deutsch = "klein"; English = "small"; EnglishAlternatives = [] }
+    let KLEIN : Adjective = { Translation = { Deutsch = "klein"; English = "small"; EnglishAlternatives = [] } }
 
 type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)

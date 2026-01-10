@@ -11,6 +11,8 @@ namespace Loana.GUI;
 
 public partial class MainWindow : Window
 {
+    private readonly Nouns _nouns = new("C:/users/percy/Desktop/Source/Anki/Deutsch/nouns.dat");
+
     public MainWindow()
     {
         InitializeComponent();
@@ -20,8 +22,7 @@ public partial class MainWindow : Window
         var log = this.FindControl<Terminal>("Log")!;
         var display = this.FindControl<Terminal>("MainDisplay")!;
 
-        var nouns = new Nouns("C:/users/percy/Desktop/Source/Anki/Deutsch/nouns.dat");
-        nouns.Validate(log);
+        _nouns.Validate(log);
         CardScheduler scheduler = new(log);
 
         Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck()];
@@ -30,7 +31,7 @@ public partial class MainWindow : Window
                 deck.Name,
                 () => deck.Menu(scheduler, log, display)
             ))];
-        menuOptions.Add(new SelectMenuOption("Browse Nouns", () => NounBrowser.create(nouns, display)));
+        menuOptions.Add(new SelectMenuOption("Browse Nouns", () => NounBrowser.create(_nouns, display)));
         var menu = new SelectMenu(
             [.. menuOptions],
             display
@@ -58,5 +59,10 @@ public partial class MainWindow : Window
                 Close();
             }
         };
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        _nouns.Save();
     }
 }

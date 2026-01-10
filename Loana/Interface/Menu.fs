@@ -145,7 +145,7 @@ type EditTextFieldMenu(get: unit -> string, set: string -> unit, output: IOutput
 type BrowserMenu<'T>(
     search: string -> 'T seq,
     display: 'T -> string,
-    create: unit -> 'T,
+    create: ('T -> unit) -> Menu,
     remove: 'T -> unit,
     add: 'T -> unit,
     edit: (unit -> 'T) -> ('T -> unit) -> Menu,
@@ -162,8 +162,7 @@ type BrowserMenu<'T>(
         search_results <- search search_query |> Seq.truncate 20 |> Array.ofSeq
         selected <- if search_results.Length = 0 then 0 else selected % search_results.Length
 
-    do
-        refresh_search()
+    do refresh_search()
 
     member private this.Draw() : unit =
         this.Output.Clear()
@@ -208,11 +207,10 @@ type BrowserMenu<'T>(
             submenu.Open(edit (fun () -> current_editor) (fun e -> current_editor <- e))
             true
         | "new" ->
-            current_editor <- create()
-            submenu.Open(edit (fun () -> current_editor) (fun e -> current_editor <- e))
+            submenu.Open(create (fun v -> current_editor <- v))
             true
         | "delete" ->
-            remove current_editor
+            remove search_results.[selected]
             refresh_search()
             this.Draw()
             true

@@ -106,44 +106,55 @@ type Person =
             Formal
         ]
 
-type SingularNounGuts = {
-    Plural: Knowledge<string>
-}
-
-type PluralNounGuts = {
-    Singular: Knowledge<string>
-}
+type Translation =
+    {
+        Deutsch: string
+        English: string
+        EnglishAlternatives: string list
+    }
 
 type NounGuts =
-    | Masculine of SingularNounGuts
-    | Feminine of SingularNounGuts
-    | Neuter of SingularNounGuts
-    | Plural of PluralNounGuts
+    | Masculine of plural: Knowledge<Translation>
+    | Feminine of plural: Knowledge<Translation>
+    | Neuter of plural: Knowledge<Translation>
+    | Plural
 
     member this.Gender =
         match this with
         | Masculine _ -> Gender.Masculine
         | Feminine _ -> Gender.Feminine
         | Neuter _ -> Gender.Neuter
-        | Plural _ -> Gender.Plural
+        | Plural -> Gender.Plural
 
 type Noun =
     {
-        Deutsch: string
-        English: string
-        EnglishAlternatives: string list
+        Translation: Translation
         Guts: NounGuts
     }
+
+    member this.Deutsch = this.Translation.Deutsch
+    member this.English = this.Translation.English
+    member this.EnglishAlternatives = this.Translation.EnglishAlternatives
+
+    member this.PluralForm : Noun option =
+        match this.Guts with
+        | Plural -> Some this
+        | Masculine (Something plural)
+        | Feminine (Something plural)
+        | Neuter (Something plural) -> Some { Translation = plural; Guts = Plural }
+        | _ -> None
 
     override this.ToString() =
         this.Guts.Gender.ToString() + "_" + Key.of_german this.Deutsch
 
 type Adjective =
     {
-        Deutsch: string
-        English: string
-        EnglishAlternatives: string list
+        Translation: Translation
     }
+
+    member this.Deutsch = this.Translation.Deutsch
+    member this.English = this.Translation.English
+    member this.EnglishAlternatives = this.Translation.EnglishAlternatives
 
     override this.ToString() = Key.of_german this.Deutsch
 
@@ -180,13 +191,15 @@ type VerbTag =
 
 type Verb =
     {
-        Deutsch: string
-        English: string
-        EnglishAlternatives: string list
+        Infinitive: Translation
         Tag: VerbTag
         Separable: bool
         Inflections: Map<VerbInflection, (string * string) option>
     }
+
+    member this.Deutsch = this.Infinitive.Deutsch
+    member this.English = this.Infinitive.English
+    member this.EnglishAlternatives = this.Infinitive.EnglishAlternatives
 
     member this.Inflection(inflection: VerbInflection) =
         match Map.tryFind inflection this.Inflections with
@@ -212,9 +225,7 @@ type Verb =
                 failwithf "Don't know what to do with this verb '%s' if regular? Maybe typo" infinitive_de
 
         {
-            Deutsch = infinitive_de
-            English = infinitive_en
-            EnglishAlternatives = []
+            Infinitive = { Deutsch = infinitive_de; English = infinitive_en; EnglishAlternatives = [] }
             Tag = VerbTag.None
             Separable = false
             Inflections = Map.empty

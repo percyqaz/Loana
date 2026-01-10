@@ -45,6 +45,24 @@ type DbFile<'T>(path: string) =
         File.Move(path, bak_path)
         File.Move(temp_path, path)
 
+[<AutoOpen>]
+module internal Helpers =
+    let read_translation(br: BinaryReader) : Translation =
+        {
+            Deutsch = br.ReadString()
+            English = br.ReadString()
+            EnglishAlternatives =
+                let count = br.Read7BitEncodedInt()
+                List.init count (fun _ -> br.ReadString())
+        }
+
+    let write_translation (bw: BinaryWriter) (translation: Translation) =
+        bw.Write(translation.Deutsch)
+        bw.Write(translation.English)
+        bw.Write7BitEncodedInt(translation.EnglishAlternatives.Length)
+        for alt in translation.EnglishAlternatives do
+            bw.Write(alt)
+
 type NounFile(path: string) =
     inherit DbFile<Noun>(path: string)
 
@@ -54,11 +72,7 @@ type NounFile(path: string) =
         match version with
         | 1 ->
             {
-                Deutsch = br.ReadString()
-                English = br.ReadString()
-                EnglishAlternatives =
-                    let count = br.Read7BitEncodedInt()
-                    List.init count (fun _ -> br.ReadString())
+                Translation = read_translation(br)
                 Guts =
                     let gender =
                         match br.ReadByte() with
@@ -67,39 +81,35 @@ type NounFile(path: string) =
                         | 1uy -> Gender.Feminine
                         | _ -> Gender.Masculine
 
-                    let other_form =
+                    let plural_form() =
                         match br.ReadByte() with
-                        | 1uy -> Something (br.ReadString())
+                        | 1uy -> Something (read_translation(br))
                         | 2uy -> Nothing
                         | _ -> ToBeDetermined
 
                     match gender with
-                    | Gender.Plural -> Plural { Singular = other_form }
-                    | Gender.Neuter -> Neuter { Plural = other_form }
-                    | Gender.Feminine -> Feminine { Plural = other_form }
-                    | Gender.Masculine -> Masculine { Plural = other_form }
+                    | Gender.Plural -> Plural
+                    | Gender.Neuter -> Neuter (plural_form())
+                    | Gender.Feminine -> Feminine (plural_form())
+                    | Gender.Masculine -> Masculine (plural_form())
             }
         | _ ->
             failwithf "Unrecognised version %i" version
 
     override this.WriteItem(noun: Noun, bw: BinaryWriter): unit =
-        bw.Write(noun.Deutsch)
-        bw.Write(noun.English)
-        bw.Write7BitEncodedInt(noun.EnglishAlternatives.Length)
-        for alt in noun.EnglishAlternatives do
-            bw.Write(alt)
+        write_translation bw noun.Translation
 
-        let write_other_form(k: Knowledge<string>) =
+        let write_plural_form(k: Knowledge<Translation>) =
             match k with
             | ToBeDetermined -> bw.Write 0uy
-            | Something v -> bw.Write 1uy; bw.Write v
+            | Something v -> bw.Write 1uy; write_translation bw v
             | Nothing -> bw.Write 2uy
 
         match noun.Guts with
-        | Plural { Singular = singular } -> bw.Write 3uy; write_other_form singular
-        | Neuter { Plural = plural } -> bw.Write 2uy; write_other_form plural
-        | Feminine { Plural = plural } -> bw.Write 1uy; write_other_form plural
-        | Masculine { Plural = plural } -> bw.Write 0uy; write_other_form plural
+        | Plural -> bw.Write 3uy
+        | Neuter plural -> bw.Write 2uy; write_plural_form plural
+        | Feminine plural -> bw.Write 1uy; write_plural_form plural
+        | Masculine plural -> bw.Write 0uy; write_plural_form plural
 
 type VerbFile(path: string) =
     inherit DbFile<Verb>(path: string)
@@ -110,11 +120,7 @@ type VerbFile(path: string) =
         match version with
         | 1 ->
             {
-                Deutsch = br.ReadString()
-                English = br.ReadString()
-                EnglishAlternatives =
-                    let count = br.Read7BitEncodedInt()
-                    List.init count (fun _ -> br.ReadString())
+                Infinitive = read_translation br
                 Tag =
                     match br.ReadByte() with
                     | 4uy -> VerbTag.Reciprocal
@@ -155,11 +161,7 @@ type VerbFile(path: string) =
             failwithf "Unrecognised version %i" version
 
     override this.WriteItem(verb: Verb, bw: BinaryWriter): unit =
-        bw.Write(verb.Deutsch)
-        bw.Write(verb.English)
-        bw.Write7BitEncodedInt(verb.EnglishAlternatives.Length)
-        for alt in verb.EnglishAlternatives do
-            bw.Write(alt)
+        write_translation bw verb.Infinitive
 
         match verb.Tag with
         | VerbTag.None -> bw.Write 0uy

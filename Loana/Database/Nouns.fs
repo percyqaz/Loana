@@ -58,24 +58,114 @@ type Nouns(path) =
 
         for noun in nouns do
             match noun.Guts with
-            | Masculine s
-            | Feminine s
-            | Neuter s ->
-                match s.Plural with
+            | Masculine plural
+            | Feminine plural
+            | Neuter plural ->
+                match plural with
                 | Something plural_form ->
-                    let plural_key = "p_" + Key.of_german plural_form
-                    if not (seen_keys.Contains plural_key) then
-                        output.WriteLine(sprintf "%O: plural form '%s' not in database" noun plural_form)
+                    let plural_key = "p_" + Key.of_german plural_form.Deutsch
+                    if seen_keys.Contains plural_key then
+                        output.WriteLine(sprintf "%O: duplicate plural-only form '%s'" noun plural_form.Deutsch)
                 | _ -> ()
-            | Plural p ->
-                match p.Singular with
-                | Something singular ->
-                    let singular_key = Key.of_german singular
-                    if not (seen_keys.Contains ("m_" + singular_key) || seen_keys.Contains ("f_" + singular_key) || seen_keys.Contains ("n_" + singular_key)) then
-                        output.WriteLine(sprintf "%O: singular form '%s' not in database" noun singular)
-                | _ -> ()
+            | Plural -> ()
 
+open Avalonia.Media
 open Loana.Interface
+
+type CreateNounMenu(save: Noun -> unit, output: IOutput) =
+    inherit Menu(output)
+
+    let mutable step = 0
+    let mutable de = ""
+    let mutable en = ""
+    let mutable en_alts = []
+    let mutable gender: Gender = Gender.Masculine
+    let mutable plural_de = Nothing
+    let mutable plural_en = ""
+    let mutable plural_en_alts = []
+
+    let display_step() =
+        match step with
+        | 0 -> output.Write("Deutsch: ")
+        | 1 -> output.Write("English: ")
+        | 2 -> output.Write("Gender: ")
+        | 3 -> output.Write("Deutsch Plural?: ")
+        | 4 -> output.Write("English Plural: ")
+        | _ -> failwith "impossible"
+
+    override this.Start() : bool =
+        output.Clear()
+        display_step()
+        true
+
+    override this.Next(user_input: string) : bool =
+        let user_input = user_input.Trim()
+        match step with
+        | 0 ->
+            if user_input.Length > 0 && System.Char.IsUpper(user_input.[0]) then
+                de <- user_input.Trim()
+                step <- 1
+                output.WriteLine(user_input, Brushes.Green)
+            else
+                output.WriteLine(user_input, Brushes.Red)
+        | 1 ->
+            let split = user_input.Split(",", System.StringSplitOptions.RemoveEmptyEntries ||| System.StringSplitOptions.TrimEntries)
+            if split.Length > 0 then
+                en <- split.[0]
+                en_alts <- split |> Seq.skip 1 |> List.ofSeq
+                step <- 2
+                output.WriteLine(user_input, Brushes.Green)
+            else
+                output.WriteLine(user_input, Brushes.Red)
+        | 2 ->
+            match user_input with
+            | "m" | "f" | "n" | "p" ->
+                gender <- Gender.Parse user_input
+                step <- if gender = Gender.Plural then 5 else 3
+                output.WriteLine(user_input, Brushes.Green)
+            | _ ->
+                output.WriteLine(user_input, Brushes.Red)
+        | 3 ->
+            match user_input with
+            | "" ->
+                plural_de <- ToBeDetermined
+                step <- 5
+            | "n/a" ->
+                plural_de <- Nothing
+                step <- 5
+                output.WriteLine(user_input, Brushes.Yellow)
+            | _ when System.Char.IsUpper(user_input.[0]) ->
+                plural_de <- Something user_input
+                step <- 4
+                output.WriteLine(user_input, Brushes.Green)
+            | _ ->
+                output.WriteLine(user_input, Brushes.Red)
+        | 4 ->
+            let split = user_input.Split(",", System.StringSplitOptions.RemoveEmptyEntries ||| System.StringSplitOptions.TrimEntries)
+            if split.Length > 0 then
+                plural_en <- split.[0]
+                plural_en_alts <- split |> Seq.skip 1 |> List.ofSeq
+                step <- 5
+                output.WriteLine(user_input, Brushes.Green)
+            else
+                output.WriteLine(user_input, Brushes.Red)
+        | _ -> failwith "impossible"
+
+        if step = 5 then
+            let plural = match plural_de with Nothing -> Nothing | ToBeDetermined -> ToBeDetermined | Something x -> Something { Deutsch = x; English = plural_en; EnglishAlternatives = plural_en_alts }
+            save {
+                Translation = { Deutsch = de; English = en; EnglishAlternatives = en_alts }
+                Guts =
+                    match gender with
+                    | Gender.Masculine -> Masculine plural
+                    | Gender.Feminine -> Feminine plural
+                    | Gender.Neuter -> Neuter plural
+                    | Gender.Plural -> Plural
+            }
+            false
+        else
+            display_step()
+            true
 
 module NounBrowser =
 
@@ -90,7 +180,7 @@ module NounBrowser =
                         Menu = fun get set ->
                             EditTextFieldMenu(
                                 (fun () -> get().Deutsch),
-                                (fun t -> set({ get() with Deutsch = t })),
+                                (fun t -> let g = get() in set({ g with Translation = { g.Translation with Deutsch = t } })),
                                 output
                             )
                     }
@@ -100,7 +190,7 @@ module NounBrowser =
                         Menu = fun get set ->
                             EditTextFieldMenu(
                                 (fun () -> get().English),
-                                (fun t -> set({ get() with English = t })),
+                                (fun t -> let g = get() in set({ g with Translation = { g.Translation with English = t } })),
                                 output
                             )
                     }
@@ -121,7 +211,7 @@ module NounBrowser =
                                         | "f" -> set({ current with Guts = Feminine s })
                                         | "n" -> set({ current with Guts = Neuter s })
                                         | _ -> ()
-                                    | Plural _ -> ()
+                                    | Plural -> ()
                                 ),
                                 output
                             )
@@ -132,18 +222,10 @@ module NounBrowser =
                 output
             ) :> Menu
 
-        let create () =
-            {
-                Deutsch = ""
-                English = ""
-                EnglishAlternatives = []
-                Guts = Masculine { Plural = ToBeDetermined }
-            }
-
         BrowserMenu(
             nouns.Search,
             (fun (noun: Noun) -> sprintf "%s [%O]" noun.Deutsch noun.Guts.Gender),
-            create,
+            (fun callback -> CreateNounMenu(callback, output)),
             nouns.Remove >> ignore,
             nouns.Add,
             edit,
