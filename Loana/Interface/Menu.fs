@@ -155,6 +155,7 @@ type BrowserMenu<'T>(
     remove: 'T -> unit,
     add: 'T -> unit,
     edit: (unit -> 'T) -> ('T -> unit) -> Menu,
+    save: unit -> unit,
     output: IOutput) =
     inherit Menu(output)
 
@@ -206,7 +207,9 @@ type BrowserMenu<'T>(
         else
 
         match user_input with
-        | "back" -> false
+        | "back" ->
+            save()
+            false
         | "ok" ->
             current_editor <- search_results.[selected]
             remove current_editor

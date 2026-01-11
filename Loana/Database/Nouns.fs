@@ -103,7 +103,7 @@ type CreateNounMenu(save: Noun -> unit, output: IOutput) =
         match step with
         | 0 ->
             if user_input.Length > 0 && System.Char.IsUpper(user_input.[0]) then
-                de <- user_input.Trim()
+                de <- user_input
                 step <- 1
                 output.WriteLine(user_input, Brushes.Green)
             else
@@ -289,5 +289,6 @@ module NounBrowser =
             nouns.Remove >> ignore,
             nouns.Add,
             edit,
+            nouns.Save,
             output
         )

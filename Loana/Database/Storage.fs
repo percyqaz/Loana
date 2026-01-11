@@ -187,7 +187,9 @@ type VerbFile(path: string) =
             | PastParticiple -> bw.Write 2uy
             | Imperative -> bw.Write 3uy
 
-        for (key, value) in Map.toSeq verb.Inflections do
+        let inflections = Map.toArray verb.Inflections
+        bw.Write7BitEncodedInt inflections.Length
+        for (key, value) in inflections do
             write_inflection key
             match value with
             | Some (de, en) -> bw.Write 1uy; bw.Write de; bw.Write en

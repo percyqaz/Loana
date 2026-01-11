@@ -189,6 +189,22 @@ type VerbTag =
     | Reflexive
     | Reciprocal
 
+    override this.ToString() =
+        match this with
+        | None -> "--"
+        | Intransitive -> "intransitive"
+        | Transitive -> "transitive"
+        | Reflexive -> "reflexive"
+        | Reciprocal -> "reciprocal"
+
+    member this.Color : IBrush =
+        match this with
+        | None -> Brushes.LightGray
+        | Intransitive -> Brushes.AliceBlue
+        | Transitive -> Brushes.Lavender
+        | Reflexive -> Brushes.Gold
+        | Reciprocal -> Brushes.Lime
+
 type Verb =
     {
         Infinitive: Translation
@@ -212,27 +228,3 @@ type Verb =
 
     member this.WithoutInflection(inflection: VerbInflection) =
         { this with Inflections = this.Inflections.Remove inflection }
-
-    static member Regular(infinitive_de: string, infinitive_en: string) =
-        let stem =
-            if infinitive_de.EndsWith "en" then
-                infinitive_de.Substring(0, infinitive_de.Length - 2)
-            elif infinitive_de.EndsWith "eln" then
-                infinitive_de.Substring(0, infinitive_de.Length - 1)
-            elif infinitive_de.EndsWith "ern" then
-                infinitive_de.Substring(0, infinitive_de.Length - 1)
-            else
-                failwithf "Don't know what to do with this verb '%s' if regular? Maybe typo" infinitive_de
-
-        {
-            Infinitive = { Deutsch = infinitive_de; English = infinitive_en; EnglishAlternatives = [] }
-            Tag = VerbTag.None
-            Separable = false
-            Inflections = Map.empty
-        }
-            .WithInflection(PastParticiple, "ge" + stem + "t", infinitive_en + "ed")
-            .WithInflection(Present FirstSingular, stem + "e", infinitive_en)
-            .WithInflection(Present FirstThirdPluralFormal, stem + "en", infinitive_en)
-            .WithInflection(Present SecondSingular, stem + "st", infinitive_en)
-            .WithInflection(Present SecondPlural, stem + "t", infinitive_en)
-            .WithInflection(Present ThirdSingular, stem + "t", infinitive_en + "s")

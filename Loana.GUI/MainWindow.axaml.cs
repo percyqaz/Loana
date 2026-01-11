@@ -12,6 +12,7 @@ namespace Loana.GUI;
 public partial class MainWindow : Window
 {
     private readonly Nouns _nouns = new("C:/users/percy/Desktop/Source/Anki/Deutsch/nouns.dat");
+    private readonly Verbs _verbs = new("C:/users/percy/Desktop/Source/Anki/Deutsch/verbs.dat");
 
     public MainWindow()
     {
@@ -32,6 +33,7 @@ public partial class MainWindow : Window
                 () => deck.Menu(scheduler, log, display)
             ))];
         menuOptions.Add(new SelectMenuOption("Browse Nouns", () => NounBrowser.create(_nouns, display)));
+        menuOptions.Add(new SelectMenuOption("Browse Verbs", () => VerbBrowser.create(_verbs, display)));
         var menu = new SelectMenu(
             [.. menuOptions],
             display
@@ -59,10 +61,5 @@ public partial class MainWindow : Window
                 Close();
             }
         };
-    }
-
-    protected override void OnClosing(WindowClosingEventArgs e)
-    {
-        _nouns.Save();
     }
 }
