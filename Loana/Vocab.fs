@@ -189,6 +189,12 @@ type VerbTag =
     | Reflexive
     | Reciprocal
 
+    member this.KeyPrefix =
+        match this with
+        | Reflexive -> "rf_"
+        | Reciprocal -> "rp_"
+        | _ -> ""
+
     override this.ToString() =
         match this with
         | None -> "--"
@@ -228,3 +234,6 @@ type Verb =
 
     member this.WithoutInflection(inflection: VerbInflection) =
         { this with Inflections = this.Inflections.Remove inflection }
+
+    override this.ToString() =
+        this.Tag.KeyPrefix + Key.of_german this.Deutsch
