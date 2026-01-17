@@ -4,14 +4,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ae="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
         xmlns:loana="clr-namespace:Loana.GUI"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+        mc:Ignorable="d"
         x:Class="Loana.GUI.MainWindow"
+		Width="500"
+		Height="500"
         Title="Loana">
 	<Grid RowDefinitions="*,Auto">
-		<Grid ColumnDefinitions="*,2*">
-			<loana:Terminal x:Name="Log" Grid.Column="0" />
-			<loana:Terminal x:Name="MainDisplay" Grid.Column="1" />
-		</Grid>
+		<SplitView IsPaneOpen="False"
+			x:Name="Split"
+			DisplayMode="Overlay"
+            OpenPaneLength="300">
+			<loana:Terminal x:Name="MainDisplay" />
+			<SplitView.Pane>
+				<loana:Terminal x:Name="Log" />
+			</SplitView.Pane>
+		</SplitView>
 		<TextBox
 			Grid.Row="1"
 			x:Name="Input"

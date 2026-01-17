@@ -52,6 +52,11 @@ public partial class MainWindow : Window
                     Close();
                 }
             }
+            else if (e.Key == Avalonia.Input.Key.Tab)
+            {
+                Split.IsPaneOpen = !Split.IsPaneOpen;
+                e.Handled = true;
+            }
         };
 
         display.OnButtonClicked += command =>
