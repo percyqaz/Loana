@@ -37,7 +37,7 @@ type Deck<'C when 'C :> Card>() =
 and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler, log: IOutput, output: IOutput) =
     inherit Menu(output)
 
-    let SESSION_SIZE = 50
+    let SESSION_SIZE = 20
     let session = Submenu.Create()
     let filters = deck.Filters
     let enabled_filters = filters |> Seq.map _.Filters |> Seq.concat |> Collections.Generic.HashSet<_>
@@ -116,7 +116,7 @@ module internal ArticleConstants =
 
     let KLEIN : Adjective = { Translation = Database.Wordlist.parse_vocab "klein = small" }
 
-type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
+type BasicGermanPracticeCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)
 
     override this.DisplayFront(output: IOutput) : unit =

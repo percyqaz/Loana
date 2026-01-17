@@ -5,7 +5,7 @@ open Loana.Scheduler
 open Loana.Declension
 
 type PersonalPronounsCard(person: Person, case: Case, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
-    inherit EnglishToGermanCard(
+    inherit BasicGermanPracticeCard(
         English.personal_pronoun person case,
         Deutsch.personal_pronoun person case,
         $"personal-pronoun-{person}-{case}",

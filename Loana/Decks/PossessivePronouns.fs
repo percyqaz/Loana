@@ -6,7 +6,7 @@ open Loana.Scheduler
 open Loana.Declension
 
 type PossessivePronounsCard(person: Person, adjective: Adjective option, noun: Noun, case: Case, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
-    inherit EnglishToGermanCard(
+    inherit BasicGermanPracticeCard(
         English.possessive_fragment person adjective noun case,
         Deutsch.possessive_fragment person adjective noun case,
         $"""possessive-{person}{(if adjective.IsSome then "-adj" else "")}-{noun}-{case}""",

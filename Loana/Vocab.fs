@@ -8,7 +8,6 @@ module Key =
 
     let of_german (text: string) =
         text
-            .ToLowerInvariant()
             .Replace("ö", "oe")
             .Replace("ä", "ae")
             .Replace("ü", "ue")

@@ -6,7 +6,7 @@ open Loana.Scheduler
 open Loana.Declension
 
 type ArticlesCard(definite: bool, adjective: Adjective option, noun: Noun, case: Case, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
-    inherit EnglishToGermanCard(
+    inherit BasicGermanPracticeCard(
         (if definite then English.definite_fragment else English.indefinite_fragment) adjective noun case,
         (if definite then Deutsch.definite_fragment else Deutsch.indefinite_fragment) adjective noun case,
         $"""{(if definite then "" else "in")}definite-article-{(if adjective.IsSome then "-adj" else "")}-{noun}-{case}""",

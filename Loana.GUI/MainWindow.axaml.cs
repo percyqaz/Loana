@@ -24,7 +24,7 @@ public partial class MainWindow : Window
         wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists");
         CardScheduler scheduler = new("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat", log);
 
-        Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck()];
+        Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck(), new VocabDeck(wordlist)];
         List<SelectMenuOption> menuOptions =
             [.. decks.Select(deck => new SelectMenuOption(
                 deck.Name,

@@ -131,3 +131,5 @@ type Wordlist(output: IOutput) =
                 this.ReadFile(path)
             else
                 output.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Brushes.Red)
+
+    member this.Entries = entries.AsReadOnly()
