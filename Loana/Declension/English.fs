@@ -78,9 +78,9 @@ module English =
         let genitive = if case.IsGenitive then "of " else ""
         match adjective with
         | Some adjective ->
-            [Case(case, [Text $"{genitive}{indefinite_article adjective.English} {adjective.English} {noun.English}"])]
+            [Case(case, [Text $"{genitive}{indefinite_article adjective.English.Text} {adjective.English} {noun.English}"])]
         | None ->
-            [Case(case, [Text $"{genitive}{indefinite_article noun.English} {noun.English}"])]
+            [Case(case, [Text $"{genitive}{indefinite_article noun.English.Text} {noun.English}"])]
 
     let possessive_fragment (person: Person) (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
         let genitive = if case.IsGenitive then [Text "of "] else []

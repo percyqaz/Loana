@@ -19,6 +19,7 @@
     <Compile Include="Scheduler\CardScheduler.fs" />
     <Compile Include="Scheduler\CardStack.fs" />
     <Compile Include="Scheduler\ReviewSession.fs" />
+    <Compile Include="Database\Wordlist.fs" />
     <Compile Include="Database\Storage.fs" />
     <Compile Include="Database\Nouns.fs" />
     <Compile Include="Database\Verbs.fs" />

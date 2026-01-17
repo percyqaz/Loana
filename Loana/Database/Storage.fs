@@ -47,21 +47,21 @@ type DbFile<'T>(path: string) =
 
 [<AutoOpen>]
 module internal Helpers =
-    let read_translation(br: BinaryReader) : Translation =
+    let read_translation(br: BinaryReader) : Vocab =
         {
             Deutsch = br.ReadString()
-            English = br.ReadString()
+            English = Annotation.Parse <| br.ReadString()
             EnglishAlternatives =
                 let count = br.Read7BitEncodedInt()
-                List.init count (fun _ -> br.ReadString())
+                List.init count (fun _ -> Annotation.Parse <| br.ReadString())
         }
 
-    let write_translation (bw: BinaryWriter) (translation: Translation) =
+    let write_translation (bw: BinaryWriter) (translation: Vocab) =
         bw.Write(translation.Deutsch)
-        bw.Write(translation.English)
+        bw.Write(translation.English.ToString())
         bw.Write7BitEncodedInt(translation.EnglishAlternatives.Length)
         for alt in translation.EnglishAlternatives do
-            bw.Write(alt)
+            bw.Write(alt.ToString())
 
 type NounFile(path: string) =
     inherit DbFile<Noun>(path: string)
@@ -99,7 +99,7 @@ type NounFile(path: string) =
     override this.WriteItem(noun: Noun, bw: BinaryWriter): unit =
         write_translation bw noun.Translation
 
-        let write_plural_form(k: Knowledge<Translation>) =
+        let write_plural_form(k: Knowledge<Vocab>) =
             match k with
             | ToBeDetermined -> bw.Write 0uy
             | Something v -> bw.Write 1uy; write_translation bw v

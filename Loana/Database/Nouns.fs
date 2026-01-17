@@ -17,8 +17,8 @@ type Nouns(path) =
             for noun in nouns do
                 if
                     noun.Deutsch.Contains(text, System.StringComparison.OrdinalIgnoreCase)
-                    || noun.English.Contains(text, System.StringComparison.OrdinalIgnoreCase)
-                    || noun.EnglishAlternatives |> List.exists (fun s -> s.Contains(text, System.StringComparison.OrdinalIgnoreCase))
+                    || noun.English.Text.Contains(text, System.StringComparison.OrdinalIgnoreCase)
+                    || noun.EnglishAlternatives |> List.exists (fun s -> s.Text.Contains(text, System.StringComparison.OrdinalIgnoreCase))
                 then
                     yield noun
         }
@@ -30,10 +30,10 @@ type Nouns(path) =
         let mutable seen_keys = Set.empty
         let mutable seen_definitions = Map.empty
         for noun in nouns do
-            if noun.English.Length = 0 then
+            if noun.English.Text.Length = 0 then
                 output.WriteLine(sprintf "%O: english definition missing" noun)
 
-            elif noun.English.Trim() <> noun.English then
+            elif noun.English.Text.Trim() <> noun.English.Text then
                 output.WriteLine(sprintf "%O: english definition must be trimmed of whitespace" noun)
 
             if noun.Deutsch.Length = 0 then
@@ -50,7 +50,7 @@ type Nouns(path) =
             else
                 seen_keys <- seen_keys.Add(noun.ToString())
 
-            let definitions = Key.of_german noun.English + "-" + String.concat "-" (noun.EnglishAlternatives |> Seq.map Key.of_german)
+            let definitions = Key.of_german noun.English.Text + "-" + String.concat "-" (noun.EnglishAlternatives |> Seq.map _.Text |> Seq.map Key.of_german)
             if seen_definitions.ContainsKey(definitions) then
                 printfn "%O: duplicate or ambiguous english definitions detected with %O" noun seen_definitions.[definitions]
             else
@@ -152,9 +152,9 @@ type CreateNounMenu(save: Noun -> unit, output: IOutput) =
         | _ -> failwith "impossible"
 
         if step = 5 then
-            let plural = match plural_de with Nothing -> Nothing | ToBeDetermined -> ToBeDetermined | Something x -> Something { Deutsch = x; English = plural_en; EnglishAlternatives = plural_en_alts }
+            let plural = match plural_de with Nothing -> Nothing | ToBeDetermined -> ToBeDetermined | Something x -> Something { Deutsch = x; English = Annotation.Parse plural_en; EnglishAlternatives = List.map Annotation.Parse plural_en_alts }
             save {
-                Translation = { Deutsch = de; English = en; EnglishAlternatives = en_alts }
+                Translation = { Deutsch = de; English = Annotation.Parse en; EnglishAlternatives = List.map Annotation.Parse en_alts }
                 Guts =
                     match gender with
                     | Gender.Masculine -> Masculine plural
@@ -176,7 +176,7 @@ module NounBrowser =
                 [|
                     {
                         Name = "Deutsch"
-                        Draw = fun (p: Translation) (output: IOutput) -> output.Write p.Deutsch
+                        Draw = fun (p: Vocab) (output: IOutput) -> output.Write p.Deutsch
                         Menu = fun get set ->
                             EditTextFieldMenu(
                                 (fun () -> get().Deutsch),
@@ -186,11 +186,11 @@ module NounBrowser =
                     }
                     {
                         Name = "English"
-                        Draw = fun (p: Translation) (output: IOutput) -> output.Write p.English
+                        Draw = fun (p: Vocab) (output: IOutput) -> output.Write p.English.Text
                         Menu = fun get set ->
                             EditTextFieldMenu(
-                                (fun () -> get().English),
-                                (fun t -> let g = get() in set({ g with English = t })),
+                                (fun () -> get().English.Text),
+                                (fun t -> let g = get() in set({ g with English = Annotation.Parse t })),
                                 output
                             )
                     }
@@ -215,11 +215,11 @@ module NounBrowser =
                     }
                     {
                         Name = "English"
-                        Draw = fun (noun: Noun) (output: IOutput) -> output.Write noun.English
+                        Draw = fun (noun: Noun) (output: IOutput) -> output.Write noun.English.Text
                         Menu = fun get set ->
                             EditTextFieldMenu(
-                                (fun () -> get().English),
-                                (fun t -> let g = get() in set({ g with Translation = { g.Translation with English = t } })),
+                                (fun () -> get().English.Text),
+                                (fun t -> let g = get() in set({ g with Translation = { g.Translation with English = Annotation.Parse t } })),
                                 output
                             )
                     }
@@ -267,7 +267,7 @@ module NounBrowser =
                                     | Neuter p ->
                                         match p with
                                         | Something a -> a
-                                        | _ -> { Deutsch = ""; English = ""; EnglishAlternatives = [] }
+                                        | _ -> { Deutsch = ""; English = { Text = ""; Note = None }; EnglishAlternatives = [] }
                                     | _ -> failwith "impossible"
                                 )
                                 (fun x ->

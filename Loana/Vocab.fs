@@ -106,17 +106,43 @@ type Person =
             Formal
         ]
 
-type Translation =
+type Annotation =
+    {
+        Text: string
+        Note: string option
+    }
+    override this.ToString() =
+        match this.Note with
+        | Some note -> sprintf "%s [%s]" this.Text note
+        | None -> this.Text
+
+    static member Parse(s: string) =
+        let m = System.Text.RegularExpressions.Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
+        let note = match m.Groups.[3].Value with "" -> None | s -> Some s
+        match m.Groups.[1].Value with
+        | "" -> failwithf "Parsing '%s' as an annotation failed" s
+        | text -> { Text = text; Note = note }
+
+type Vocab =
     {
         Deutsch: string
-        English: string
-        EnglishAlternatives: string list
+        English: Annotation
+        EnglishAlternatives: Annotation list
     }
+    override this.ToString() =
+        sprintf "%s = %s" this.Deutsch ((this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", ")
+
+    static member Parse(s: string) =
+        let split = s.Split("=", 2, System.StringSplitOptions.TrimEntries ||| System.StringSplitOptions.RemoveEmptyEntries)
+        if split.Length < 2 then failwithf "Parsing '%s' as vocab failed" s
+        let alts = split.[1].Split(",", System.StringSplitOptions.TrimEntries ||| System.StringSplitOptions.RemoveEmptyEntries)
+        if alts.Length < 1 then failwithf "should be unreachable"
+        { Deutsch = split.[0]; English = Annotation.Parse alts.[0]; EnglishAlternatives = Seq.skip 1 alts |> Seq.map Annotation.Parse |> List.ofSeq }
 
 type NounGuts =
-    | Masculine of plural: Knowledge<Translation>
-    | Feminine of plural: Knowledge<Translation>
-    | Neuter of plural: Knowledge<Translation>
+    | Masculine of plural: Knowledge<Vocab>
+    | Feminine of plural: Knowledge<Vocab>
+    | Neuter of plural: Knowledge<Vocab>
     | Plural
 
     member this.Gender =
@@ -128,7 +154,7 @@ type NounGuts =
 
 type Noun =
     {
-        Translation: Translation
+        Translation: Vocab
         Guts: NounGuts
     }
 
@@ -149,7 +175,7 @@ type Noun =
 
 type Adjective =
     {
-        Translation: Translation
+        Translation: Vocab
     }
 
     member this.Deutsch = this.Translation.Deutsch
@@ -213,7 +239,7 @@ type VerbTag =
 
 type Verb =
     {
-        Infinitive: Translation
+        Infinitive: Vocab
         Tag: VerbTag
         Separable: bool
         Inflections: Map<VerbInflection, (string * string) option>

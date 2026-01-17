@@ -17,8 +17,8 @@ type Verbs(path) =
             for verb in verbs do
                 if
                     verb.Deutsch.Contains(text, System.StringComparison.OrdinalIgnoreCase)
-                    || verb.English.Contains(text, System.StringComparison.OrdinalIgnoreCase)
-                    || verb.EnglishAlternatives |> List.exists (fun s -> s.Contains(text, System.StringComparison.OrdinalIgnoreCase))
+                    || verb.English.Text.Contains(text, System.StringComparison.OrdinalIgnoreCase)
+                    || verb.EnglishAlternatives |> List.exists (fun s -> s.Text.Contains(text, System.StringComparison.OrdinalIgnoreCase))
                 then
                     yield verb
         }
@@ -30,10 +30,10 @@ type Verbs(path) =
         let mutable seen_keys = Set.empty
         let mutable seen_definitions = Map.empty
         for verb in verbs do
-            if verb.English.Length = 0 then
+            if verb.English.Text.Length = 0 then
                 output.WriteLine(sprintf "%O: english definition missing" verb)
 
-            elif verb.English.Trim().ToLower() <> verb.English then
+            elif verb.English.Text.Trim().ToLower() <> verb.English.Text then
                 output.WriteLine(sprintf "%O: english definition must be lowercase and trimmed of whitespace" verb)
 
             if verb.Deutsch.Length = 0 then
@@ -47,7 +47,7 @@ type Verbs(path) =
             else
                 seen_keys <- seen_keys.Add(verb.ToString())
 
-            let definitions = Key.of_german verb.English + "-" + String.concat "-" (verb.EnglishAlternatives |> Seq.map Key.of_german)
+            let definitions = Key.of_german verb.English.Text + "-" + String.concat "-" (verb.EnglishAlternatives |> Seq.map _.Text |> Seq.map Key.of_german)
             if seen_definitions.ContainsKey(definitions) then
                 printfn "%O: duplicate or ambiguous english definitions detected with %O" verb seen_definitions.[definitions]
             else
@@ -98,7 +98,7 @@ module VerbDownloader =
     let extend_verb(verb: Verb, output: IOutput) : Verb =
         output.WriteLine("Downloading HTML ...")
         let de_html = download_de_verb_page(Key.of_german verb.Infinitive.Deutsch)
-        let en_html = download_en_verb_page(verb.Infinitive.English)
+        let en_html = download_en_verb_page(verb.Infinitive.English.Text)
         output.WriteLine("Parsing HTML ...")
         let de_present_tense = find_conjugation_list "Indikativ Präsens" de_html
         let en_present_tense = find_conjugation_list "Indicative Present" en_html
@@ -107,12 +107,12 @@ module VerbDownloader =
         let en_infinitive = (find_participle "Infinitive" en_html).Replace("to ", "").Trim()
 
         verb
-            .WithInflection(Present FirstSingular, de_present_tense.["ich"], verb.Infinitive.English.Replace(en_infinitive, en_present_tense.["I"]))
-            .WithInflection(Present FirstThirdPluralFormal, de_present_tense.["Sie"], verb.Infinitive.English.Replace(en_infinitive, en_present_tense.["we"]))
-            .WithInflection(Present SecondSingular, de_present_tense.["du"], verb.Infinitive.English.Replace(en_infinitive, en_present_tense.["you"]))
-            .WithInflection(Present SecondPlural, de_present_tense.["ihr"], verb.Infinitive.English.Replace(en_infinitive, en_present_tense.["you"]))
-            .WithInflection(Present ThirdSingular, de_present_tense.["er/sie/es"], verb.Infinitive.English.Replace(en_infinitive, en_present_tense.["he/she/it"]))
-            .WithInflection(PastParticiple, de_past_participle, verb.Infinitive.English.Replace(en_infinitive, en_past_participle))
+            .WithInflection(Present FirstSingular, de_present_tense.["ich"], verb.Infinitive.English.Text.Replace(en_infinitive, en_present_tense.["I"]))
+            .WithInflection(Present FirstThirdPluralFormal, de_present_tense.["Sie"], verb.Infinitive.English.Text.Replace(en_infinitive, en_present_tense.["we"]))
+            .WithInflection(Present SecondSingular, de_present_tense.["du"], verb.Infinitive.English.Text.Replace(en_infinitive, en_present_tense.["you"]))
+            .WithInflection(Present SecondPlural, de_present_tense.["ihr"], verb.Infinitive.English.Text.Replace(en_infinitive, en_present_tense.["you"]))
+            .WithInflection(Present ThirdSingular, de_present_tense.["er/sie/es"], verb.Infinitive.English.Text.Replace(en_infinitive, en_present_tense.["he/she/it"]))
+            .WithInflection(PastParticiple, de_past_participle, verb.Infinitive.English.Text.Replace(en_infinitive, en_past_participle))
 
 type CreateVerbMenu(save: Verb -> unit, output: IOutput) =
     inherit Menu(output)
@@ -186,7 +186,7 @@ type CreateVerbMenu(save: Verb -> unit, output: IOutput) =
 
         if step = 4 then
             save {
-                Infinitive = { Deutsch = de; English = en; EnglishAlternatives = en_alts }
+                Infinitive = { Deutsch = de; English = Annotation.Parse en; EnglishAlternatives = List.map Annotation.Parse en_alts }
                 Separable = separable
                 Tag = tag
                 Inflections = Map.empty
@@ -215,11 +215,11 @@ module VerbBrowser =
                     }
                     {
                         Name = "English"
-                        Draw = fun (verb: Verb) (output: IOutput) -> output.Write verb.English
+                        Draw = fun (verb: Verb) (output: IOutput) -> output.Write verb.English.Text
                         Menu = fun get set ->
                             EditTextFieldMenu(
-                                (fun () -> get().English),
-                                (fun t -> let g = get() in set({ g with Infinitive = { g.Infinitive with English = t } })),
+                                (fun () -> get().English.Text),
+                                (fun t -> let g = get() in set({ g with Infinitive = { g.Infinitive with English = Annotation.Parse t } })),
                                 output
                             )
                     }

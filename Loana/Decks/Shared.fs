@@ -94,21 +94,9 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
 [<AutoOpen>]
 module internal ArticleConstants =
 
-    let SPOON =
-        {
-            Translation = { Deutsch = "Löffel"; English = "spoon"; EnglishAlternatives = [] }
-            Guts = Masculine (Something { Deutsch = "Löffel"; English = "spoons"; EnglishAlternatives = [] })
-        }
-    let FORK =
-        {
-            Translation = { Deutsch = "Gabel"; English = "fork"; EnglishAlternatives = [] }
-            Guts = Feminine (Something { Deutsch = "Gabeln"; English = "forks"; EnglishAlternatives = [] })
-        }
-    let KNIFE =
-        {
-            Translation = { Deutsch = "Messer"; English = "knife"; EnglishAlternatives = [] }
-            Guts = Neuter (Something { Deutsch = "Messer"; English = "knives"; EnglishAlternatives = [] })
-        }
+    let SPOON = Database.Wordlist.parse_noun "Löffel = spoon :m plural Löffel = spoons"
+    let FORK = Database.Wordlist.parse_noun "Gabel = fork :f plural Gabeln = forks"
+    let KNIFE = Database.Wordlist.parse_noun "Messer = knife :n plural Messer = knives"
     let NOUNS : Noun array =
         [|
             SPOON
@@ -119,7 +107,7 @@ module internal ArticleConstants =
             KNIFE.PluralForm.Value
         |]
 
-    let KLEIN : Adjective = { Translation = { Deutsch = "klein"; English = "small"; EnglishAlternatives = [] } }
+    let KLEIN : Adjective = { Translation = Database.Wordlist.parse_vocab "klein = small" }
 
 type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)
