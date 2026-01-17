@@ -17,11 +17,10 @@
     <Compile Include="Wordlist.fs" />
     <Compile Include="Annotations.fs" />
     <Compile Include="Interface\Menu.fs" />
+    <Compile Include="Database\Verbs.fs" />
     <Compile Include="Scheduler\CardScheduler.fs" />
     <Compile Include="Scheduler\CardStack.fs" />
     <Compile Include="Scheduler\ReviewSession.fs" />
-    <Compile Include="Database\Verbs.fs" />
-    <Compile Include="Database\Storage.fs" />
     <Compile Include="Declension\Deutsch.fs" />
     <Compile Include="Declension\English.fs" />
     <Compile Include="Decks\Shared.fs" />

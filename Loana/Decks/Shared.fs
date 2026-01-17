@@ -59,12 +59,19 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
         output.WriteLine($"Session size: {SESSION_SIZE}")
 
         let available = deck.Build(filters |> List.map (fun f -> f.Pick enabled_filters), scheduler)
+        let total = Seq.length available
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         let due = available |> Seq.where (fun card -> card.IsDue now) |> Seq.length
+        let to_learn = available |> Seq.where (fun card -> card.Learning) |> Seq.length
+        let healthy = total- due - to_learn
 
-        output.Write($" {available |> Seq.length} available ", Brushes.Black, Brushes.White)
+        output.Write($" {total} cards ", Brushes.Black, Brushes.White)
         output.Write(" ")
         output.Write($" {due} due ", Brushes.LimeGreen, Brushes.DarkGreen)
+        output.Write(" ")
+        output.Write($" {to_learn} to learn ", Brushes.LightBlue, Brushes.DarkBlue)
+        output.Write(" ")
+        output.Write($" {healthy} ok ", Brushes.Yellow, Brushes.DarkGoldenrod)
         output.WriteLine()
         output.WriteLine()
         output.Button(" ok ", "ok", Brushes.LightGray, Brush.Parse("#101010"))

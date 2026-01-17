@@ -1,6 +1,9 @@
 namespace Loana.Scheduler
 
 open System
+open System.Text
+open System.IO
+open System.Collections.Generic
 open Avalonia.Media
 open Loana
 
@@ -179,9 +182,77 @@ type CardSpacingRule =
                     Interval = this.GraduatingInterval
                 }
 
-type CardScheduler(output: IOutput) =
+type CardSchedulerFile(path: string) =
 
-    let mem = Collections.Generic.Dictionary<string, CardScheduleData>()
+    let VERSION = 1
+
+    member private this.ReadCardEntry(version: int, br: BinaryReader) : string * CardScheduleData =
+        if version <> VERSION then failwithf "Unsupported version '%i'" version
+        let id = br.ReadString()
+        let data : CardScheduleData =
+            {
+                Reviews = br.ReadInt32()
+                Streak = br.ReadInt32()
+                LearningStep = if br.ReadByte() > 0uy then Some(br.ReadInt32()) else None
+                LastReviewed = if br.ReadByte() > 0uy then Some(br.ReadInt64()) else None
+                NextReview = br.ReadInt64()
+                Interval = br.ReadInt64()
+            }
+        id, data
+
+    member private this.WriteCardEntry(id: string, data: CardScheduleData, bw: BinaryWriter) =
+        bw.Write id
+        bw.Write data.Reviews
+        bw.Write data.Streak
+        match data.LearningStep with
+        | None -> bw.Write 0uy
+        | Some l -> bw.Write 1uy; bw.Write l
+        match data.LastReviewed with
+        | None -> bw.Write 0uy
+        | Some l -> bw.Write 1uy; bw.Write l
+        bw.Write data.NextReview
+        bw.Write data.Interval
+
+    member this.Load() : Dictionary<string, CardScheduleData> =
+        let stream = File.Open(path, FileMode.OpenOrCreate)
+        use br = new BinaryReader(stream, Encoding.UTF8, leaveOpen = false)
+
+        if stream.Position = stream.Length then
+            printfn "Schedule file '%s' is empty" path
+            Dictionary()
+        else
+
+        let version = br.ReadInt32()
+        let count = br.ReadInt32()
+        try
+            seq {
+                for _ = 1 to count do
+                    yield this.ReadCardEntry(version, br)
+            }
+            |> Seq.map KeyValuePair
+            |> Dictionary
+        with
+        | :? EndOfStreamException -> reraise()
+
+    member this.Write(data: Dictionary<string, CardScheduleData>) =
+        let bak_path = path + ".bak"
+        let temp_path = path + ".tmp"
+        let stream = File.Open(temp_path, FileMode.Create)
+        let bw = new BinaryWriter(stream, Encoding.UTF8, leaveOpen = false)
+        bw.Write(VERSION)
+        bw.Write(data.Count)
+        for kvp in data do
+            this.WriteCardEntry(kvp.Key, kvp.Value, bw)
+        bw.Dispose()
+
+        try File.Delete(bak_path) with _ -> ()
+        File.Move(path, bak_path)
+        File.Move(temp_path, path)
+
+type CardScheduler(path: string, output: IOutput) =
+
+    let db = CardSchedulerFile(path)
+    let mem = db.Load()
 
     member this.Get(key: string) : CardScheduleData =
         match mem.TryGetValue(key) with
@@ -202,6 +273,7 @@ type CardScheduler(output: IOutput) =
         match new_schedule.LearningStep with
         | Some step -> output.WriteLine(sprintf "'%s' -> %O (%i/%i)" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)) step spacing_rule.LearningSteps.Length, Brushes.LightBlue)
         | None -> output.WriteLine(sprintf "'%s' -> %O" key (DateTimeOffset.FromUnixTimeSeconds(new_schedule.NextReview)))
+        db.Write(mem)
 
 type NoteHistory =
     {

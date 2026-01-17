@@ -20,9 +20,9 @@ public partial class MainWindow : Window
         var log = this.FindControl<Terminal>("Log")!;
         var display = this.FindControl<Terminal>("MainDisplay")!;
 
-        Wordlist wordlist = new Wordlist(log);
+        Wordlist wordlist = new(log);
         wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists");
-        CardScheduler scheduler = new(log);
+        CardScheduler scheduler = new("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat", log);
 
         Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck()];
         List<SelectMenuOption> menuOptions =
