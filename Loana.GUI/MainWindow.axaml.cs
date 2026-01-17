@@ -11,9 +11,6 @@ namespace Loana.GUI;
 
 public partial class MainWindow : Window
 {
-    private readonly Nouns _nouns = new("C:/users/percy/Desktop/Source/Anki/Deutsch/nouns.dat");
-    private readonly Verbs _verbs = new("C:/users/percy/Desktop/Source/Anki/Deutsch/verbs.dat");
-
     public MainWindow()
     {
         InitializeComponent();
@@ -23,7 +20,8 @@ public partial class MainWindow : Window
         var log = this.FindControl<Terminal>("Log")!;
         var display = this.FindControl<Terminal>("MainDisplay")!;
 
-        _nouns.Validate(log);
+        Wordlist wordlist = new Wordlist(log);
+        wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists");
         CardScheduler scheduler = new(log);
 
         Deck[] decks = [new PersonalPronounsDeck(), new ArticlesDeck(), new PossessivePronounsDeck()];
@@ -32,8 +30,6 @@ public partial class MainWindow : Window
                 deck.Name,
                 () => deck.Menu(scheduler, log, display)
             ))];
-        menuOptions.Add(new SelectMenuOption("Browse Nouns", () => NounBrowser.create(_nouns, display)));
-        menuOptions.Add(new SelectMenuOption("Browse Verbs", () => VerbBrowser.create(_verbs, display)));
         var menu = new SelectMenu(
             [.. menuOptions],
             display

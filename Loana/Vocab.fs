@@ -1,5 +1,7 @@
 ﻿namespace Loana
 
+open System
+open System.Text.RegularExpressions
 open Avalonia.Media
 
 module Key =
@@ -117,7 +119,7 @@ type Annotation =
         | None -> this.Text
 
     static member Parse(s: string) =
-        let m = System.Text.RegularExpressions.Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
+        let m = Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
         let note = match m.Groups.[3].Value with "" -> None | s -> Some s
         match m.Groups.[1].Value with
         | "" -> failwithf "Parsing '%s' as an annotation failed" s
@@ -130,12 +132,15 @@ type Vocab =
         EnglishAlternatives: Annotation list
     }
     override this.ToString() =
-        sprintf "%s = %s" this.Deutsch ((this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", ")
+        sprintf "%s = %s" this.Deutsch this.EnglishKey
+
+    member this.Key = Key.of_german this.Deutsch
+    member this.EnglishKey = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
 
     static member Parse(s: string) =
-        let split = s.Split("=", 2, System.StringSplitOptions.TrimEntries ||| System.StringSplitOptions.RemoveEmptyEntries)
+        let split = s.Split("=", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
         if split.Length < 2 then failwithf "Parsing '%s' as vocab failed" s
-        let alts = split.[1].Split(",", System.StringSplitOptions.TrimEntries ||| System.StringSplitOptions.RemoveEmptyEntries)
+        let alts = split.[1].Split(",", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
         if alts.Length < 1 then failwithf "should be unreachable"
         { Deutsch = split.[0]; English = Annotation.Parse alts.[0]; EnglishAlternatives = Seq.skip 1 alts |> Seq.map Annotation.Parse |> List.ofSeq }
 
@@ -170,8 +175,19 @@ type Noun =
         | Neuter (Something plural) -> Some { Translation = plural; Guts = Plural }
         | _ -> None
 
-    override this.ToString() =
+    member this.KeyWithGender =
         this.Guts.Gender.ToString() + "_" + Key.of_german this.Deutsch
+
+    override this.ToString() =
+        match this.Guts with
+        | Plural -> sprintf "%O :p" this.Translation
+        | Masculine p
+        | Feminine p
+        | Neuter p ->
+            match p with
+            | Something plural -> sprintf "%O :%O plural %O" this.Translation this.Guts.Gender plural
+            | Nothing -> sprintf "%O :%O no_plural" this.Translation this.Guts.Gender
+            | ToBeDetermined -> sprintf "%O :%O" this.Translation this.Guts.Gender
 
 type Adjective =
     {
@@ -182,7 +198,7 @@ type Adjective =
     member this.English = this.Translation.English
     member this.EnglishAlternatives = this.Translation.EnglishAlternatives
 
-    override this.ToString() = Key.of_german this.Deutsch
+    member this.Key = Key.of_german this.Deutsch
 
 type VerbPerson =
     | FirstSingular
@@ -261,5 +277,6 @@ type Verb =
     member this.WithoutInflection(inflection: VerbInflection) =
         { this with Inflections = this.Inflections.Remove inflection }
 
-    override this.ToString() =
-        this.Tag.KeyPrefix + Key.of_german this.Deutsch
+    member this.KeyWithTag = this.Tag.KeyPrefix + Key.of_german this.Deutsch
+
+    override this.ToString() = this.Infinitive.ToString()
