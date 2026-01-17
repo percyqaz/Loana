@@ -85,10 +85,14 @@ type Wordlist(output: IOutput) =
         let ded_de = v.Key
         if deduplicate_de.ContainsKey(ded_de) then
             failwithf "'%O' conflicts (German) with '%O'" v deduplicate_de.[ded_de]
+        else
+            deduplicate_de.Add(ded_de, v)
 
         let ded_en = v.EnglishKey
         if deduplicate_en.ContainsKey(ded_en) then
             failwithf "'%O' conflicts (English) with '%O'" v deduplicate_en.[ded_en]
+        else
+            deduplicate_en.Add(ded_en, v)
 
         let item =
             if Char.IsUpper v.Deutsch.[0] && tags <> [] then
