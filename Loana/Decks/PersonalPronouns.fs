@@ -1,8 +1,7 @@
 ﻿namespace Loana.Decks
 
-open Loana
+open Loana.Language
 open Loana.Scheduler
-open Loana.Declension
 
 type PersonalPronounsCard(person: Person, case: Case, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit BasicGermanPracticeCard(

@@ -1,7 +1,7 @@
 namespace Loana.Scheduler
 
 open System
-open Loana
+open Loana.Interface
 
 [<AbstractClass>]
 type Card(key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =

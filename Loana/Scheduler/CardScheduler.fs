@@ -5,7 +5,7 @@ open System.Text
 open System.IO
 open System.Collections.Generic
 open Avalonia.Media
-open Loana
+open Loana.Interface
 
 [<RequireQualifiedAccess>]
 type CardEase =

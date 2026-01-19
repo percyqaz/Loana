@@ -2,10 +2,10 @@ using System.Linq;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Loana.Scheduler;
 using Loana.Interface;
+using Loana.Language;
+using Loana.Scheduler;
 using Loana.Decks;
-using Loana.Database;
 
 namespace Loana.GUI;
 

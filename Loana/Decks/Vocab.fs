@@ -1,9 +1,9 @@
 namespace Loana.Decks
 
 open Avalonia.Media
-open Loana
+open Loana.Interface
+open Loana.Language
 open Loana.Scheduler
-open Loana.Database
 
 type EnglishToGermanCard(front: AnnotationTree, back: AnnotationTree, vocab: Vocab, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card($"""vocab-recall-{vocab.Key}""", spacing_rule, scheduler)

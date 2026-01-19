@@ -1,7 +1,7 @@
-﻿namespace Loana.Database
+﻿namespace Loana.Language
 
 open System
-open Loana
+open Loana.Interface
 
 module Wordlist =
 

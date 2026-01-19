@@ -2,9 +2,9 @@
 
 open System
 open Avalonia.Media
-open Loana
-open Loana.Scheduler
 open Loana.Interface
+open Loana.Language
+open Loana.Scheduler
 
 type DeckFilter<'C> =
     { Label: string; Color: IBrush; Filter: 'C -> bool }
@@ -101,9 +101,9 @@ and DeckBuilderMenu<'C when 'C :> Card>(deck: Deck<'C>, scheduler: CardScheduler
 [<AutoOpen>]
 module internal ArticleConstants =
 
-    let SPOON = Database.Wordlist.parse_noun "Löffel = spoon :m plural Löffel = spoons"
-    let FORK = Database.Wordlist.parse_noun "Gabel = fork :f plural Gabeln = forks"
-    let KNIFE = Database.Wordlist.parse_noun "Messer = knife :n plural Messer = knives"
+    let SPOON = Wordlist.parse_noun "Löffel = spoon :m plural Löffel = spoons"
+    let FORK = Wordlist.parse_noun "Gabel = fork :f plural Gabeln = forks"
+    let KNIFE = Wordlist.parse_noun "Messer = knife :n plural Messer = knives"
     let NOUNS : Noun array =
         [|
             SPOON
@@ -114,7 +114,7 @@ module internal ArticleConstants =
             KNIFE.PluralForm.Value
         |]
 
-    let KLEIN : Adjective = { Translation = Database.Wordlist.parse_vocab "klein = small" }
+    let KLEIN : Adjective = { Translation = Wordlist.parse_vocab "klein = small" }
 
 type BasicGermanPracticeCard(front: AnnotationTree, back: AnnotationTree, key: string, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit Card(key, spacing_rule, scheduler)

@@ -1,7 +1,8 @@
-﻿namespace Loana
+﻿namespace Loana.Language
 
 open Avalonia
 open Avalonia.Media
+open Loana.Interface
 
 type AnnotationFragment =
     | Text of string

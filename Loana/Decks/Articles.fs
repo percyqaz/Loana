@@ -1,9 +1,8 @@
 ﻿namespace Loana.Decks
 
 open Avalonia.Media
-open Loana
+open Loana.Language
 open Loana.Scheduler
-open Loana.Declension
 
 type ArticlesCard(definite: bool, adjective: Adjective option, noun: Noun, case: Case, spacing_rule: CardSpacingRule, scheduler: CardScheduler) =
     inherit BasicGermanPracticeCard(

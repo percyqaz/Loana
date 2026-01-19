@@ -2,7 +2,6 @@
 
 open System
 open Avalonia.Media
-open Loana
 
 [<AbstractClass>]
 type Menu (output: IOutput) =

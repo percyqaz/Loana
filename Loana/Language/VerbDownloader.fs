@@ -1,9 +1,9 @@
-﻿namespace Loana.Database
+﻿namespace Loana.Language
 
 open System
 open System.Text.RegularExpressions
 open System.Net.Http
-open Loana
+open Loana.Interface
 
 module VerbDownloader =
 

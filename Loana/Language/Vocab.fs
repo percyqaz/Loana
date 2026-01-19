@@ -1,4 +1,4 @@
-﻿namespace Loana
+﻿namespace Loana.Language
 
 open System
 open System.Text.RegularExpressions

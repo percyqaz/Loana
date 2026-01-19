@@ -1,4 +1,4 @@
-namespace Loana
+namespace Loana.Interface
 
 open System.Runtime.CompilerServices
 open Avalonia.Media

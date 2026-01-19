@@ -1,10 +1,10 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using System;
 using System.Collections.Generic;
+using Loana.Interface;
 
 namespace Loana.GUI;
 

@@ -1,7 +1,6 @@
 namespace Loana.Scheduler
 
 open Avalonia.Media
-open Loana
 open Loana.Interface
 
 type private ReviewSessionState =

@@ -1,6 +1,4 @@
-﻿namespace Loana.Declension
-
-open Loana
+﻿namespace Loana.Language
 
 module Deutsch =
 

@@ -12,22 +12,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="IOutput.fs" />
-    <Compile Include="Vocab.fs" />
-    <Compile Include="Annotations.fs" />
+    <Compile Include="Interface\IOutput.fs" />
     <Compile Include="Interface\Menu.fs" />
-    <Compile Include="Database\Wordlist.fs" />
-    <Compile Include="Database\Verbs.fs" />
+    <Compile Include="Language\Vocab.fs" />
+    <Compile Include="Language\Annotations.fs" />
+    <Compile Include="Language\Declension\Deutsch.fs" />
+    <Compile Include="Language\Declension\English.fs" />
+    <Compile Include="Language\VerbDownloader.fs" />
+    <Compile Include="Language\Wordlist.fs" />
     <Compile Include="Scheduler\CardScheduler.fs" />
     <Compile Include="Scheduler\CardStack.fs" />
     <Compile Include="Scheduler\ReviewSession.fs" />
-    <Compile Include="Declension\Deutsch.fs" />
-    <Compile Include="Declension\English.fs" />
     <Compile Include="Decks\Shared.fs" />
     <Compile Include="Decks\PersonalPronouns.fs" />
     <Compile Include="Decks\PossessivePronouns.fs" />
     <Compile Include="Decks\Articles.fs" />
-    <Compile Include="decks\Vocab.fs" />
+    <Compile Include="Decks\Vocab.fs" />
   </ItemGroup>
 
   <ItemGroup>
