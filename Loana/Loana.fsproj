@@ -20,10 +20,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="GUI\index.html" />
-    <EmbeddedResource Include="GUI\style.css" />
-    <Compile Include="GUI\HtmlWindow.fs" />
-    <Compile Include="CLI\IOutput.fs" />
+    <Compile Include="CLI\Console.fs" />
+    <Compile Include="CLI\CliReviewSession.fs" />
     <Compile Include="CLI\Menu.fs" />
     <Compile Include="Language\Vocab.fs" />
     <Compile Include="Language\Annotations.fs" />
@@ -31,14 +29,18 @@
     <Compile Include="Language\Declension\English.fs" />
     <Compile Include="Language\VerbDownloader.fs" />
     <Compile Include="Language\Wordlist.fs" />
-    <Compile Include="Scheduler\CardScheduler.fs" />
-    <Compile Include="Scheduler\CardStack.fs" />
-    <Compile Include="Scheduler\ReviewSession.fs" />
-    <Compile Include="Decks\Shared.fs" />
-    <Compile Include="Decks\PersonalPronouns.fs" />
-    <Compile Include="Decks\PossessivePronouns.fs" />
-    <Compile Include="Decks\Articles.fs" />
-    <Compile Include="Decks\Vocab.fs" />
+    <Compile Include="Scheduler\ReviewSchedule.fs" />
+    <Folder Include="GUI\" />
+    <EmbeddedResource Include="GUI\index.html" />
+    <EmbeddedResource Include="GUI\style.css" />
+    <Compile Include="GUI\HtmlWindow.fs" />
+    <Compile Include="gui\GuiReviewSession.fs" />
+    <Compile Include="Features\Shared.fs" />
+    <Compile Include="Features\PersonalPronouns.fs" />
+    <Compile Include="Features\ReflexivePronouns.fs" />
+    <Compile Include="Features\PossessivePronouns.fs" />
+    <Compile Include="Features\Articles.fs" />
+    <Compile Include="features\Vocab.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,7 +52,6 @@
 
   <ItemGroup>
     <Compile Include="Program.fs" />
-    <Folder Include="GUI\" />
   </ItemGroup>
 
 </Project>

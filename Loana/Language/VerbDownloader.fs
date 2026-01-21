@@ -40,12 +40,12 @@ module VerbDownloader =
         Regex.Match(list, "<i class=\"particletxt\">(.*?)<\/i>").Groups.[1].Value +
         Regex.Match(list, "<i class=\"verbtxt\">(.*?)<\/i>").Groups.[1].Value
 
-    let extend_verb(verb: Verb, output: IOutput) : Verb =
-        output.WriteLine("Downloading HTML ...")
+    let extend_verb(verb: Verb) : Verb =
+        Console.WriteLine("Downloading HTML ...")
         let en_without_to = verb.Infinitive.English.Text.Substring(3)
         let de_html = download_de_verb_page(Key.of_german verb.Infinitive.Deutsch)
         let en_html = download_en_verb_page(en_without_to)
-        output.WriteLine("Parsing HTML ...")
+        Console.WriteLine("Parsing HTML ...")
         let de_present_tense = find_conjugation_list "Indikativ Präsens" de_html
         let en_present_tense = find_conjugation_list "Indicative Present" en_html
         let de_past_participle = find_participle "Partizip Perfekt" de_html

@@ -1,32 +1,26 @@
 ﻿open System
+open System.Drawing
 open Loana.CLI
 open Loana.Language
 open Loana.Scheduler
 open Loana.Decks
-open Loana.GUI
 
-let output =
-    { new IOutput with
-        member this.Button(text: string, _, _, _) = Console.Write text
-        member this.Write(text: string, _, _) = Console.Write text
-        member this.Clear() = Console.Clear()
-    }
-
-let wordlist = Wordlist(output)
+let wordlist = Wordlist()
 wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists")
-let scheduler = CardScheduler("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat", output)
-let decks =
-    [|
-        PersonalPronounsDeck() :> Deck
-        ArticlesDeck()
-        PossessivePronounsDeck()
-        VocabDeck(wordlist)
-    |]
-let menu_options = decks |> Array.map (fun d -> { Name = d.Name; Menu = Func<Menu>(fun () -> d.Menu(scheduler, output, output)) })
-let menu = SelectMenu(menu_options, output)
-//menu.Start() |> ignore
+let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")
 
-//while menu.Next(Console.ReadLine()) do ()
+Console.WriteLine("Loana startup successful! Press enter to begin", Color.Yellow)
+Console.ReadLine() |> ignore
+
+SelectMenu(
+    [|
+        { Name = "Articles"; Action = fun () -> ArticlesQuiz().Study() }
+        { Name = "Personal Pronouns"; Action = fun () -> PersonalPronounsQuiz().Study() }
+        { Name = "Possessive Pronouns"; Action = fun () -> PossessivePronounsQuiz().Study() }
+        { Name = "Reflexive Pronouns"; Action = fun () -> ReflexivePronounsQuiz().Study() }
+        { Name = "Vocab"; Action = fun () -> VocabDeck(scheduler, wordlist).Study() }
+    |]
+).Show()
 
 //let machen = { Infinitive = Vocab.Parse "machen = to make, to do"; Separable = false; Tag = VerbTag.Transitive; Inflections = Map.empty }
 //let essen = { Infinitive = Vocab.Parse "essen = to eat"; Separable = false; Tag = VerbTag.Transitive; Inflections = Map.empty }
@@ -37,14 +31,3 @@ let menu = SelectMenu(menu_options, output)
 //printfn "%A" (VerbDownloader.extend_verb(essen, output))
 //printfn "%A" (VerbDownloader.extend_verb(abwaschen, output))
 //printfn "%A" (VerbDownloader.extend_verb(sich_hinlegen, output))
-
-App.Run(fun () ->
-    let win = HtmlWindow()
-    win.SetCSS (HtmlWindow.GetResource("style.css"))
-    let base_html = HtmlWindow.GetResource("index.html")
-    let refresh() =
-        win.SetHtml (base_html.Replace("{{now}}", DateTime.UtcNow.ToString()))
-    refresh()
-    win.KeyDown.Add (fun k -> k.Key |> printfn "%A"; refresh())
-    win
-) |> ignore

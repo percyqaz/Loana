@@ -1,6 +1,7 @@
 ﻿namespace Loana.Language
 
 open System
+open System.Drawing
 open Loana.CLI
 
 module Wordlist =
@@ -70,9 +71,8 @@ type WordlistEntry =
     }
 
 open System.IO
-open Avalonia.Media
 
-type Wordlist(output: IOutput) =
+type Wordlist() =
 
     let entries = ResizeArray<WordlistEntry>()
 
@@ -108,28 +108,28 @@ type Wordlist(output: IOutput) =
 
     member this.ReadFile(path: string) =
         let filename = Path.GetFileNameWithoutExtension(path)
-        output.WriteLine(sprintf "Reading wordlist contents from '%s'" filename)
+        Console.WriteLine(sprintf "Reading wordlist contents from '%s'" filename)
         let mutable count = 0
         File.ReadAllLines(path)
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iter (fun line ->
             match this.TryAdd(filename, line) with
             | Ok() -> count <- count + 1
-            | Error reason -> output.WriteLine(reason, Brushes.Red)
+            | Error reason -> Console.WriteLine(reason, Color.Red)
         )
-        output.WriteLine(sprintf "Successfully read %i entries" count, Brushes.Green)
+        Console.WriteLine(sprintf "Successfully read %i entries" count, Color.Green)
 
     member this.ReadDirectory(path: string) =
         let meta_list = Path.Combine(path, "wordlists.meta")
-        output.WriteLine(sprintf "Reading wordlist meta from '%s'" meta_list)
+        Console.WriteLine(sprintf "Reading wordlist meta from '%s'" meta_list)
         let lines =
             try File.ReadAllLines(meta_list)
-            with err -> output.WriteLine(err.Message, Brushes.Red); [||]
+            with err -> Console.WriteLine(err.Message, Color.Red); [||]
         for source in lines do
             let path = Path.Combine(path, source + ".wordlist")
             if Path.Exists(path) then
                 this.ReadFile(path)
             else
-                output.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Brushes.Red)
+                Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Color.Red)
 
     member this.Entries = entries.AsReadOnly()

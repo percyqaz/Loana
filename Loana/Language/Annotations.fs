@@ -1,7 +1,6 @@
 ﻿namespace Loana.Language
 
-open Avalonia
-open Avalonia.Media
+open System.Drawing
 open Loana.CLI
 
 type AnnotationFragment =
@@ -31,26 +30,16 @@ module AnnotationTree =
         List.map flatten_fragment tree
         |> String.concat ""
 
-    //
-    let internal gradient (start: Color) (finish: Color) : IBrush =
-        let brush = LinearGradientBrush()
-        brush.StartPoint <- RelativePoint(0, 0, RelativeUnit.Relative)
-        brush.StartPoint <- RelativePoint(1, 0, RelativeUnit.Relative)
-        brush.GradientStops <- GradientStops()
-        brush.GradientStops.Add(GradientStop(start, 0.0))
-        brush.GradientStops.Add(GradientStop(finish, 1.0))
-        brush
-
     type internal ConsoleAnnotationFragment =
         {
             Text: string
             Start: int
             Finish: int
-            Color: IBrush
+            Color: Color
             Layer: int
         }
 
-    let internal render (annotations: AnnotationTree, output: IOutput) : unit =
+    let internal render (annotations: AnnotationTree) : unit =
         let frags = ResizeArray<ConsoleAnnotationFragment>()
 
         let mutable position = 0
@@ -60,7 +49,7 @@ module AnnotationTree =
                 let l =
                     match fragment with
                     | Text str ->
-                        frags.Add { Text = str; Start = position; Finish = position + str.Length; Color = Brushes.White; Layer = 0 }
+                        frags.Add { Text = str; Start = position; Finish = position + str.Length; Color = Color.White; Layer = 0 }
                         position <- position + str.Length
                         0
                     | Gender (gender, children) ->
@@ -92,7 +81,7 @@ module AnnotationTree =
                             Text = "S"
                             Start = start
                             Finish = position
-                            Color = Brushes.Red
+                            Color = Color.Red
                             Layer = layer
                         }
                         layer
@@ -103,7 +92,7 @@ module AnnotationTree =
                             Text = "W"
                             Start = start
                             Finish = position
-                            Color = Brushes.DarkCyan
+                            Color = Color.DarkCyan
                             Layer = layer
                         }
                         layer
@@ -114,7 +103,7 @@ module AnnotationTree =
                             Text = "D"
                             Start = start
                             Finish = position
-                            Color = Brushes.OrangeRed
+                            Color = Color.OrangeRed
                             Layer = layer
                         }
                         layer
@@ -125,7 +114,7 @@ module AnnotationTree =
                             Text = note
                             Start = start
                             Finish = position
-                            Color = Brushes.Gray
+                            Color = Color.Gray
                             Layer = layer
                         }
                         layer
@@ -137,9 +126,9 @@ module AnnotationTree =
         let render_line (line: ConsoleAnnotationFragment array) : unit =
             let mutable p = 0
             for frag in line do
-                output.Write(String.replicate (frag.Start - p) " ")
+                Console.Write(String.replicate (frag.Start - p) " ")
 
-                if frag.Layer = 0 then output.Write(frag.Text)
+                if frag.Layer = 0 then Console.Write(frag.Text)
                 else
                     let padded =
                         if frag.Text.Length <= (frag.Finish - frag.Start) then
@@ -148,7 +137,7 @@ module AnnotationTree =
                             String.replicate lpadding "-" + frag.Text + String.replicate rpadding "-"
                         else
                             frag.Text.Substring(0, frag.Finish - frag.Start)
-                    output.Write(padded, frag.Color)
+                    Console.Write(padded, frag.Color)
                 p <- frag.Finish
-            output.WriteLine("")
+            Console.WriteLine("")
         lines |> Array.iter render_line

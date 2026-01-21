@@ -1,8 +1,8 @@
 ﻿namespace Loana.Language
 
 open System
+open System.Drawing
 open System.Text.RegularExpressions
-open Avalonia.Media
 
 module Key =
 
@@ -34,12 +34,12 @@ type Gender =
         | Neuter -> "n"
         | Plural -> "p"
 
-    member this.Color : IBrush =
+    member this.Color : Color =
         match this with
-        | Masculine -> Brushes.Blue
-        | Neuter -> Brushes.Gray
-        | Feminine -> Brushes.Magenta
-        | Plural -> Brushes.Yellow
+        | Masculine -> Color.Blue
+        | Neuter -> Color.Gray
+        | Feminine -> Color.Magenta
+        | Plural -> Color.Yellow
 
     static member Parse(string: string) : Gender =
         match string with
@@ -63,12 +63,12 @@ type Case =
         | Dative -> "dat"
         | Genitive -> "gen"
 
-    member this.Color : IBrush =
+    member this.Color : Color =
         match this with
-        | Nominative -> Brushes.Green
-        | Accusative -> Brushes.Cyan
-        | Dative -> Brushes.DarkMagenta
-        | Genitive -> Brushes.Gold
+        | Nominative -> Color.Green
+        | Accusative -> Color.Cyan
+        | Dative -> Color.DarkMagenta
+        | Genitive -> Color.Gold
 
     static member LIST =
         [
@@ -244,13 +244,13 @@ type VerbTag =
         | Reflexive -> "reflexive"
         | Reciprocal -> "reciprocal"
 
-    member this.Color : IBrush =
+    member this.Color : Color =
         match this with
-        | None -> Brushes.LightGray
-        | Intransitive -> Brushes.AliceBlue
-        | Transitive -> Brushes.Lavender
-        | Reflexive -> Brushes.Gold
-        | Reciprocal -> Brushes.Lime
+        | None -> Color.LightGray
+        | Intransitive -> Color.AliceBlue
+        | Transitive -> Color.Lavender
+        | Reflexive -> Color.Gold
+        | Reciprocal -> Color.Lime
 
 type Verb =
     {
