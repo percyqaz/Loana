@@ -64,6 +64,19 @@ module English =
         | Person.Formal -> Annotation("Formal", [Text "your"])
         |> fun x -> [x]
 
+    let reflexive_pronoun (person: Person) (is_dative: bool) : AnnotationTree =
+        match person with
+        | Person.First false -> Text "myself"
+        | Person.First true -> Text "ourselves"
+        | Person.Second false -> Text "yourself"
+        | Person.Second true -> Gender(Gender.Plural, [Text "yourself"])
+        | Person.Third Gender.Masculine -> Text "himself"
+        | Person.Third Gender.Feminine -> Text "herself"
+        | Person.Third Gender.Neuter -> Text "itself"
+        | Person.Third Gender.Plural -> Text "themselves"
+        | Person.Formal -> Annotation("Formal", [Text "yourself"])
+        |> fun x -> [Case ((if is_dative then Case.Dative else Case.Accusative), [x])]
+
     let definite_fragment (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
         let genitive = if case.IsGenitive then "of " else ""
         match adjective with
