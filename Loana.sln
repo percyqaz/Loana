@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36717.8
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Loana", "Loana\Loana.fsproj", "{8A3CBDCD-40AD-4365-92EB-C0BF98417857}"
 EndProject
@@ -11,10 +11,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AnkiConnect.Tests", "AnkiCo
 	ProjectSection(ProjectDependencies) = postProject
 		{230ABE94-8135-428E-9D75-BF64E9D9D0CE} = {230ABE94-8135-428E-9D75-BF64E9D9D0CE}
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loana.GUI", "Loana.GUI\Loana.GUI.csproj", "{1587722D-B574-6A38-FA8B-B581AAA40431}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Loana.CLI", "Loana.CLI\Loana.CLI.fsproj", "{9300BC92-B071-4425-AAEC-7D0A267BBD35}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,14 +30,6 @@ Global
 		{CE7DE435-0A9B-4E9A-89CD-3AFBB155F828}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE7DE435-0A9B-4E9A-89CD-3AFBB155F828}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE7DE435-0A9B-4E9A-89CD-3AFBB155F828}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1587722D-B574-6A38-FA8B-B581AAA40431}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1587722D-B574-6A38-FA8B-B581AAA40431}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1587722D-B574-6A38-FA8B-B581AAA40431}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1587722D-B574-6A38-FA8B-B581AAA40431}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9300BC92-B071-4425-AAEC-7D0A267BBD35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9300BC92-B071-4425-AAEC-7D0A267BBD35}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9300BC92-B071-4425-AAEC-7D0A267BBD35}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9300BC92-B071-4425-AAEC-7D0A267BBD35}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

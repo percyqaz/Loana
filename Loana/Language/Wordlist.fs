@@ -1,7 +1,7 @@
 ﻿namespace Loana.Language
 
 open System
-open Loana.Interface
+open Loana.CLI
 
 module Wordlist =
 

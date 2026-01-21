@@ -1,4 +1,4 @@
-﻿namespace Loana.Interface
+﻿namespace Loana.CLI
 
 open System
 open Avalonia.Media

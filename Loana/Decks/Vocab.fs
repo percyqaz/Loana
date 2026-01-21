@@ -1,7 +1,7 @@
 namespace Loana.Decks
 
 open Avalonia.Media
-open Loana.Interface
+open Loana.CLI
 open Loana.Language
 open Loana.Scheduler
 

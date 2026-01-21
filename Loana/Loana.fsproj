@@ -1,19 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
+	<PublishTrimmed>True</PublishTrimmed>
+	<PublishAot>True</PublishAot>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>True</Optimize>
+    <Tailcalls>True</Tailcalls>
   </PropertyGroup>
 
   <PropertyGroup Label="Avalonia">
     <AvaloniaNameGeneratorIsEnabled>False</AvaloniaNameGeneratorIsEnabled>
     <EnableAvaloniaXamlCompilation>False</EnableAvaloniaXamlCompilation>
     <AvaloniaXamlReportImportance>High</AvaloniaXamlReportImportance>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Interface\IOutput.fs" />
-    <Compile Include="Interface\Menu.fs" />
+    <EmbeddedResource Include="GUI\index.html" />
+    <EmbeddedResource Include="GUI\style.css" />
+    <Compile Include="GUI\HtmlWindow.fs" />
+    <Compile Include="CLI\IOutput.fs" />
+    <Compile Include="CLI\Menu.fs" />
     <Compile Include="Language\Vocab.fs" />
     <Compile Include="Language\Annotations.fs" />
     <Compile Include="Language\Declension\Deutsch.fs" />
@@ -31,7 +42,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Headless" Version="11.3.10" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.11" />
+    <PackageReference Include="Avalonia.FuncUI" Version="1.5.2" />
+    <PackageReference Include="Avalonia.HtmlRenderer" Version="11.2.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+    <Folder Include="GUI\" />
   </ItemGroup>
 
 </Project>

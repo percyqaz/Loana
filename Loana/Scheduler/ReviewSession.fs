@@ -1,7 +1,7 @@
 namespace Loana.Scheduler
 
 open Avalonia.Media
-open Loana.Interface
+open Loana.CLI
 
 type private ReviewSessionState =
     | Start

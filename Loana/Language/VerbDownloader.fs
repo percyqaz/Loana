@@ -3,7 +3,7 @@
 open System
 open System.Text.RegularExpressions
 open System.Net.Http
-open Loana.Interface
+open Loana.CLI
 
 module VerbDownloader =
 

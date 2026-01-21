@@ -2,7 +2,7 @@
 
 open System
 open Avalonia.Media
-open Loana.Interface
+open Loana.CLI
 open Loana.Language
 open Loana.Scheduler
 

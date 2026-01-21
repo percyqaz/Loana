@@ -2,7 +2,7 @@
 
 open Avalonia
 open Avalonia.Media
-open Loana.Interface
+open Loana.CLI
 
 type AnnotationFragment =
     | Text of string
