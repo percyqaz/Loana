@@ -174,7 +174,9 @@ type ReviewSchedule(path: string) =
 
     member this.Schedule(key: string, data: ReviewData) =
         mem.[key] <- data
-        Console.WriteLine(sprintf "'%s' -> %O" key (DateTimeOffset.FromUnixTimeSeconds(data.NextReview)))
+        let minutes = data.Interval / TimeSpan.SecondsPerMinute
+        let interval = sprintf "%02id%02ih%02im" (minutes / TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
+        Console.WriteLine(sprintf "'%s' -> * %i [%i] %s" key data.Level data.Difficulty interval)
         db.Write(mem)
 
     member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : unit =

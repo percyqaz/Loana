@@ -16,6 +16,30 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             | None -> a.Text
         let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
         {
+            Key = $"vocab-recall-{v.Key}"
+            Front =
+                $"""
+                <div class="de-en">
+                <div class="de">{v.Deutsch}</div>
+                <div class="en">???</div>
+                </div>
+                """
+            Back =
+                $"""
+                <div class="de-en">
+                <div class="de">{v.Deutsch}</div>
+                <div class="en">{en_html}</div>
+                </div>
+                """
+        }
+
+    let en_to_de(v: Vocab) : GuiCard =
+        let annotation_html(a: Annotation) =
+            match a.Note with
+            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
+            | None -> a.Text
+        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+        {
             Key = $"vocab-recognise-{v.Key}"
             Front =
                 $"""
@@ -33,37 +57,13 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
                 """
         }
 
-    let en_to_de(v: Vocab) : GuiCard =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
-        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
-        {
-            Key = $"vocab-recognise-{v.Key}"
-            Front =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">{en_html}</div>
-                </div>
-                """
-        }
-
     let vocab_cards(v: Vocab) : GuiCard seq =
         seq {
             let tier_1 = de_to_en v
             yield tier_1
 
             match scheduler.Get tier_1.Key with
-            | ValueSome d when d.Level >= 3 ->
+            | ValueSome d when d.Level >= 2 ->
                 let tier_2 = en_to_de v
                 yield tier_2
             | _ -> ()
@@ -99,11 +99,13 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         |> Seq.sortByDescending snd
         |> Seq.map fst
 
-    member this.AheadReviewCards(cards: GuiCard seq) =
+    member this.AheadReviewCards(cards: GuiCard seq, now: int64) =
         cards
         |> Seq.choose (fun c ->
             match scheduler.Get c.Key with
-            | ValueSome data -> Some (c, data.NextReview)
+            | ValueSome data ->
+                let n = data.NextReview
+                if n > now then Some (c, n) else None
             | ValueNone -> None
         )
         |> Seq.sortBy snd
@@ -118,7 +120,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let review_ahead () =
-            let cards = this.AheadReviewCards(this.AllAvailableCards()) |> Seq.truncate 50 |> Array.ofSeq
+            let cards = this.AheadReviewCards(this.AllAvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let learn () =
@@ -134,7 +136,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             Console.WriteLine(sprintf " %i cards to learn " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
             let due = this.DueReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             Console.WriteLine(sprintf " %i cards due " (Seq.length due), Color.Green, Color.FromArgb(0x202020))
-            let ahead = this.AheadReviewCards(available)
+            let ahead = this.AheadReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             Console.WriteLine(sprintf " %i cards ok " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202020))
 
             match Console.ReadLine() with
