@@ -2,14 +2,17 @@ namespace Loana.Decks
 
 open System
 open System.Drawing
+open System.Runtime.CompilerServices
 open Loana.CLI
 open Loana.Language
 open Loana.Scheduler
 open Loana.GUI
 
-type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
+[<Extension>]
+type CardExtensions =
 
-    let de_to_en(v: Vocab) : GuiCard =
+    [<Extension>]
+    static member RecallEnToDe(v: Vocab) =
         let annotation_html(a: Annotation) =
             match a.Note with
             | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
@@ -17,30 +20,6 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
         {
             Key = $"vocab-recall-{v.Key}"
-            Front =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">{en_html}</div>
-                </div>
-                """
-        }
-
-    let en_to_de(v: Vocab) : GuiCard =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
-        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
-        {
-            Key = $"vocab-recognise-{v.Key}"
             Front =
                 $"""
                 <div class="en-de">
@@ -57,14 +36,41 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
                 """
         }
 
+    [<Extension>]
+    static member RecogniseDeToEn(v: Vocab) =
+        let annotation_html(a: Annotation) =
+            match a.Note with
+            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
+            | None -> a.Text
+        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+        {
+            Key = $"vocab-recognise-{v.Key}"
+            Front =
+                $"""
+                <div class="de-en">
+                <div class="de">{v.Deutsch}</div>
+                <div class="en">???</div>
+                </div>
+                """
+            Back =
+                $"""
+                <div class="de-en">
+                <div class="de">{v.Deutsch}</div>
+                <div class="en">{en_html}</div>
+                </div>
+                """
+        }
+
+type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
+
     let vocab_cards(v: Vocab) : GuiCard seq =
         seq {
-            let tier_1 = de_to_en v
+            let tier_1 = v.RecogniseDeToEn()
             yield tier_1
 
             match scheduler.Get tier_1.Key with
             | ValueSome d when d.Level >= 2 ->
-                let tier_2 = en_to_de v
+                let tier_2 = v.RecallEnToDe()
                 yield tier_2
             | _ -> ()
         }
@@ -129,6 +135,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
         let mutable loop = true
         while loop do
+            Console.Clear()
             Console.WriteLine("Vocab learner :)")
             let available = this.AllAvailableCards()
             Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
