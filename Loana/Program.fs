@@ -5,9 +5,9 @@ open Loana.Language
 open Loana.Scheduler
 open Loana.Decks
 
+let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")
 let wordlist = Wordlist()
 wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists")
-let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")
 
 Console.WriteLine("Loana startup successful! Press enter to begin", Color.Yellow)
 Console.ReadLine() |> ignore

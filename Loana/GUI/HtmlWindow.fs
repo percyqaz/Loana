@@ -1,36 +1,41 @@
 namespace Loana.GUI
 
+open System.Threading
+open System.Threading.Tasks
 open Avalonia
-open Avalonia.Controls.ApplicationLifetimes
 open Avalonia.Themes.Fluent
 open Avalonia.FuncUI.Hosts
 open Avalonia.FuncUI
 open Avalonia.FuncUI.DSL
 open Avalonia.Layout
+open Avalonia.Threading
 open TheArtOfDev.HtmlRenderer.Avalonia
 
 type App() =
     inherit Application()
 
-    static let mutable main_window_gen = Unchecked.defaultof<_>
+    static let mutable running = false
 
     override this.Initialize() =
         this.Styles.Add (FluentTheme())
         this.RequestedThemeVariant <- Styling.ThemeVariant.Dark
 
-    override this.OnFrameworkInitializationCompleted() =
-        match this.ApplicationLifetime with
-        | :? IClassicDesktopStyleApplicationLifetime as desktopLifetime ->
-            desktopLifetime.MainWindow <- main_window_gen()
-        | _ -> ()
+    static member StartThread() =
+        if running then () else
 
-    static member Run(constructor: unit -> HostWindow) =
-        main_window_gen <- constructor
-        AppBuilder
-            .Configure<App>()
-            .UsePlatformDetect()
-            .UseSkia()
-            .StartWithClassicDesktopLifetime([||])
+        running <- true
+        let thread =
+            Thread(ThreadStart(fun () ->
+                AppBuilder
+                    .Configure<App>()
+                    .UsePlatformDetect()
+                    .StartWithClassicDesktopLifetime([||], fun (lifetime: Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime) -> lifetime.ShutdownMode <- Controls.ShutdownMode.OnExplicitShutdown)
+                |> ignore
+            ))
+
+        thread.IsBackground <- true
+        thread.SetApartmentState(ApartmentState.STA)
+        thread.Start()
 
 type HtmlWindow() =
     inherit HostWindow()
@@ -72,3 +77,15 @@ type HtmlWindow() =
         use stream = System.Reflection.Assembly.GetAssembly(typeof<HtmlWindow>).GetManifestResourceStream(typeof<HtmlWindow>, key)
         use sr = new System.IO.StreamReader(stream)
         sr.ReadToEnd()
+
+    static member ShowUntilClosed(init: HtmlWindow -> HtmlWindow) =
+
+        let tcs = TaskCompletionSource()
+
+        Dispatcher.UIThread.Post(fun () ->
+            let w = init(HtmlWindow())
+            w.Closed.Add(fun _ -> tcs.SetResult())
+            w.Show()
+        )
+
+        tcs.Task.Wait()

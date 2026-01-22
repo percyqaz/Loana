@@ -111,17 +111,19 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
     member this.Study() =
 
+        App.StartThread()
+
         let review () =
             let cards = this.DueReviewCards(this.AllAvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
-            App.Run(fun () -> ReviewSession(cards, scheduler).Init(HtmlWindow())) |> ignore
+            HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let review_ahead () =
             let cards = this.AheadReviewCards(this.AllAvailableCards()) |> Seq.truncate 50 |> Array.ofSeq
-            App.Run(fun () -> ReviewSession(cards, scheduler).Init(HtmlWindow())) |> ignore
+            HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let learn () =
             let cards = this.LearningCards(this.AllAvailableCards()) |> Seq.truncate 20 |> Array.ofSeq
-            App.Run(fun () -> LearnSession(cards, scheduler).Init(HtmlWindow())) |> ignore
+            HtmlWindow.ShowUntilClosed(LearnSession(cards, scheduler).Init)
 
         let mutable loop = true
         while loop do
