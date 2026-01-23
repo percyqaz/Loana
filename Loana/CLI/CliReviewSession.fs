@@ -13,13 +13,14 @@ type CliCard =
 
 type CliReviewSession(cards: CliCard array) =
 
-    let cards = ResizeArray<CliCard>(cards)
+    let cards = ResizeArray<CliCard>(cards |> Seq.randomShuffle)
 
     member this.Start() =
         while cards.Count > 0 do
             let next = cards.[0]
             cards.RemoveAt(0)
 
+            Console.Clear()
             next.Front()
 
             if Console.ReadLine() <> next.Answer then

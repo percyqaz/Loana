@@ -35,11 +35,12 @@
     <EmbeddedResource Include="GUI\style.css" />
     <Compile Include="GUI\HtmlWindow.fs" />
     <Compile Include="gui\GuiReviewSession.fs" />
-    <Compile Include="Features\Shared.fs" />
-    <Compile Include="Features\PersonalPronouns.fs" />
-    <Compile Include="Features\ReflexivePronouns.fs" />
-    <Compile Include="Features\PossessivePronouns.fs" />
-    <Compile Include="Features\Articles.fs" />
+    <Compile Include="Features\Quizzes\Shared.fs" />
+    <Compile Include="Features\Quizzes\Articles.fs" />
+    <Compile Include="Features\Quizzes\PersonalPronouns.fs" />
+    <Compile Include="Features\Quizzes\ReflexivePronouns.fs" />
+    <Compile Include="Features\Quizzes\PossessivePronouns.fs" />
+    <Compile Include="Features\Quizzes.fs" />
     <Compile Include="features\Vocab.fs" />
   </ItemGroup>
 

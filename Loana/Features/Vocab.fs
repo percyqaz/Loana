@@ -1,4 +1,4 @@
-namespace Loana.Decks
+namespace Loana.Features
 
 open System
 open System.Drawing
@@ -61,6 +61,62 @@ type CardExtensions =
                 """
         }
 
+    [<Extension>]
+    static member ArticleRecallEnToDe(n: Noun) =
+        let annotation_html(a: Annotation) =
+            match a.Note with
+            | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
+            | None -> a.Text
+        let de_html =
+            let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
+            $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
+        let en_html = (n.English :: n.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+        {
+            Key = $"noun-recall-{n.KeyWithGender}"
+            Front =
+                $"""
+                <div class="en-de">
+                <div class="en">{en_html}</div>
+                <div class="de">???</div>
+                </div>
+                """
+            Back =
+                $"""
+                <div class="en-de">
+                <div class="en">{en_html}</div>
+                <div class="de">{de_html}</div>
+                </div>
+                """
+        }
+
+    [<Extension>]
+    static member ArticleRecogniseDeToEn(n: Noun) =
+        let annotation_html(a: Annotation) =
+            match a.Note with
+            | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
+            | None -> a.Text
+        let de_html =
+            let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
+            $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
+        let en_html = (n.English :: n.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+        {
+            Key = $"noun-recognise-{n.KeyWithGender}"
+            Front =
+                $"""
+                <div class="de-en">
+                <div class="de">{de_html}</div>
+                <div class="en">???</div>
+                </div>
+                """
+            Back =
+                $"""
+                <div class="de-en">
+                <div class="de">{de_html}</div>
+                <div class="en">{en_html}</div>
+                </div>
+                """
+        }
+
 type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
     let vocab_cards(v: Vocab) : GuiCard seq =
@@ -75,12 +131,49 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             | _ -> ()
         }
 
+    let noun_cards(n: Noun) : GuiCard seq =
+        seq {
+            let tier_2 = n.Translation.RecallEnToDe()
+            match scheduler.Get tier_2.Key with
+            | ValueSome d when d.Level >= 4 ->
+                let tier_3 = n.ArticleRecogniseDeToEn()
+                yield tier_3
+
+                match scheduler.Get tier_3.Key with
+                | ValueSome d when d.Level >= 2 ->
+                    let tier_4 = n.ArticleRecallEnToDe()
+                    yield tier_4
+                | _ -> ()
+            | _ ->
+                let tier_1 = n.Translation.RecogniseDeToEn()
+                yield tier_1
+
+                match scheduler.Get tier_1.Key with
+                | ValueSome d when d.Level >= 2 ->
+                    let tier_2 = n.Translation.RecallEnToDe()
+                    yield tier_2
+                | _ -> ()
+        }
+
+    member this.Chores() =
+        seq {
+            for word in wordlist.Entries do
+                match word.Item with
+                | Vocab v when Char.IsUpper(v.Deutsch.[0]) ->
+                    match v.RecallEnToDe().Key |> scheduler.Get with
+                    | ValueSome d when d.Level >= 4 ->
+                        yield sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source
+                    | _ -> ()
+                | _ -> ()
+                // nouns without plural
+        }
+
     member this.AllAvailableCards() =
         seq {
             for word in wordlist.Entries do
                 match word.Item with
                 | Vocab v -> yield! vocab_cards v
-                | Noun n -> yield! vocab_cards n.Translation // todo: plural forms, gender
+                | Noun n -> yield! noun_cards n
                 | Verb v -> yield! vocab_cards v.Infinitive
         }
         |> Seq.cache
@@ -117,6 +210,12 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         |> Seq.sortBy snd
         |> Seq.map fst
 
+    member this.Stats(cards: GuiCard seq) : (int * int) seq =
+        cards
+        |> Seq.choose (fun card -> scheduler.Get card.Key |> ValueOption.map _.Level |> ValueOption.toOption)
+        |> Seq.countBy id
+        |> Seq.sortBy fst
+
     member this.Study() =
 
         App.StartThread()
@@ -133,6 +232,31 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             let cards = this.LearningCards(this.AllAvailableCards()) |> Seq.truncate 20 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(LearnSession(cards, scheduler).Init)
 
+        let chores () =
+            Console.WriteLine(" Chores ", Color.White, Color.FromArgb(0x202020))
+            for chore in this.Chores() |> Seq.truncate 20 do
+                Console.WriteLine(chore, Color.Pink)
+            Console.ReadLine() |> ignore
+
+        let stats () =
+            let all_cards = this.AllAvailableCards()
+            Console.WriteLine(" All cards ", Color.White, Color.FromArgb(0x202020))
+            all_cards
+            |> this.Stats
+            |> Seq.iter (fun (level, count) ->
+                Console.WriteLine(sprintf "[%i] %i cards" level count, Color.LightGray)
+            )
+            Console.WriteLine(" Upcoming cards ", Color.White, Color.FromArgb(0x202020))
+            this.AheadReviewCards(all_cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.truncate 100
+            |> this.Stats
+            |> Seq.iter (fun (level, count) ->
+                Console.WriteLine(sprintf "[%i] %i cards" level count, Color.LightGray)
+            )
+            Console.ReadLine() |> ignore
+
+        // todo: study by level, study by wordlist
+
         let mutable loop = true
         while loop do
             Console.Clear()
@@ -140,15 +264,18 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             let available = this.AllAvailableCards()
             Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
             let learning = this.LearningCards(available)
-            Console.WriteLine(sprintf " %i cards to learn " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i cards to [learn] " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
             let due = this.DueReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-            Console.WriteLine(sprintf " %i cards due " (Seq.length due), Color.Green, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i cards to [review] " (Seq.length due), Color.Green, Color.FromArgb(0x202020))
             let ahead = this.AheadReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-            Console.WriteLine(sprintf " %i cards ok " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i cards [ahead] " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i [chores] " (Seq.length (this.Chores())), Color.Red, Color.FromArgb(0x202020))
 
             match Console.ReadLine() with
             | "review" -> review()
             | "ahead" -> review_ahead()
             | "learn" -> learn()
+            | "chores" -> chores()
+            | "stats" -> stats()
             | "back" -> loop <- false
             | _ -> ()

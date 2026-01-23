@@ -1,4 +1,4 @@
-﻿namespace Loana.Decks
+﻿namespace Loana.Features
 
 open System
 open System.Drawing
@@ -16,7 +16,7 @@ type ArticlesQuiz() =
 
         let mutable loop = true
         while loop do
-            Console.WriteLine(sprintf "Studying: Possessive Pronouns", Color.LimeGreen)
+            Console.WriteLine(sprintf "Studying: Articles", Color.LimeGreen)
             Console.WriteLine(String.concat ", " (cases |> Seq.map (sprintf "%A")), Color.LimeGreen)
             Console.WriteLine((if definite then "definite" else "") + " | " + (if indefinite then "indefinite" else ""), Color.LimeGreen)
             if adjective then

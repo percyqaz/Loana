@@ -1,4 +1,4 @@
-﻿namespace Loana.Decks
+﻿namespace Loana.Features
 
 open System
 open System.Drawing

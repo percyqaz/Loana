@@ -3,7 +3,7 @@ open System.Drawing
 open Loana.CLI
 open Loana.Language
 open Loana.Scheduler
-open Loana.Decks
+open Loana.Features
 
 let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")
 let wordlist = Wordlist()
@@ -14,11 +14,8 @@ Console.ReadLine() |> ignore
 
 SelectMenu(
     [|
-        { Name = "Articles"; Action = fun () -> ArticlesQuiz().Study() }
-        { Name = "Personal Pronouns"; Action = fun () -> PersonalPronounsQuiz().Study() }
-        { Name = "Possessive Pronouns"; Action = fun () -> PossessivePronounsQuiz().Study() }
-        { Name = "Reflexive Pronouns"; Action = fun () -> ReflexivePronounsQuiz().Study() }
         { Name = "Vocab"; Action = fun () -> VocabDeck(scheduler, wordlist).Study() }
+        { Name = "Quizzes"; Action = fun () -> QuizScheduler(scheduler).Study() }
     |]
 ).Show()
 

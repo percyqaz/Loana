@@ -108,16 +108,17 @@ type Wordlist() =
 
     member this.ReadFile(path: string) =
         let filename = Path.GetFileNameWithoutExtension(path)
-        Console.WriteLine(sprintf "Reading wordlist contents from '%s'" filename)
         let mutable count = 0
         File.ReadAllLines(path)
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iter (fun line ->
             match this.TryAdd(filename, line) with
             | Ok() -> count <- count + 1
-            | Error reason -> Console.WriteLine(reason, Color.Red)
+            | Error reason ->
+                Console.Write($" {filename}: ", Color.LightBlue, Color.FromArgb 0x202020)
+                Console.WriteLine(" " + reason, Color.Red)
         )
-        Console.WriteLine(sprintf "Successfully read %i entries" count, Color.Green)
+        Console.WriteLine(sprintf "Successfully read %i entries from '%s'" count filename, Color.LightGreen)
 
     member this.ReadDirectory(path: string) =
         let meta_list = Path.Combine(path, "wordlists.meta")

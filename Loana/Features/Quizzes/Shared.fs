@@ -1,4 +1,4 @@
-﻿namespace Loana.Decks
+﻿namespace Loana.Features
 
 open System.Drawing
 open Loana.CLI
@@ -29,7 +29,7 @@ type GermanPracticeCard =
             Front =
                 fun () ->
                     AnnotationTree.render(front)
-                    Console.Write(" -> German ", Color.LightGoldenrodYellow, Color.DarkRed)
+                    Console.WriteLine(" -> German ", Color.LightGoldenrodYellow, Color.DarkRed)
             Back =
                 fun () ->
                     AnnotationTree.render(back)

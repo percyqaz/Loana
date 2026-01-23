@@ -32,6 +32,7 @@ type SelectMenu(options: SelectMenuOption array) =
             let user_input = Console.ReadLine()
             match user_input with
             | "back" -> show <- false
+            | ""
             | "ok" ->
                 options.[selected].Action()
                 this.Draw()
