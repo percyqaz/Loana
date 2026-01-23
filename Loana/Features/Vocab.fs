@@ -239,6 +239,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             Console.ReadLine() |> ignore
 
         let stats () =
+            let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             let all_cards = this.AllAvailableCards()
             Console.WriteLine(" All cards ", Color.White, Color.FromArgb(0x202020))
             all_cards
@@ -246,13 +247,26 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             |> Seq.iter (fun (level, count) ->
                 Console.WriteLine(sprintf "[%i] %i cards" level count, Color.LightGray)
             )
-            Console.WriteLine(" Upcoming cards ", Color.White, Color.FromArgb(0x202020))
-            this.AheadReviewCards(all_cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            Console.WriteLine(" Next 100 cards ", Color.White, Color.FromArgb(0x202020))
+            this.AheadReviewCards(all_cards, now)
             |> Seq.truncate 100
             |> this.Stats
             |> Seq.iter (fun (level, count) ->
                 Console.WriteLine(sprintf "[%i] %i cards" level count, Color.LightGray)
             )
+            Console.WriteLine(" Upcoming workload ", Color.White, Color.FromArgb(0x202020))
+
+            let upcoming(label: string, days: int64) =
+                this.AheadReviewCards(all_cards, now)
+                |> Seq.takeWhile (fun c -> (scheduler.Get c.Key).Value.NextReview < now + TimeSpan.SecondsPerDay * days)
+                |> Seq.length
+                |> fun x -> Console.WriteLine(sprintf "%s: %i cards" label x, Color.LightGray)
+
+            upcoming("1d", 1L)
+            upcoming("2d", 2L)
+            upcoming("1w", 7L)
+            upcoming("2w", 14L)
+
             Console.ReadLine() |> ignore
 
         // todo: study by level, study by wordlist
