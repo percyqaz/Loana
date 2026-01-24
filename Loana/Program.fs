@@ -1,6 +1,4 @@
-﻿open System
-open System.Drawing
-open Loana.CLI
+﻿open Loana.CLI
 open Loana.Language
 open Loana.Scheduler
 open Loana.Features
@@ -8,9 +6,7 @@ open Loana.Features
 let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")
 let wordlist = Wordlist()
 wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists")
-
-Console.WriteLine("Loana startup successful! Press enter to begin", Color.Yellow)
-Console.ReadLine() |> ignore
+wordlist.Stats()
 
 SelectMenu(
     [|

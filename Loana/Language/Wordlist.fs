@@ -76,26 +76,31 @@ type Wordlist() =
 
     let entries = ResizeArray<WordlistEntry>()
 
-    let deduplicate_de = Collections.Generic.Dictionary<string, Vocab>()
-    let deduplicate_en = Collections.Generic.Dictionary<string, Vocab>()
+    let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string>()
+    let deduplicate_en = Collections.Generic.Dictionary<string, Vocab * string>()
 
     let add_dynamic (source: string) (line: string) : unit =
         let v, tags = Wordlist.parse_core line
 
         let ded_de = v.Key
         if deduplicate_de.ContainsKey(ded_de) then
-            failwithf "'%O' conflicts (German) with '%O'" v deduplicate_de.[ded_de]
+            let duplicate_of, d_source = deduplicate_de.[ded_de]
+            failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
         else
-            deduplicate_de.Add(ded_de, v)
+            deduplicate_de.Add(ded_de, (v, source))
 
         let ded_en = v.EnglishKey
         if deduplicate_en.ContainsKey(ded_en) then
-            failwithf "'%O' conflicts (English) with '%O'" v deduplicate_en.[ded_en]
+            let duplicate_of, d_source = deduplicate_en.[ded_en]
+            failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
         else
-            deduplicate_en.Add(ded_en, v)
+            deduplicate_en.Add(ded_en, (v, source))
 
         let item =
-            if Char.IsUpper v.Deutsch.[0] && tags <> [] then
+            if v.DetectVerb then
+                // todo: tag parsing on verbs or whatever to overhaul that
+                Verb { Infinitive = v; Tag = VerbTag.None; Inflections = Map.empty }
+            elif v.DetectNoun && tags <> [] then
                 Wordlist.parse_noun_inner(v, tags) |> Noun
             else
                 Vocab v
@@ -134,3 +139,24 @@ type Wordlist() =
                 Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Color.Red)
 
     member this.Entries = entries.AsReadOnly()
+
+    member this.Stats() =
+        let nouns = this.Entries |> Seq.choose (fun e -> match e.Item with Noun n -> Some n | _ -> None) |> Array.ofSeq
+        let missing_plural = nouns |> Seq.where (fun n -> match n.Guts with Plural -> false | Masculine x | Feminine x | Neuter x -> x.IsToBeDetermined) |> Array.ofSeq
+        Console.WriteLine(sprintf " %i Nouns + Gender " nouns.Length, Color.White, Color.FromArgb(0x202020))
+        for gender, count in nouns |> Seq.countBy _.Guts.Gender do
+            Console.Write($"[{gender}]", gender.Color)
+            Console.WriteLine(sprintf ": %i" count)
+        Console.WriteLine(sprintf "%i nouns are missing plurals" missing_plural.Length, Color.Yellow)
+
+        let verbs = this.Entries |> Seq.choose (fun e -> match e.Item with Verb v -> Some v | _ -> None) |> Array.ofSeq
+        let inflections = verbs |> Seq.map (fun v -> v.Inflections.Count) |> Seq.sum
+        Console.WriteLine(sprintf " %i Verbs " verbs.Length, Color.White, Color.FromArgb(0x202020))
+        Console.WriteLine(sprintf "+ %i inflections" inflections)
+
+        let other = this.Entries |> Seq.choose (fun e -> match e.Item with Vocab v -> Some v | _ -> None) |> Array.ofSeq
+        let could_be_nouns = other |> Seq.where(fun v -> v.DetectNoun)
+        Console.WriteLine(sprintf " %i Uncategorised " other.Length, Color.White, Color.FromArgb(0x202020))
+        Console.WriteLine(sprintf "%i potential nouns missing a gender" (Seq.length could_be_nouns), Color.Yellow)
+
+        Console.ReadLine() |> ignore

@@ -136,6 +136,9 @@ type Vocab =
     member this.Key = Key.of_german this.Deutsch
     member this.EnglishKey = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
 
+    member this.DetectVerb = this.English.Text.StartsWith("to ") && this.EnglishAlternatives |> List.forall (fun x -> x.Text.StartsWith("to "))
+    member this.DetectNoun = this.Deutsch.Length > 0 && Char.IsUpper(this.Deutsch.[0])
+
     static member Parse(s: string) =
         let split = s.Split("=", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
         if split.Length < 2 then failwithf "Parsing '%s' as vocab failed" s
@@ -256,7 +259,6 @@ type Verb =
     {
         Infinitive: Vocab
         Tag: VerbTag
-        Separable: bool
         Inflections: Map<VerbInflection, (string * string) option>
     }
 

@@ -66,7 +66,7 @@ type CardExtensions =
         let annotation_html(a: Annotation) =
             match a.Note with
             | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
+            | None -> $"""<span class="note">the </span>{a.Text}"""
         let de_html =
             let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
             $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
@@ -94,7 +94,7 @@ type CardExtensions =
         let annotation_html(a: Annotation) =
             match a.Note with
             | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
+            | None -> $"""<span class="note">the </span>{a.Text}"""
         let de_html =
             let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
             $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
@@ -159,7 +159,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         seq {
             for word in wordlist.Entries do
                 match word.Item with
-                | Vocab v when Char.IsUpper(v.Deutsch.[0]) ->
+                | Vocab v when v.DetectNoun ->
                     match v.RecallEnToDe().Key |> scheduler.Get with
                     | ValueSome d when d.Level >= 4 ->
                         yield sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source
