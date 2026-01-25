@@ -119,40 +119,38 @@ type CardExtensions =
 
 type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
+    let level_of (c: GuiCard) : int =
+        match scheduler.Get c.Key with
+        | ValueSome data -> data.Level
+        | ValueNone -> 0
+
     let vocab_cards(v: Vocab) : GuiCard seq =
         seq {
             let tier_1 = v.RecogniseDeToEn()
             yield tier_1
 
-            match scheduler.Get tier_1.Key with
-            | ValueSome d when d.Level >= 2 ->
-                let tier_2 = v.RecallEnToDe()
-                yield tier_2
-            | _ -> ()
+            if level_of tier_1 >= 2 then
+                yield v.RecallEnToDe()
         }
 
     let noun_cards(n: Noun) : GuiCard seq =
         seq {
+            let tier_1 = n.Translation.RecogniseDeToEn()
             let tier_2 = n.Translation.RecallEnToDe()
-            match scheduler.Get tier_2.Key with
-            | ValueSome d when d.Level >= 4 ->
-                let tier_3 = n.ArticleRecogniseDeToEn()
-                yield tier_3
+            let tier_3 = n.ArticleRecogniseDeToEn()
 
-                match scheduler.Get tier_3.Key with
-                | ValueSome d when d.Level >= 2 ->
-                    let tier_4 = n.ArticleRecallEnToDe()
-                    yield tier_4
-                | _ -> ()
-            | _ ->
-                let tier_1 = n.Translation.RecogniseDeToEn()
+            if level_of tier_1 < 2 then
                 yield tier_1
-
-                match scheduler.Get tier_1.Key with
-                | ValueSome d when d.Level >= 2 ->
-                    let tier_2 = n.Translation.RecallEnToDe()
-                    yield tier_2
-                | _ -> ()
+            elif level_of tier_2 < 4 then
+                yield tier_1
+                yield tier_2
+            elif level_of tier_3 < 2 then
+                yield tier_2
+                yield tier_3
+            else
+                yield tier_3
+                let tier_4 = n.ArticleRecallEnToDe()
+                yield tier_4
         }
 
     member this.Chores() =
@@ -168,15 +166,26 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
                 // nouns without plural
         }
 
-    member this.AllAvailableCards() =
+    member this.AvailableCards(sources: string list) =
         seq {
             for word in wordlist.Entries do
-                match word.Item with
-                | Vocab v -> yield! vocab_cards v
-                | Noun n -> yield! noun_cards n
-                | Verb v -> yield! vocab_cards v.Infinitive
+                if sources.IsEmpty || List.contains word.Source sources then
+                    match word.Item with
+                    | Vocab v -> yield! vocab_cards v
+                    | Noun n -> yield! noun_cards n
+                    | Verb v -> yield! vocab_cards v.Infinitive
         }
         |> Seq.cache
+
+    member this.AvailableCards() = this.AvailableCards([])
+
+    member this.FilterByLevel(cards: GuiCard seq, minlevel: int, maxlevel: int) =
+        cards
+        |> Seq.where (fun c ->
+            match scheduler.Get c.Key with
+            | ValueSome data -> data.Level >= minlevel && data.Level <= maxlevel
+            | ValueNone -> false
+        )
 
     member this.LearningCards(cards: GuiCard seq) =
         cards
@@ -221,15 +230,15 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         App.StartThread()
 
         let review () =
-            let cards = this.DueReviewCards(this.AllAvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+            let cards = this.DueReviewCards(this.AvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let review_ahead () =
-            let cards = this.AheadReviewCards(this.AllAvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+            let cards = this.AheadReviewCards(this.AvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let learn () =
-            let cards = this.LearningCards(this.AllAvailableCards()) |> Seq.truncate 20 |> Array.ofSeq
+            let cards = this.LearningCards(this.AvailableCards()) |> Seq.truncate 20 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(LearnSession(cards, scheduler).Init)
 
         let chores () =
@@ -240,7 +249,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
         let stats () =
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-            let all_cards = this.AllAvailableCards()
+            let all_cards = this.AvailableCards()
             Console.WriteLine(" All cards ", Color.White, Color.FromArgb(0x202020))
             all_cards
             |> this.Stats
@@ -275,7 +284,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         while loop do
             Console.Clear()
             Console.WriteLine("Vocab learner :)")
-            let available = this.AllAvailableCards()
+            let available = this.AvailableCards()
             Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
             let learning = this.LearningCards(available)
             Console.WriteLine(sprintf " %i cards to [learn] " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))

@@ -53,6 +53,17 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(1, difficulty, 10L)
         }
 
+    static member SeedAtLevel(now: int64, level: int) : ReviewData =
+        let level = level |> max 1 |> min 8
+        let interval = ReviewData.GetNextInterval(level, 5, 10L)
+        {
+            Reviews = 0
+            Level = level
+            Difficulty = 5
+            LastReviewed = now - int64 (Random().Next(int interval))
+            Interval = interval
+        }
+
     member this.NextReview = this.LastReviewed + this.Interval
 
     member this.DueLevel(now: int64) =

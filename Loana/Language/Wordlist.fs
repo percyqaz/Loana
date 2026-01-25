@@ -141,6 +141,7 @@ type Wordlist() =
     member this.Entries = entries.AsReadOnly()
 
     member this.Stats() =
+        Console.WriteLine(sprintf " %i Entries " this.Entries.Count, Color.LightGreen, Color.FromArgb(0x202020))
         let nouns = this.Entries |> Seq.choose (fun e -> match e.Item with Noun n -> Some n | _ -> None) |> Array.ofSeq
         let missing_plural = nouns |> Seq.where (fun n -> match n.Guts with Plural -> false | Masculine x | Feminine x | Neuter x -> x.IsToBeDetermined) |> Array.ofSeq
         Console.WriteLine(sprintf " %i Nouns + Gender " nouns.Length, Color.White, Color.FromArgb(0x202020))
