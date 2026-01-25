@@ -219,65 +219,10 @@ type VerbPerson =
         | Person.Second true -> SecondPlural
         | Person.Third _ -> ThirdSingular
 
-type VerbInflection =
-    | Present of VerbPerson
-    | SimplePast of VerbPerson
-    | PastParticiple
-    | Imperative
-
-[<RequireQualifiedAccess>]
-type VerbTag =
-    | None
-    | Intransitive
-    | Transitive
-    | Reflexive
-    | Reciprocal
-
-    member this.KeyPrefix =
-        match this with
-        | Reflexive -> "rf_"
-        | Reciprocal -> "rp_"
-        | _ -> ""
-
-    override this.ToString() =
-        match this with
-        | None -> "--"
-        | Intransitive -> "intransitive"
-        | Transitive -> "transitive"
-        | Reflexive -> "reflexive"
-        | Reciprocal -> "reciprocal"
-
-    member this.Color : Color =
-        match this with
-        | None -> Color.LightGray
-        | Intransitive -> Color.AliceBlue
-        | Transitive -> Color.Lavender
-        | Reflexive -> Color.Gold
-        | Reciprocal -> Color.Lime
-
 type Verb =
     {
         Infinitive: Vocab
-        Tag: VerbTag
-        Inflections: Map<VerbInflection, (string * string) option>
+        Inflections: Vocab list
     }
-
-    member this.Deutsch = this.Infinitive.Deutsch
-    member this.English = this.Infinitive.English
-    member this.EnglishAlternatives = this.Infinitive.EnglishAlternatives
-
-    member this.Inflection(inflection: VerbInflection) =
-        match Map.tryFind inflection this.Inflections with
-        | Some (None) -> Nothing
-        | Some (Some (de, en)) -> Something {| Deutsch = de; English = en |}
-        | None -> ToBeDetermined
-
-    member this.WithInflection(inflection: VerbInflection, de: string, en: string) =
-        { this with Inflections = this.Inflections.Add(inflection, Some (de, en)) }
-
-    member this.WithoutInflection(inflection: VerbInflection) =
-        { this with Inflections = this.Inflections.Remove inflection }
-
-    member this.KeyWithTag = this.Tag.KeyPrefix + Key.of_german this.Deutsch
-
+    member this.WithInflection(vocab: Vocab) = { this with Inflections = this.Inflections @ [vocab] }
     override this.ToString() = this.Infinitive.ToString()

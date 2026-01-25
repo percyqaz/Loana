@@ -79,6 +79,8 @@ type Wordlist() =
     let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string>()
     let deduplicate_en = Collections.Generic.Dictionary<string, Vocab * string>()
 
+    let mutable current_verb = None
+
     let add_dynamic (source: string) (line: string) : unit =
         let v, tags = Wordlist.parse_core line
 
@@ -98,8 +100,7 @@ type Wordlist() =
 
         let item =
             if v.DetectVerb then
-                // todo: tag parsing on verbs or whatever to overhaul that
-                Verb { Infinitive = v; Tag = VerbTag.None; Inflections = Map.empty }
+                Verb { Infinitive = v; Inflections = [] }
             elif v.DetectNoun && tags <> [] then
                 Wordlist.parse_noun_inner(v, tags) |> Noun
             else
@@ -151,7 +152,7 @@ type Wordlist() =
         Console.WriteLine(sprintf "%i nouns are missing plurals" missing_plural.Length, Color.Yellow)
 
         let verbs = this.Entries |> Seq.choose (fun e -> match e.Item with Verb v -> Some v | _ -> None) |> Array.ofSeq
-        let inflections = verbs |> Seq.map (fun v -> v.Inflections.Count) |> Seq.sum
+        let inflections = verbs |> Seq.map (fun v -> v.Inflections.Length) |> Seq.sum
         Console.WriteLine(sprintf " %i Verbs " verbs.Length, Color.White, Color.FromArgb(0x202020))
         Console.WriteLine(sprintf "+ %i inflections" inflections)
 
