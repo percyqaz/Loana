@@ -38,7 +38,8 @@ module VerbDownloader =
         let list = Regex.Match(html, sprintf "<div class=\"blue-box-wrap.*?\" mobile-title=\"%s\\s*\">(.*?)<\/div>" title).Groups.[1].Value
 
         Regex.Match(list, "<i class=\"particletxt\">(.*?)<\/i>").Groups.[1].Value +
-        Regex.Match(list, "<i class=\"verbtxt\">(.*?)<\/i>").Groups.[1].Value
+        Regex.Match(list, "<i class=\"verbtxt\">(.*?)<\/i>").Groups.[1].Value +
+        Regex.Match(list, "<i class=\"auxgraytxt\">(.*?)<\/i>").Groups.[1].Value
 
     let extend_verb(verb: Verb) : Verb =
         Console.WriteLine("Downloading HTML ...")
@@ -63,12 +64,13 @@ module VerbDownloader =
         let en_html = download_en_verb_page(en_without_to)
         Console.WriteLine("Parsing HTML ...")
         let de_present_tense = find_conjugation_list "Indikativ Präsens" de_html
+        let de_past_tense = find_conjugation_list "Indikativ Präteritum" de_html
         let en_present_tense = find_conjugation_list "Indicative Present" en_html
+        let en_past_tense = find_conjugation_list "Indicative Preterite" en_html
         let de_past_participle = find_participle "Partizip Perfekt" de_html
+        let de_past_participle_aux = find_participle "Infinitiv Perfekt" de_html
         let en_past_participle = find_participle "Participle Past" en_html
         let en_infinitive = (find_participle "Infinitive" en_html).Replace("to ", "").Trim()
-
-        printfn "%A %A %A" sich separation verb_base
 
         let de (m: Map<string, string>) (person: Person) =
             let key =
@@ -83,17 +85,23 @@ module VerbDownloader =
             + (if sich then " " + AnnotationTree.flatten_tree(Deutsch.reflexive_pronoun person false) else "") // ideally verbs could specify if they are dative verbs
             + (match separation with Some s -> " " + s | None -> "")
 
-        printfn "%A" de_present_tense
-        printfn "%A" en_present_tense
+        let en (m: Map<string, string>) (person: Person) =
+            let key =
+                match VerbPerson.OfPerson person with
+                | FirstSingular -> "I"
+                | FirstThirdPluralFormal -> "we"
+                | ThirdSingular -> "he/she/it"
+                | SecondSingular -> "you"
+                | SecondPlural -> "you"
+            AnnotationTree.flatten_tree(English.personal_pronoun person Case.Nominative)
+            + " " + en_without_to.Replace(en_infinitive, m.[key])
+            + (match person with Person.Second true -> " [plural]" | Person.Formal -> " [formal]" | _ -> "")
+
+        let present person = { Deutsch = de de_present_tense person; English = Annotation.Parse (en en_present_tense person); EnglishAlternatives = [] }
+        let past person = { Deutsch = de de_past_tense person; English = Annotation.Parse (en en_past_tense person); EnglishAlternatives = [] }
 
         verb
-            .WithInflection({ Deutsch = de de_present_tense (Person.First false); English = Annotation.Parse $"""I {en_without_to.Replace(en_infinitive, en_present_tense.["I"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.Second false); English = Annotation.Parse $"""you {en_without_to.Replace(en_infinitive, en_present_tense.["you"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.Third Gender.Masculine); English = Annotation.Parse $"""he {en_without_to.Replace(en_infinitive, en_present_tense.["he/she/it"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.Third Gender.Feminine); English = Annotation.Parse $"""she {en_without_to.Replace(en_infinitive, en_present_tense.["he/she/it"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.Third Gender.Neuter); English = Annotation.Parse $"""it {en_without_to.Replace(en_infinitive, en_present_tense.["he/she/it"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.First true); English = Annotation.Parse $"""we {en_without_to.Replace(en_infinitive, en_present_tense.["we"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.Second true); English = Annotation.Parse $"""you {en_without_to.Replace(en_infinitive, en_present_tense.["you"])} [plural]"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense (Person.Third Gender.Plural); English = Annotation.Parse $"""they {en_without_to.Replace(en_infinitive, en_present_tense.["they"])}"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = de de_present_tense Person.Formal; English = Annotation.Parse $"""you {en_without_to.Replace(en_infinitive, en_present_tense.["you"])} [formal]"""; EnglishAlternatives = [] })
-            .WithInflection({ Deutsch = (Option.defaultValue "" separation) + de_past_participle; English = Annotation.Parse (en_without_to.Replace(en_infinitive, en_past_participle)); EnglishAlternatives = [] })
+        |> List.foldBack (fun p v -> v.WithInflection(present p)) (List.rev Person.LIST)
+        |> List.foldBack (fun p v -> v.WithInflection(past p)) (List.rev Person.LIST)
+        |> fun v -> v.WithInflection({ Deutsch = (Option.defaultValue "" separation) + de_past_participle; English = Annotation.Parse (en_without_to.Replace(en_infinitive, en_past_participle)); EnglishAlternatives = [] })
+        |> fun v -> v.WithInflection({ Deutsch = (Option.defaultValue "" separation) + de_past_participle_aux; English = Annotation.Parse ("to have " + en_without_to.Replace(en_infinitive, en_past_participle)); EnglishAlternatives = [] })

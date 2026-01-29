@@ -13,6 +13,7 @@ SelectMenu(
     [|
         { Name = "Vocab"; Action = fun () -> vocab_deck.Study() }
         { Name = "Quizzes"; Action = fun () -> QuizScheduler(scheduler).Study() }
+        { Name = "Add Verbs"; Action = fun () -> Verbs.AddVerbs() }
     |]
 ).Show()
 
@@ -23,15 +24,3 @@ SelectMenu(
 //        scheduler.Schedule(card.Key, ReviewData.SeedAtLevel(now, 5))
 //        c <- c + 1
 //Console.WriteLine(sprintf "Seeded in %i existing cards at level 5" c, System.Drawing.Color.LightGreen)
-
-//{ Infinitive = Vocab.Parse "machen = to make, to do"; Inflections = [] }
-//|> VerbDownloader.extend_verb
-//|> printfn "%A"
-
-//{ Infinitive = Vocab.Parse "ab.waschen = to wash up"; Inflections = [] }
-//|> VerbDownloader.extend_verb
-//|> printfn "%A"
-
-//{ Infinitive = Vocab.Parse "sich hin.legen = to lie down"; Inflections = [] }
-//|> VerbDownloader.extend_verb
-//|> printfn "%A"

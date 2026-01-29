@@ -41,7 +41,8 @@
     <Compile Include="Features\Quizzes\ReflexivePronouns.fs" />
     <Compile Include="Features\Quizzes\PossessivePronouns.fs" />
     <Compile Include="Features\Quizzes.fs" />
-    <Compile Include="features\Vocab.fs" />
+    <Compile Include="Features\Vocab.fs" />
+    <Compile Include="Features\Verbs.fs" />
   </ItemGroup>
 
   <ItemGroup>

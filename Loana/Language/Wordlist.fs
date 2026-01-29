@@ -81,8 +81,12 @@ type Wordlist() =
 
     let mutable current_verb = None
 
-    let add_dynamic (source: string) (line: string) : unit =
-        let v, tags = Wordlist.parse_core line
+    let finish_verb(source: string) =
+        match current_verb with
+        | Some v -> entries.Add { Item = Verb v; Source = source }; current_verb <- None
+        | None -> ()
+
+    let check_duplicate (source: string) (v: Vocab) : unit =
 
         let ded_de = v.Key
         if deduplicate_de.ContainsKey(ded_de) then
@@ -98,15 +102,36 @@ type Wordlist() =
         else
             deduplicate_en.Add(ded_en, (v, source))
 
-        let item =
-            if v.DetectVerb then
-                Verb { Infinitive = v; Inflections = [] }
-            elif v.DetectNoun && tags <> [] then
-                Wordlist.parse_noun_inner(v, tags) |> Noun
-            else
-                Vocab v
+    let add_vocab (source: string) (line: string) : unit =
+        finish_verb source
+        let v, tags = Wordlist.parse_core line
 
-        entries.Add { Item = item; Source = source }
+        check_duplicate source v
+
+        if v.DetectVerb then
+            current_verb <- Some { Infinitive = v; Inflections = [] }
+        elif v.DetectNoun && tags <> [] then
+            entries.Add { Item = Wordlist.parse_noun_inner(v, tags) |> Noun; Source = source }
+        else
+            entries.Add { Item = Vocab v; Source = source }
+
+    let add_inflection (source: string) (line: string) : unit =
+        let v, _ = Wordlist.parse_core line
+
+        check_duplicate source v
+
+        match current_verb with
+        | Some verb ->
+            current_verb <- Some (verb.WithInflection(v))
+        | None -> failwithf "Verb inflection not attached to a verb: %s" line
+
+    let add_dynamic (source: string) (line: string) : unit =
+        if line = "" || line.StartsWith "#" then
+            () // reserved for comments for now
+        elif line.[0] = ' ' then
+            add_inflection source line
+        else
+            add_vocab source line
 
     member this.TryAdd(source: string, line: string) : Result<unit, string> =
         try add_dynamic source line; Ok()
@@ -124,6 +149,7 @@ type Wordlist() =
                 Console.Write($" {filename}: ", Color.LightBlue, Color.FromArgb 0x202020)
                 Console.WriteLine(" " + reason, Color.Red)
         )
+        finish_verb filename
         Console.WriteLine(sprintf "Successfully read %i entries from '%s'" count filename, Color.LightGreen)
 
     member this.ReadDirectory(path: string) =
