@@ -276,6 +276,13 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             upcoming("1w", 7L)
             upcoming("2w", 14L)
 
+            for wl in wordlist.Sources do
+                Console.Write($" {wl} ", Color.LightGreen, Color.FromArgb(0x202020))
+                let available = this.AvailableCards([wl])
+                Console.Write(sprintf " %i available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
+                let learning = this.LearningCards(available)
+                Console.WriteLine(sprintf " %i to learn" (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
+
             Console.ReadLine() |> ignore
 
         // todo: study by level, study by wordlist

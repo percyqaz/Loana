@@ -74,6 +74,7 @@ open System.IO
 
 type Wordlist() =
 
+    let sources = ResizeArray<string>()
     let entries = ResizeArray<WordlistEntry>()
 
     let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string>()
@@ -139,6 +140,7 @@ type Wordlist() =
 
     member this.ReadFile(path: string) =
         let filename = Path.GetFileNameWithoutExtension(path)
+        sources.Add(filename)
         let mutable count = 0
         File.ReadAllLines(path)
         |> Seq.where (fun line -> line.Trim() <> "")
@@ -166,6 +168,8 @@ type Wordlist() =
                 Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Color.Red)
 
     member this.Entries = entries.AsReadOnly()
+
+    member this.Sources = sources.AsReadOnly()
 
     member this.Stats() =
         Console.WriteLine(sprintf " %i Entries " this.Entries.Count, Color.LightGreen, Color.FromArgb(0x202020))
