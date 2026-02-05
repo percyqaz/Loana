@@ -1,4 +1,4 @@
-namespace Loana.Scheduler
+namespace Loana.Study
 
 open System
 open System.Text

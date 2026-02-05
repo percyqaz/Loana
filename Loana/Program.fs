@@ -1,6 +1,6 @@
 ﻿open Loana.CLI
 open Loana.Language
-open Loana.Scheduler
+open Loana.Study
 open Loana.Features
 
 let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")

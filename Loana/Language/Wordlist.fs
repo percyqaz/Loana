@@ -168,7 +168,6 @@ type Wordlist() =
                 Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Color.Red)
 
     member this.Entries = entries.AsReadOnly()
-
     member this.Sources = sources.AsReadOnly()
 
     member this.Stats() =

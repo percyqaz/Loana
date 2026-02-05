@@ -3,7 +3,7 @@
 open System
 open System.Drawing
 open Loana.CLI
-open Loana.Scheduler
+open Loana.Study
 
 type Quiz =
     {

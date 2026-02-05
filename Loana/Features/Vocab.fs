@@ -2,182 +2,103 @@ namespace Loana.Features
 
 open System
 open System.Drawing
-open System.Runtime.CompilerServices
 open Loana.CLI
 open Loana.Language
-open Loana.Scheduler
+open Loana.Study
 open Loana.GUI
 
-[<Extension>]
-type CardExtensions =
-
-    [<Extension>]
-    static member RecallEnToDe(v: Vocab) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
-        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
-        {
-            Key = $"vocab-recall-{v.Key}"
-            Front =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">{v.Deutsch}</div>
-                </div>
-                """
-        }
-
-    [<Extension>]
-    static member RecogniseDeToEn(v: Vocab) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
-        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
-        {
-            Key = $"vocab-recognise-{v.Key}"
-            Front =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">{en_html}</div>
-                </div>
-                """
-        }
-
-    [<Extension>]
-    static member ArticleRecallEnToDe(n: Noun) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
-            | None -> $"""<span class="note">the </span>{a.Text}"""
-        let de_html =
-            let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
-            $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
-        let en_html = (n.English :: n.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
-        {
-            Key = $"noun-recall-{n.KeyWithGender}"
-            Front =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">{de_html}</div>
-                </div>
-                """
-        }
-
-    [<Extension>]
-    static member ArticleRecogniseDeToEn(n: Noun) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
-            | None -> $"""<span class="note">the </span>{a.Text}"""
-        let de_html =
-            let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
-            $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
-        let en_html = (n.English :: n.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
-        {
-            Key = $"noun-recognise-{n.KeyWithGender}"
-            Front =
-                $"""
-                <div class="de-en">
-                <div class="de">{de_html}</div>
-                <div class="en">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="de-en">
-                <div class="de">{de_html}</div>
-                <div class="en">{en_html}</div>
-                </div>
-                """
-        }
+type Chore =
+    { Message: string; Urgent: bool }
+    static member urgent message = { Message = message; Urgent = true }
+    static member non_urgent message = { Message = message; Urgent = false }
 
 type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
-    let level_of (c: GuiCard) : int =
-        match scheduler.Get c.Key with
+    member this.Scheduler = scheduler
+
+    member inline this.LevelOf<^T when ^T : (member Key: string)>(c: ^T) : int =
+        match this.Scheduler.Get c.Key with
         | ValueSome data -> data.Level
         | ValueNone -> 0
 
-    let vocab_cards(v: Vocab) : GuiCard seq =
+    member private this.AvailableCards(v: Vocab) : GuiCard seq =
         seq {
-            let tier_1 = v.RecogniseDeToEn()
+            let tier_1 = VocabCard.C_Tier1_RecogniseDE(v)
             yield tier_1
 
-            if level_of tier_1 >= 2 then
-                yield v.RecallEnToDe()
+            if this.LevelOf tier_1 >= 2 then
+                yield VocabCard.C_Tier2_RecallDE(v)
         }
 
-    let noun_cards(n: Noun) : GuiCard seq =
+    member private this.AvailableCards(n: Noun) : GuiCard seq =
         seq {
-            let tier_1 = n.Translation.RecogniseDeToEn()
-            let tier_2 = n.Translation.RecallEnToDe()
-            let tier_3 = n.ArticleRecogniseDeToEn()
+            let tier_1 = VocabCard.C_Tier1_RecogniseDE(n.Translation)
+            let tier_2 = VocabCard.C_Tier2_RecallDE(n.Translation)
+            let tier_3 = VocabCard.C_Tier3_RecogniseArticleDE(n)
 
-            if level_of tier_1 < 2 then
+            if this.LevelOf tier_1 < 2 then
                 yield tier_1
-            elif level_of tier_2 < 4 then
+            elif this.LevelOf tier_2 < 4 then
                 yield tier_1
                 yield tier_2
-            elif level_of tier_3 < 2 then
+            elif this.LevelOf tier_3 < 2 then
                 yield tier_2
                 yield tier_3
             else
                 yield tier_3
-                let tier_4 = n.ArticleRecallEnToDe()
+                let tier_4 = VocabCard.C_Tier4_RecallArticleDE(n)
                 yield tier_4
         }
 
-    member this.Chores() =
-        seq {
-            for word in wordlist.Entries do
-                match word.Item with
-                | Vocab v when v.DetectNoun ->
-                    match v.RecallEnToDe().Key |> scheduler.Get with
-                    | ValueSome d when d.Level >= 4 ->
-                        yield sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source
-                    | _ -> ()
-                | _ -> ()
-                // nouns without plural
-        }
+    member private this.AvailableCards(word: WordlistItem): GuiCard seq =
+        match word with
+        | Vocab v -> this.AvailableCards v
+        | Noun n -> this.AvailableCards n
+        | Verb v -> this.AvailableCards v.Infinitive
 
-    member this.AvailableCards(sources: string list) =
+    member this.AvailableCards(sources: string list) : GuiCard seq =
         seq {
             for word in wordlist.Entries do
                 if sources.IsEmpty || List.contains word.Source sources then
-                    match word.Item with
-                    | Vocab v -> yield! vocab_cards v
-                    | Noun n -> yield! noun_cards n
-                    | Verb v -> yield! vocab_cards v.Infinitive
+                    yield! this.AvailableCards(word.Item)
         }
         |> Seq.cache
 
     member this.AvailableCards() = this.AvailableCards([])
+
+    member private this.PossibleCards(v: Vocab) : CardMeta seq =
+        seq {
+            yield VocabCard.M_Tier1_RecogniseDE(v)
+            yield VocabCard.M_Tier2_RecallDE(v)
+        }
+
+    member private this.PossibleCards(n: Noun) : CardMeta seq =
+        seq {
+            yield VocabCard.M_Tier1_RecogniseDE(n.Translation)
+            yield VocabCard.M_Tier2_RecallDE(n.Translation)
+            yield VocabCard.M_Tier3_RecogniseArticleDE(n)
+            yield VocabCard.M_Tier4_RecallArticleDE(n)
+        }
+
+    member private this.PossibleCards(word: WordlistItem) : CardMeta seq =
+        match word with
+        | Vocab v -> this.PossibleCards v
+        | Noun n -> this.PossibleCards n
+        | Verb v -> this.PossibleCards v.Infinitive
+
+    member this.PossibleCards(sources: string list) : CardMeta seq =
+        seq {
+            for word in wordlist.Entries do
+                if sources.IsEmpty || List.contains word.Source sources then
+                    yield! this.PossibleCards(word.Item)
+        }
+        |> Seq.cache
+
+    member this.PossibleCards() = this.PossibleCards([])
+
+    member this.FilterByTier(cards: GuiCard seq, min_tier: int, max_tier: int) =
+        cards
+        |> Seq.where (fun c -> c.Meta.Tier >= min_tier && c.Meta.Tier <= max_tier)
 
     member this.FilterByLevel(cards: GuiCard seq, minlevel: int, maxlevel: int) =
         cards
@@ -187,18 +108,32 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             | ValueNone -> false
         )
 
-    member this.LearningCards(cards: GuiCard seq) =
-        cards
-        |> Seq.where (fun c -> (scheduler.Get c.Key).IsNone)
+    member this.Chores() : Chore seq =
+        seq {
+            for word in wordlist.Entries do
+                match word.Item with
+                | Vocab v when v.DetectNoun ->
+                    let message = sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source
+                    if this.LevelOf(VocabCard.M_Tier2_RecallDE(v)) >= 4 then yield Chore.urgent message
+                    else yield Chore.non_urgent message
+                | Noun n when n.Plural.IsToBeDetermined ->
+                    let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" n.Deutsch word.Source
+                    yield Chore.non_urgent message
+                | _ -> ()
+        }
 
-    member this.ReviewCards(cards: GuiCard seq) =
+    member inline this.LearningCards<^T when ^T : (member Key: string)>(cards: ^T seq) =
         cards
-        |> Seq.where (fun c -> (scheduler.Get c.Key).IsSome)
+        |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsNone)
 
-    member this.DueReviewCards(cards: GuiCard seq, now: int64) =
+    member inline this.ReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq) =
+        cards
+        |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsSome)
+
+    member inline this.DueReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq, now: int64) =
         cards
         |> Seq.choose (fun c ->
-            match scheduler.Get c.Key with
+            match this.Scheduler.Get c.Key with
             | ValueSome data ->
                 let dl = data.DueLevel now
                 if dl >= 0 then Some (c, dl) else None
@@ -207,10 +142,10 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         |> Seq.sortByDescending snd
         |> Seq.map fst
 
-    member this.AheadReviewCards(cards: GuiCard seq, now: int64) =
+    member inline this.AheadReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq, now: int64) =
         cards
         |> Seq.choose (fun c ->
-            match scheduler.Get c.Key with
+            match this.Scheduler.Get c.Key with
             | ValueSome data ->
                 let n = data.NextReview
                 if n > now then Some (c, n) else None
@@ -219,9 +154,9 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         |> Seq.sortBy snd
         |> Seq.map fst
 
-    member this.Stats(cards: GuiCard seq) : (int * int) seq =
+    member inline this.Stats<^T when ^T : (member Key: string)>(cards: ^T seq) : (int * int) seq =
         cards
-        |> Seq.choose (fun card -> scheduler.Get card.Key |> ValueOption.map _.Level |> ValueOption.toOption)
+        |> Seq.map this.LevelOf
         |> Seq.countBy id
         |> Seq.sortBy fst
 
@@ -229,27 +164,43 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
 
         App.StartThread()
 
+        let mutable filter : (GuiCard seq -> GuiCard seq) option = None
+
+        let get_filtered() =
+            match filter with
+            | None -> this.AvailableCards()
+            | Some f -> this.AvailableCards() |> f
+
         let review () =
-            let cards = this.DueReviewCards(this.AvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+            let cards = this.DueReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let review_ahead () =
-            let cards = this.AheadReviewCards(this.AvailableCards(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+            let cards = this.AheadReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
 
         let learn () =
-            let cards = this.LearningCards(this.AvailableCards()) |> Seq.truncate 20 |> Array.ofSeq
+            let cards = this.LearningCards(get_filtered()) |> Seq.truncate 20 |> Array.ofSeq
             HtmlWindow.ShowUntilClosed(LearnSession(cards, scheduler).Init)
 
         let chores () =
+            // todo: show all chores
             Console.WriteLine(" Chores ", Color.White, Color.FromArgb(0x202020))
-            for chore in this.Chores() |> Seq.truncate 20 do
-                Console.WriteLine(chore, Color.Pink)
+            for chore in this.Chores() |> Seq.filter _.Urgent |> Seq.truncate 20 do
+                Console.WriteLine(chore.Message, if chore.Urgent then Color.Pink else Color.Yellow)
             Console.ReadLine() |> ignore
+
+        let toggle_filter () =
+            Console.Clear()
+            Console.WriteLine("Enter a wordlist name, otherwise blank to filter out tier 1")
+            match filter with
+            | None ->
+                filter <- Some (fun c -> this.FilterByTier(c, 2, 4) |> Seq.cache)
+            | Some _ -> filter <- None
 
         let stats () =
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-            let all_cards = this.AvailableCards()
+            let all_cards = get_filtered()
             Console.WriteLine(" All cards ", Color.White, Color.FromArgb(0x202020))
             all_cards
             |> this.Stats
@@ -276,30 +227,49 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             upcoming("1w", 7L)
             upcoming("2w", 14L)
 
+            Console.WriteLine(" Wordlists ", Color.White, Color.FromArgb(0x202020))
             for wl in wordlist.Sources do
-                Console.Write($" {wl} ", Color.LightGreen, Color.FromArgb(0x202020))
-                let available = this.AvailableCards([wl])
-                Console.Write(sprintf " %i available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
-                let learning = this.LearningCards(available)
-                Console.WriteLine(sprintf " %i to learn" (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
+                let all_cards_ever = this.PossibleCards([wl])
+                let total_cards = Seq.length all_cards_ever
+                let started = total_cards - (this.LearningCards(all_cards_ever) |> Seq.length)
+                let mature = all_cards_ever |> Seq.map this.LevelOf |> Seq.where (fun x -> x >= 4) |> Seq.length
+                let mature_percent = float32 mature / float32 total_cards * 100.0f
+                let started_percent = float32 started / float32 total_cards * 100.0f
+                Console.Write("[", Color.LightGray)
+                let m_c = mature_percent / 2f |> floor |> int
+                Console.Write(String.replicate m_c " ", Color.White, Color.Green)
+                let s_c = started_percent / 2f |> floor |> int
+                Console.Write(String.replicate (s_c - m_c) " ", Color.White, Color.LightGreen)
+                let l_c = 50 - s_c
+                Console.Write(String.replicate l_c " ", Color.White, Color.LightBlue)
+                Console.Write("] ", Color.LightGray)
+
+                Console.Write(sprintf " %.1f%% " mature_percent, Color.Green, Color.FromArgb(0x202020))
+                Console.Write(sprintf "/ %i " total_cards, Color.White, Color.FromArgb(0x202020))
+                Console.WriteLine($" {wl} ", Color.LightGreen, Color.FromArgb(0x202020))
 
             Console.ReadLine() |> ignore
 
-        // todo: study by level, study by wordlist
-
         let mutable loop = true
         while loop do
-            Console.Clear()
-            Console.WriteLine("Vocab learner :)")
-            let available = this.AvailableCards()
-            Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
+            let available = get_filtered()
             let learning = this.LearningCards(available)
-            Console.WriteLine(sprintf " %i cards to [learn] " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
             let due = this.DueReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-            Console.WriteLine(sprintf " %i cards to [review] " (Seq.length due), Color.Green, Color.FromArgb(0x202020))
             let ahead = this.AheadReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+
+            Console.Clear()
+            Console.Write(" Vocab Eater :) |", Color.White, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i [chores] " (Seq.length (this.Chores() |> Seq.filter _.Urgent)), Color.Pink, Color.FromArgb(0x202020))
+            if filter.IsNone then
+                Console.WriteLine(" no [filter] applied ", Color.LightGray)
+            else
+                Console.WriteLine(" == [filter] applied ! == ", Color.LightGreen)
+
+            Console.WriteLine()
+            Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i cards to [learn] " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
+            Console.WriteLine(sprintf " %i cards to [review] " (Seq.length due), Color.Green, Color.FromArgb(0x202020))
             Console.WriteLine(sprintf " %i cards [ahead] " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202020))
-            Console.WriteLine(sprintf " %i [chores] " (Seq.length (this.Chores())), Color.Red, Color.FromArgb(0x202020))
 
             match Console.ReadLine() with
             | "review" -> review()
@@ -307,5 +277,6 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             | "learn" -> learn()
             | "chores" -> chores()
             | "stats" -> stats()
+            | "filter" -> toggle_filter()
             | "back" -> loop <- false
             | _ -> ()

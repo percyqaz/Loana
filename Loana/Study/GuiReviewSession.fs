@@ -2,14 +2,17 @@ namespace Loana.GUI
 
 open System
 open Loana.GUI
-open Loana.Scheduler
+open Loana.Study
+
+type CardMeta = { Key: string; Tier: int }
 
 type GuiCard =
     {
-        Key: string
+        Meta: CardMeta
         Front: string
         Back: string
     }
+    member this.Key = this.Meta.Key
 
 type private GuiReviewSessionState =
     | Start

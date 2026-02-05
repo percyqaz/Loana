@@ -169,12 +169,16 @@ type Noun =
     member this.English = this.Translation.English
     member this.EnglishAlternatives = this.Translation.EnglishAlternatives
 
-    member this.PluralForm : Noun option =
+    member this.Plural : Knowledge<Vocab> =
         match this.Guts with
-        | Plural -> Some this
-        | Masculine (Something plural)
-        | Feminine (Something plural)
-        | Neuter (Something plural) -> Some { Translation = plural; Guts = Plural }
+        | Plural -> Nothing
+        | Masculine plural
+        | Feminine plural
+        | Neuter plural -> plural
+
+    member this.PluralForm : Noun option =
+        match this.Plural with
+        | Something plural -> Some { Translation = plural; Guts = Plural }
         | _ -> None
 
     member this.KeyWithGender =
