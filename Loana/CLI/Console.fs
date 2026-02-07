@@ -1,13 +1,13 @@
 namespace Loana.CLI
 
-open System.Runtime.CompilerServices
 open System.Drawing
 
 type Console =
+    static member ColorText(text: string, fg: Color, bg: Color) = sprintf "\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm%s\u001b[0m" fg.R fg.G fg.B bg.R bg.G bg.B text
 
     static member Clear() = System.Console.Clear()
 
-    static member Write(text: string, fg: Color, bg: Color) = System.Console.Write (sprintf "\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm%s\u001b[0m" fg.R fg.G fg.B bg.R bg.G bg.B text)
+    static member Write(text: string, fg: Color, bg: Color) = System.Console.Write (Console.ColorText(text, fg, bg))
     static member Write(text: string, fg: Color) = Console.Write(text, fg, Color.Black)
     static member Write(text: string) = Console.Write(text, Color.White, Color.Black)
 

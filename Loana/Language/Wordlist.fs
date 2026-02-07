@@ -64,17 +64,22 @@ type WordlistItem =
     | Verb of Verb
     | Vocab of Vocab
 
+[<Struct>]
+type Source = { Group: string; File: string }
+
 type WordlistEntry =
     {
-        Source: string
+        Source: Source
         Item: WordlistItem
     }
 
 open System.IO
 
+type WordlistGroup = { Name: string; Lists: ResizeArray<string> }
+
 type Wordlist() =
 
-    let sources = ResizeArray<string>()
+    let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
 
     let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string>()
@@ -82,28 +87,28 @@ type Wordlist() =
 
     let mutable current_verb = None
 
-    let finish_verb(source: string) =
+    let finish_verb(source: Source) =
         match current_verb with
         | Some v -> entries.Add { Item = Verb v; Source = source }; current_verb <- None
         | None -> ()
 
-    let check_duplicate (source: string) (v: Vocab) : unit =
+    let check_duplicate (source: Source) (v: Vocab) : unit =
 
         let ded_de = v.Key
         if deduplicate_de.ContainsKey(ded_de) then
             let duplicate_of, d_source = deduplicate_de.[ded_de]
             failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
         else
-            deduplicate_de.Add(ded_de, (v, source))
+            deduplicate_de.Add(ded_de, (v, source.File))
 
         let ded_en = v.EnglishKey
         if deduplicate_en.ContainsKey(ded_en) then
             let duplicate_of, d_source = deduplicate_en.[ded_en]
             failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
         else
-            deduplicate_en.Add(ded_en, (v, source))
+            deduplicate_en.Add(ded_en, (v, source.File))
 
-    let add_vocab (source: string) (line: string) : unit =
+    let add_vocab (source: Source) (line: string) : unit =
         finish_verb source
         let v, tags = Wordlist.parse_core line
 
@@ -117,7 +122,7 @@ type Wordlist() =
         else
             entries.Add { Item = Vocab v; Source = source }
 
-    let add_inflection (source: string) (line: string) : unit =
+    let add_inflection (source: Source) (line: string) : unit =
         let v, _ = Wordlist.parse_core line
 
         check_duplicate source v
@@ -127,7 +132,7 @@ type Wordlist() =
             current_verb <- Some (verb.WithInflection(v))
         | None -> failwithf "Verb inflection not attached to a verb: %s" line
 
-    let add_dynamic (source: string) (line: string) : unit =
+    let add_dynamic (source: Source) (line: string) : unit =
         if line = "" || line.StartsWith "#" then
             () // reserved for comments for now
         elif line.[0] = ' ' then
@@ -135,37 +140,47 @@ type Wordlist() =
         else
             add_vocab source line
 
-    member this.TryAdd(source: string, line: string) : Result<unit, string> =
+    member this.TryAdd(source: Source, line: string) : Result<unit, string> =
         try add_dynamic source line; Ok()
         with err -> Error err.Message
 
-    member this.ReadFile(path: string) =
-        let filename = Path.GetFileNameWithoutExtension(path)
-        sources.Add(filename)
-        let mutable count = 0
+    member this.ReadFile(source: Source, path: string) =
         File.ReadAllLines(path)
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iter (fun line ->
-            match this.TryAdd(filename, line) with
-            | Ok() -> count <- count + 1
+            match this.TryAdd(source, line) with
+            | Ok() -> ()
             | Error reason ->
-                Console.Write($" {filename}: ", Color.LightBlue, Color.FromArgb 0x202020)
+                Console.Write($" {source.File}: ", Color.LightBlue, Color.FromArgb 0x202020)
                 Console.WriteLine(" " + reason, Color.Red)
         )
-        finish_verb filename
+        finish_verb source
 
     member this.ReadDirectory(path: string) =
         let meta_list = Path.Combine(path, "wordlists.meta")
-        Console.WriteLine(sprintf "Reading wordlist meta from '%s'" meta_list)
-        let lines =
-            try File.ReadAllLines(meta_list)
-            with err -> Console.WriteLine(err.Message, Color.Red); [||]
-        for source in lines do
-            let path = Path.Combine(path, source + ".wordlist")
-            if Path.Exists(path) then
-                this.ReadFile(path)
-            else
-                Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Color.Red)
+        if File.Exists(meta_list) |> not then
+            Console.WriteLine(sprintf "'%s' doesn't exist!" meta_list, Color.Red)
+        else
+            Console.WriteLine(sprintf "Reading wordlist meta from '%s'" meta_list)
+            let mutable group : WordlistGroup option = None
+            for line in File.ReadAllLines(meta_list) do
+                if line.StartsWith("#") then
+                    let new_group = { Name = line.TrimStart('#').Trim(); Lists = ResizeArray() }
+                    groups.Add new_group
+                    group <- Some new_group
+
+                elif group.IsSome then
+                    let filename = line.Trim()
+                    let wl_path = Path.Combine(path, filename + ".wordlist")
+                    if Path.Exists(wl_path) then
+                        group.Value.Lists.Add(filename)
+                        this.ReadFile({ Group = group.Value.Name; File = filename }, wl_path)
+                    else
+                        Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" filename wl_path, Color.Red)
+
+                else
+                    let filename = line.Trim()
+                    Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" filename, Color.Red)
 
     static member ReadDirectory(path: string) : Wordlist =
         let wl = Wordlist()
@@ -173,7 +188,7 @@ type Wordlist() =
         wl
 
     member this.Entries = entries.AsReadOnly()
-    member this.Sources = sources.AsReadOnly()
+    member this.Groups = groups.AsReadOnly()
 
     member this.Stats() =
         Console.WriteLine(sprintf " %i Entries " this.Entries.Count, Color.LightGreen, Color.FromArgb(0x202020))

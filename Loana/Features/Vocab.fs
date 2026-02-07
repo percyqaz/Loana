@@ -69,7 +69,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
     member this.AvailableCards(sources: string list) : GuiCard seq =
         seq {
             for word in wordlist.Entries do
-                if sources.IsEmpty || List.contains word.Source sources then
+                if sources.IsEmpty || List.contains word.Source.File sources then
                     yield! this.AvailableCards(word.Item)
         }
         |> Seq.cache
@@ -104,7 +104,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
     member this.PossibleCards(sources: string list) : CardMeta seq =
         seq {
             for word in wordlist.Entries do
-                if sources.IsEmpty || List.contains word.Source sources then
+                if sources.IsEmpty || List.contains word.Source.File sources then
                     yield! this.PossibleCards(word.Item)
         }
         |> Seq.cache
@@ -128,11 +128,11 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             for word in wordlist.Entries do
                 match word.Item with
                 | Vocab v when v.DetectNoun ->
-                    let message = sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source
+                    let message = sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source.File
                     if this.LevelOf(VocabCard.M_Tier2_RecallDE(v)) >= 4 then yield Chore.urgent message
                     else yield Chore.non_urgent message
                 | Noun n when n.Plural.IsToBeDetermined ->
-                    let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" n.Deutsch word.Source
+                    let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" n.Deutsch word.Source.File
                     yield Chore.non_urgent message
                 | _ -> ()
         }
@@ -175,14 +175,33 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         |> Seq.countBy id
         |> Seq.sortBy fst
 
-    member this.Study(filter: (GuiCard seq -> GuiCard seq) option) =
+    member this.Study() =
 
         App.StartThread()
+        let mutable selected_group = []
+        let groups =
+            seq {
+                for group in wordlist.Groups do
+                    yield List.ofSeq group.Lists
+                    yield! group.Lists |> Seq.map List.singleton
+                yield []
+            }
+            |> Array.ofSeq
+        let next_selection() =
+            selected_group <- groups.[(Array.IndexOf(groups, selected_group) + 1) % groups.Length]
+        let previous_selection() =
+            selected_group <- groups.[(Array.IndexOf(groups, selected_group) + groups.Length - 1) % groups.Length]
+        let filters = [|
+            id, "None";
+            (fun cards -> this.FilterByTier(cards, 1, 1)), "Tier 1 ONLY"
+            (fun cards -> this.FilterByTier(cards, 2, 999)), "No Tier 1"
+        |]
+        let mutable current_filter = filters.[0]
+        let cycle_filter() =
+            current_filter <- filters.[(Array.IndexOf(filters, current_filter) + 1) % filters.Length]
 
         let get_filtered() =
-            match filter with
-            | None -> this.AvailableCards()
-            | Some f -> this.AvailableCards() |> f
+            this.AvailableCards(selected_group) |> fst current_filter
 
         let review () =
             let cards = this.DueReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
@@ -201,12 +220,12 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             Console.WriteLine(" Chores ", Color.White, Color.FromArgb(0x202020))
             for chore in this.Chores() |> Seq.filter _.Urgent |> Seq.truncate 20 do
                 Console.WriteLine(chore.Message, if chore.Urgent then Color.Pink else Color.Yellow)
-            Console.ReadLine() |> ignore
+            Console.ReadKey() |> ignore
 
         let stats () =
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             let all_cards = get_filtered()
-            Console.WriteLine(" All cards ", Color.White, Color.FromArgb(0x202020))
+            Console.WriteLine(" Card levels ", Color.White, Color.FromArgb(0x202020))
             all_cards
             |> this.Stats
             |> Seq.iter (fun (level, count) ->
@@ -232,55 +251,93 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             upcoming("1w", 7L)
             upcoming("2w", 14L)
 
-            Console.WriteLine(" Wordlists ", Color.White, Color.FromArgb(0x202020))
-            for wl in wordlist.Sources do
-                let all_cards_ever = this.PossibleCards([wl])
+            Console.ReadKey() |> ignore
+
+        let BAR_SIZE = 25
+        let mutable loop = true
+
+        while loop do
+
+            let card_actions(word_lists: string list, is_group: bool) =
+                let available = this.AvailableCards(word_lists) |> fst current_filter
+                let learning = this.LearningCards(available)
+                let due = this.DueReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                let ahead = this.AheadReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+
+                let m = if is_group then 2 else 1
+
+                Console.Write(sprintf " % 5i " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x101020 * m))
+                Console.Write(sprintf " % 5i " (Seq.length due), Color.Green, Color.FromArgb(0x102010 * m))
+                Console.Write(sprintf " % 5i " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202010 * m))
+                Console.Write(sprintf " % 5i " (Seq.length available), Color.White, Color.FromArgb(0x202020 * m))
+
+            let progress_bar(word_lists: string list) =
+                let all_cards_ever = this.PossibleCards(word_lists)
                 let total_cards = Seq.length all_cards_ever
                 let started = total_cards - (this.LearningCards(all_cards_ever) |> Seq.length)
                 let mature = all_cards_ever |> Seq.map this.LevelOf |> Seq.where (fun x -> x >= 4) |> Seq.length
                 let mature_percent = float32 mature / float32 total_cards * 100.0f
                 let started_percent = float32 started / float32 total_cards * 100.0f
-                Console.Write("[", Color.LightGray)
-                let m_c = mature_percent / 2f |> floor |> int
+                Console.Write("[", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+                let m_c = mature_percent * float32 BAR_SIZE / 100.0f |> floor |> int
                 Console.Write(String.replicate m_c " ", Color.White, Color.Green)
-                let s_c = started_percent / 2f |> floor |> int
+                let s_c = started_percent * float32 BAR_SIZE / 100.0f |> floor |> int
                 Console.Write(String.replicate (s_c - m_c) " ", Color.White, Color.LightGreen)
-                let l_c = 50 - s_c
+                let l_c = BAR_SIZE - s_c
                 Console.Write(String.replicate l_c " ", Color.White, Color.LightBlue)
-                Console.Write("] ", Color.LightGray)
+                Console.Write("]", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
 
-                Console.Write(sprintf " %.1f%% " mature_percent, Color.Green, Color.FromArgb(0x202020))
-                Console.Write(sprintf "/ %i " total_cards, Color.White, Color.FromArgb(0x202020))
-                Console.WriteLine($" {wl} ", Color.LightGreen, Color.FromArgb(0x202020))
-
-            Console.ReadLine() |> ignore
-
-        let mutable loop = true
-        while loop do
-            let available = get_filtered()
-            let learning = this.LearningCards(available)
-            let due = this.DueReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-            let ahead = this.AheadReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                Console.Write((sprintf " %.1f%% " mature_percent).PadRight(8), Color.Green, Color.FromArgb(0x202020))
+                Console.Write(sprintf "| % 5i " total_cards, Color.White, Color.FromArgb(0x202020))
 
             Console.Clear()
-            Console.Write(" Vocab Eater :) |", Color.White, Color.FromArgb(0x202020))
-            Console.WriteLine(sprintf " %i [chores] " (Seq.length (this.Chores() |> Seq.filter _.Urgent)), Color.Pink, Color.FromArgb(0x202020))
-            if filter.IsNone then
-                Console.WriteLine(" no filter applied ", Color.LightGray)
-            else
-                Console.WriteLine(" == filter applied ! == ", Color.LightGreen)
-
+            Console.Write(" The Word Eater :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0x202020))
+            Console.Write(
+                $"  Filter: {snd current_filter} ".PadRight(BAR_SIZE + 3),
+                (if snd current_filter = "None" then Color.LightGray else Color.DeepPink),
+                Color.FromArgb(0x101010)
+            )
+            Console.Write((sprintf " %i chores " (Seq.length (this.Chores() |> Seq.filter _.Urgent))).PadLeft(BAR_SIZE + 18), Color.Pink, Color.FromArgb(0x202020))
             Console.WriteLine()
-            Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
-            Console.WriteLine(sprintf " %i cards to [learn] " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x202020))
-            Console.WriteLine(sprintf " %i cards to [review] " (Seq.length due), Color.Green, Color.FromArgb(0x202020))
-            Console.WriteLine(sprintf " %i cards [ahead] " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202020))
+            for group in wordlist.Groups do
 
-            match Console.ReadLine() with
-            | "review" -> review()
-            | "ahead" -> review_ahead()
-            | "learn" -> learn()
-            | "chores" -> chores()
-            | "stats" -> stats()
-            | "back" -> loop <- false
+                let word_lists = List.ofSeq group.Lists
+                Console.Write(
+                    $"@ {group.Name.PadRight(BAR_SIZE)} ",
+                    (if selected_group = word_lists then Color.Yellow else Color.White),
+                    Color.FromArgb(0x303030)
+                )
+                card_actions(word_lists, true)
+                progress_bar(word_lists)
+                Console.WriteLine()
+
+                for wl in group.Lists do
+                    Console.Write(
+                        $"| {wl.PadRight(BAR_SIZE)} ",
+                        (if selected_group = [wl] then Color.Yellow else Color.LightGreen),
+                        Color.FromArgb(0x202020)
+                    )
+                    card_actions([wl], false)
+                    progress_bar([wl])
+                    Console.WriteLine()
+
+            Console.Write(
+                "** ALL CARDS ** ".PadRight(BAR_SIZE + 3),
+                (if selected_group = [] then Color.Yellow else Color.White),
+                Color.FromArgb(0x303030)
+            )
+            card_actions([], true)
+            progress_bar([])
+            Console.WriteLine()
+
+            match Console.ReadKey().Key with
+            | ConsoleKey.UpArrow -> previous_selection()
+            | ConsoleKey.DownArrow -> next_selection()
+            | ConsoleKey.Escape -> loop <- false
+            | ConsoleKey.Enter -> stats()
+            | ConsoleKey.L -> learn()
+            | ConsoleKey.R -> review()
+            | ConsoleKey.A -> review_ahead()
+            | ConsoleKey.C -> chores()
+            | ConsoleKey.F -> cycle_filter()
             | _ -> ()

@@ -19,9 +19,7 @@ let b1_deck = VocabDeck(scheduler, sentence_list)
 
 SelectMenu(
     [|
-        { Name = "Vocab"; Action = fun () -> vocab_deck.Study(None) }
-        { Name = "Vocab [No new cards]"; Action = fun () -> vocab_deck.Study(Some (fun s -> vocab_deck.FilterByTier(s, 2, 8))) }
-        { Name = "Sentences [DE -> EN]"; Action = fun () -> b1_deck.Study(Some (fun s -> vocab_deck.FilterByTier(s, 1, 1))) }
+        { Name = "Vocab"; Action = fun () -> vocab_deck.Study() }
         { Name = "Quizzes"; Action = fun () -> QuizScheduler(scheduler).Study() }
         { Name = "Add Verbs"; Action = fun () -> Verbs.AddVerbs() }
     |]
