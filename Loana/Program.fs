@@ -11,8 +11,8 @@ type Loana =
 let data_path = Path.Combine(Loana.GetFilePath(), "../Data")
 
 let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
-let wordlist = Wordlist.ReadDirectory(Path.Combine(data_path, "Vocab"))
-let sentence_list = Wordlist.ReadDirectory(Path.Combine(data_path, "B1-Goethe"))
+let wordlist = WordBank.ReadDirectory(Path.Combine(data_path, "Vocab"))
+let sentence_list = WordBank.ReadDirectory(Path.Combine(data_path, "B1-Goethe"))
 wordlist.Stats()
 let vocab_deck = VocabDeck(scheduler, wordlist)
 let b1_deck = VocabDeck(scheduler, sentence_list)

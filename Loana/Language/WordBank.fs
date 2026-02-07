@@ -77,7 +77,7 @@ open System.IO
 
 type WordlistGroup = { Name: string; Lists: ResizeArray<string> }
 
-type Wordlist() =
+type WordBank() =
 
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
@@ -182,10 +182,10 @@ type Wordlist() =
                     let filename = line.Trim()
                     Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" filename, Color.Red)
 
-    static member ReadDirectory(path: string) : Wordlist =
-        let wl = Wordlist()
-        wl.ReadDirectory(path)
-        wl
+    static member ReadDirectory(path: string) : WordBank =
+        let words = WordBank()
+        words.ReadDirectory(path)
+        words
 
     member this.Entries = entries.AsReadOnly()
     member this.Groups = groups.AsReadOnly()

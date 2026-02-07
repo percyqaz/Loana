@@ -32,7 +32,7 @@
     <Compile Include="Language\Declension\Deutsch.fs" />
     <Compile Include="Language\Declension\English.fs" />
     <Compile Include="Language\VerbDownloader.fs" />
-    <Compile Include="Language\Wordlist.fs" />
+    <Compile Include="Language\WordBank.fs" />
     <Compile Include="Study\ReviewSchedule.fs" />
     <Compile Include="Study\GuiReviewSession.fs" />
     <Compile Include="study\VocabCards.fs" />
@@ -41,8 +41,8 @@
     <Compile Include="Features\Quizzes\PersonalPronouns.fs" />
     <Compile Include="Features\Quizzes\ReflexivePronouns.fs" />
     <Compile Include="Features\Quizzes\PossessivePronouns.fs" />
-    <Compile Include="Features\Quizzes.fs" />
     <Compile Include="Features\Vocab.fs" />
+    <Compile Include="Features\Quizzes.fs" />
     <Compile Include="Features\Verbs.fs" />
   </ItemGroup>
 

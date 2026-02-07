@@ -3,6 +3,7 @@ namespace Loana.Study
 open System
 open System.Text
 open System.IO
+open System.Drawing
 open System.Collections.Generic
 open Loana.CLI
 
@@ -21,6 +22,19 @@ type ReviewData =
         LastReviewed: int64
         Interval: int64
     }
+
+    static let level_colors = [|
+            Color.FromArgb(0x709090)
+            Color.FromArgb(0x709070)
+            Color.FromArgb(0x509050)
+            Color.FromArgb(0x309030)
+            Color.FromArgb(0x109010)
+            Color.FromArgb(0x008000)
+            Color.FromArgb(0x006000)
+            Color.FromArgb(0x004000)
+            Color.FromArgb(0x002000)
+        |]
+    static member LevelColors = level_colors
 
     static member private GetNextInterval(level: int, difficulty: int, current_interval: int64) =
 
@@ -184,10 +198,16 @@ type ReviewSchedule(path: string) =
         | false, _ -> ValueNone
 
     member this.Schedule(key: string, data: ReviewData) =
+        let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
         mem.[key] <- data
         let minutes = data.Interval / TimeSpan.SecondsPerMinute
         let interval = sprintf "%02id%02ih%02im" (minutes / TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
-        Console.WriteLine(sprintf "'%s' -> * %i [%i] %s" key data.Level data.Difficulty interval)
+        Console.Write((sprintf "[%i] %s" old_level key).PadRight(51), ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
+        Console.Write(" -> ", Color.LightGray, Color.FromArgb(0x202020))
+        Console.Write(sprintf " Level %i " data.Level, ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
+        Console.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
+        Console.Write(sprintf " Next review: %s " interval, Color.LightGreen, Color.FromArgb(0x202020))
+        Console.WriteLine()
         db.Write(mem)
 
     member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : unit =
