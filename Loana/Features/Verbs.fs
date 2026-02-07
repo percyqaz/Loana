@@ -9,7 +9,7 @@ open Loana.Language
 type Verbs =
 
     static member AddVerb(input: string) : unit =
-        let verb = VerbDownloader.extend_verb { Infinitive = Vocab.Parse input; Inflections = [] }
+        let verb = VerbDownloader.extend_verb { Infinitive = Vocab.Parse input; PastParticiple = Nothing; Inflections = [] }
         let lines =
             seq {
                 yield verb.Infinitive.ToString()

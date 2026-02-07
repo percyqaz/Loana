@@ -110,3 +110,17 @@ type VocabCard =
                 </div>
                 """
         }
+
+    static member M_Tier5_RecognisePluralDE(n: Noun) =
+        assert(n.Guts.IsPlural)
+        { VocabCard.M_Tier3_RecogniseArticleDE(n) with Tier = 5 }
+    static member C_Tier5_RecognisePluralDE(n: Noun) =
+        assert(n.Guts.IsPlural)
+        { VocabCard.C_Tier3_RecogniseArticleDE(n) with Meta = VocabCard.M_Tier5_RecognisePluralDE(n) }
+
+    static member M_Tier6_RecallPluralDE(n: Noun) =
+        assert(n.Guts.IsPlural)
+        { VocabCard.M_Tier4_RecallArticleDE(n) with Tier = 6 }
+    static member C_Tier6_RecallPluralDE(n: Noun) =
+        assert(n.Guts.IsPlural)
+        { VocabCard.C_Tier4_RecallArticleDE(n) with Meta = VocabCard.M_Tier6_RecallPluralDE(n) }

@@ -35,6 +35,7 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             let tier_1 = VocabCard.C_Tier1_RecogniseDE(n.Translation)
             let tier_2 = VocabCard.C_Tier2_RecallDE(n.Translation)
             let tier_3 = VocabCard.C_Tier3_RecogniseArticleDE(n)
+            let tier_4 = VocabCard.C_Tier4_RecallArticleDE(n)
 
             if this.LevelOf tier_1 < 2 then
                 yield tier_1
@@ -46,8 +47,17 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
                 yield tier_3
             else
                 yield tier_3
-                let tier_4 = VocabCard.C_Tier4_RecallArticleDE(n)
                 yield tier_4
+
+            match n.PluralForm with
+            | Some p ->
+                let tier_5 = VocabCard.C_Tier5_RecognisePluralDE(p)
+                let tier_6 = VocabCard.C_Tier6_RecallPluralDE(p)
+                if this.LevelOf tier_4 >= 2 then
+                    yield tier_5
+                if this.LevelOf tier_5 >= 2 then
+                    yield tier_6
+            | None -> ()
         }
 
     member private this.AvailableCards(word: WordlistItem): GuiCard seq =
@@ -78,6 +88,11 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             yield VocabCard.M_Tier2_RecallDE(n.Translation)
             yield VocabCard.M_Tier3_RecogniseArticleDE(n)
             yield VocabCard.M_Tier4_RecallArticleDE(n)
+            match n.PluralForm with
+            | Some p ->
+                yield VocabCard.M_Tier5_RecognisePluralDE(p)
+                yield VocabCard.M_Tier6_RecallPluralDE(p)
+            | None -> ()
         }
 
     member private this.PossibleCards(word: WordlistItem) : CardMeta seq =
@@ -160,11 +175,9 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
         |> Seq.countBy id
         |> Seq.sortBy fst
 
-    member this.Study() =
+    member this.Study(filter: (GuiCard seq -> GuiCard seq) option) =
 
         App.StartThread()
-
-        let mutable filter : (GuiCard seq -> GuiCard seq) option = None
 
         let get_filtered() =
             match filter with
@@ -189,14 +202,6 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             for chore in this.Chores() |> Seq.filter _.Urgent |> Seq.truncate 20 do
                 Console.WriteLine(chore.Message, if chore.Urgent then Color.Pink else Color.Yellow)
             Console.ReadLine() |> ignore
-
-        let toggle_filter () =
-            Console.Clear()
-            Console.WriteLine("Enter a wordlist name, otherwise blank to filter out tier 1")
-            match filter with
-            | None ->
-                filter <- Some (fun c -> this.FilterByTier(c, 2, 4) |> Seq.cache)
-            | Some _ -> filter <- None
 
         let stats () =
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
@@ -261,9 +266,9 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             Console.Write(" Vocab Eater :) |", Color.White, Color.FromArgb(0x202020))
             Console.WriteLine(sprintf " %i [chores] " (Seq.length (this.Chores() |> Seq.filter _.Urgent)), Color.Pink, Color.FromArgb(0x202020))
             if filter.IsNone then
-                Console.WriteLine(" no [filter] applied ", Color.LightGray)
+                Console.WriteLine(" no filter applied ", Color.LightGray)
             else
-                Console.WriteLine(" == [filter] applied ! == ", Color.LightGreen)
+                Console.WriteLine(" == filter applied ! == ", Color.LightGreen)
 
             Console.WriteLine()
             Console.WriteLine(sprintf " %i cards available " (Seq.length available), Color.White, Color.FromArgb(0x202020))
@@ -277,6 +282,5 @@ type VocabDeck(scheduler: ReviewSchedule, wordlist: Wordlist) =
             | "learn" -> learn()
             | "chores" -> chores()
             | "stats" -> stats()
-            | "filter" -> toggle_filter()
             | "back" -> loop <- false
             | _ -> ()

@@ -226,6 +226,7 @@ type VerbPerson =
 type Verb =
     {
         Infinitive: Vocab
+        PastParticiple: Knowledge<Vocab>
         Inflections: Vocab list
     }
     member this.WithInflection(vocab: Vocab) = { this with Inflections = this.Inflections @ [vocab] }

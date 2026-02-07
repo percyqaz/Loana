@@ -68,7 +68,7 @@ type ReviewData =
 
     member this.DueLevel(now: int64) =
         let amount_overdue = now - this.NextReview
-        if amount_overdue < 0L then -1 else amount_overdue * 100L / (max 1L this.Interval) |> int
+        if amount_overdue < 0L then -1 else float32 amount_overdue / float32 (max 1L this.Interval) * 10000f |> floor |> int
 
     member this.Forget(now: int64) =
         let difficulty = this.Difficulty + 5 |> min 10

@@ -1,26 +1,28 @@
-﻿open Loana.CLI
+﻿open System.IO
+open Loana.CLI
 open Loana.Language
 open Loana.Study
 open Loana.Features
 
-let scheduler = ReviewSchedule("C:/Users/percy/Desktop/Source/Anki/Deutsch/cards.dat")
-let wordlist = Wordlist()
-wordlist.ReadDirectory("C:/Users/percy/Desktop/Source/Loana/Wordlists")
+type Loana =
+    static member GetFilePath([<System.Runtime.CompilerServices.CallerFilePath>] ?path: string) =
+        System.IO.Path.GetDirectoryName(path.Value)
+
+let data_path = Path.Combine(Loana.GetFilePath(), "../Data")
+
+let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
+let wordlist = Wordlist.ReadDirectory(Path.Combine(data_path, "Vocab"))
+let sentence_list = Wordlist.ReadDirectory(Path.Combine(data_path, "B1-Goethe"))
 wordlist.Stats()
 let vocab_deck = VocabDeck(scheduler, wordlist)
+let b1_deck = VocabDeck(scheduler, sentence_list)
 
 SelectMenu(
     [|
-        { Name = "Vocab"; Action = fun () -> vocab_deck.Study() }
+        { Name = "Vocab"; Action = fun () -> vocab_deck.Study(None) }
+        { Name = "Vocab [No new cards]"; Action = fun () -> vocab_deck.Study(Some (fun s -> vocab_deck.FilterByTier(s, 2, 8))) }
+        { Name = "Sentences [DE -> EN]"; Action = fun () -> b1_deck.Study(Some (fun s -> vocab_deck.FilterByTier(s, 1, 1))) }
         { Name = "Quizzes"; Action = fun () -> QuizScheduler(scheduler).Study() }
         { Name = "Add Verbs"; Action = fun () -> Verbs.AddVerbs() }
     |]
 ).Show()
-
-//let now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-//let mutable c = 0
-//for card in vocab_deck.AvailableCards(["gcse-general"; "gcse-relationships-home"]) do
-//    if card.Key.StartsWith("vocab-") then
-//        scheduler.Schedule(card.Key, ReviewData.SeedAtLevel(now, 5))
-//        c <- c + 1
-//Console.WriteLine(sprintf "Seeded in %i existing cards at level 5" c, System.Drawing.Color.LightGreen)

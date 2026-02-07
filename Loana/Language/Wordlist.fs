@@ -110,7 +110,8 @@ type Wordlist() =
         check_duplicate source v
 
         if v.DetectVerb then
-            current_verb <- Some { Infinitive = v; Inflections = [] }
+            // todo: support :pp deutsch = english notation
+            current_verb <- Some { Infinitive = v; PastParticiple = Nothing; Inflections = [] }
         elif v.DetectNoun && tags <> [] then
             entries.Add { Item = Wordlist.parse_noun_inner(v, tags) |> Noun; Source = source }
         else
@@ -152,7 +153,6 @@ type Wordlist() =
                 Console.WriteLine(" " + reason, Color.Red)
         )
         finish_verb filename
-        Console.WriteLine(sprintf "Successfully read %i entries from '%s'" count filename, Color.LightGreen)
 
     member this.ReadDirectory(path: string) =
         let meta_list = Path.Combine(path, "wordlists.meta")
@@ -167,27 +167,14 @@ type Wordlist() =
             else
                 Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" source path, Color.Red)
 
+    static member ReadDirectory(path: string) : Wordlist =
+        let wl = Wordlist()
+        wl.ReadDirectory(path)
+        wl
+
     member this.Entries = entries.AsReadOnly()
     member this.Sources = sources.AsReadOnly()
 
     member this.Stats() =
         Console.WriteLine(sprintf " %i Entries " this.Entries.Count, Color.LightGreen, Color.FromArgb(0x202020))
-        let nouns = this.Entries |> Seq.choose (fun e -> match e.Item with Noun n -> Some n | _ -> None) |> Array.ofSeq
-        let missing_plural = nouns |> Seq.where (fun n -> match n.Guts with Plural -> false | Masculine x | Feminine x | Neuter x -> x.IsToBeDetermined) |> Array.ofSeq
-        Console.WriteLine(sprintf " %i Nouns + Gender " nouns.Length, Color.White, Color.FromArgb(0x202020))
-        for gender, count in nouns |> Seq.countBy _.Guts.Gender do
-            Console.Write($"[{gender}]", gender.Color)
-            Console.WriteLine(sprintf ": %i" count)
-        Console.WriteLine(sprintf "%i nouns are missing plurals" missing_plural.Length, Color.Yellow)
-
-        let verbs = this.Entries |> Seq.choose (fun e -> match e.Item with Verb v -> Some v | _ -> None) |> Array.ofSeq
-        let inflections = verbs |> Seq.map (fun v -> v.Inflections.Length) |> Seq.sum
-        Console.WriteLine(sprintf " %i Verbs " verbs.Length, Color.White, Color.FromArgb(0x202020))
-        Console.WriteLine(sprintf "+ %i inflections" inflections)
-
-        let other = this.Entries |> Seq.choose (fun e -> match e.Item with Vocab v -> Some v | _ -> None) |> Array.ofSeq
-        let could_be_nouns = other |> Seq.where(fun v -> v.DetectNoun)
-        Console.WriteLine(sprintf " %i Uncategorised " other.Length, Color.White, Color.FromArgb(0x202020))
-        Console.WriteLine(sprintf "%i potential nouns missing a gender" (Seq.length could_be_nouns), Color.Yellow)
-
         Console.ReadLine() |> ignore
