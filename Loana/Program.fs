@@ -8,6 +8,10 @@ type Loana =
     static member GetFilePath([<System.Runtime.CompilerServices.CallerFilePath>] ?path: string) =
         System.IO.Path.GetDirectoryName(path.Value)
 
+if System.OperatingSystem.IsWindows() then
+    System.Console.CursorVisible <- false
+    System.Console.Title <- "Loana v0.1"
+
 let data_path = Path.Combine(Loana.GetFilePath(), "../Data")
 
 let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
