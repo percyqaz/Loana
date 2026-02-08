@@ -244,15 +244,6 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         let stats () =
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             let all_cards = get_filtered()
-            Console.WriteLine(pad_header " Stats for selected deck(s) ", Color.LightGray, Color.FromArgb(0x303030))
-            Console.WriteLine(pad_header "- Distribution - ", Color.LightGray, Color.FromArgb(0x202020))
-            all_cards
-            |> this.Stats
-            |> Seq.iter (fun (level, count) ->
-                Console.Write(sprintf "[%i]" level, ReviewData.LevelColors.[level], Color.FromArgb(0x202020))
-                Console.Write(String.replicate (count / 100) " ", Color.White, ReviewData.LevelColors.[level])
-                Console.WriteLine((sprintf " %i cards" count).PadRight(WIDTH - (count / 100) - 3), Color.LightGray, Color.FromArgb(0x101010))
-            )
 
             let by_hour =
                 this.AheadReviewCards(all_cards, now)
@@ -274,6 +265,23 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                     DeferConsole.Write(" ", Color.White, if hit then Color.Green else Color.FromArgb(0x101010))
                 DeferConsole.WriteLine()
                 DeferConsole.Flush()
+
+            let forgotten =
+                all_cards
+                |> Seq.choose (fun c -> match scheduler.Get c.Key with ValueSome v when (v.Reviews > v.Level && v.Level < 4) || v.Difficulty > 5 -> Some (v, c.Key) | _ -> None)
+                |> Seq.sortByDescending (fst >> _.LastReviewed)
+                |> Seq.truncate 20
+                |> Array.ofSeq
+
+            Console.WriteLine(pad_header " Stats for selected deck(s) ", Color.LightGray, Color.FromArgb(0x303030))
+            Console.WriteLine(pad_header "- Distribution - ", Color.LightGray, Color.FromArgb(0x202020))
+            all_cards
+            |> this.Stats
+            |> Seq.iter (fun (level, count) ->
+                Console.Write(sprintf "[%i]" level, ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
+                Console.Write(String.replicate (count / 100) " ", Color.White, ReviewData.LevelColors.[level])
+                Console.WriteLine((sprintf " %i cards" count).PadRight(WIDTH - (count / 100) - 3), Color.LightGray, Color.FromArgb(0x101010))
+            )
 
             Console.WriteLine(pad_header "- Upcoming workload (axis in days) - ", Color.LightGray, Color.FromArgb(0x303030))
             upcoming_bar(by_hour, 250)
@@ -298,8 +306,19 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 Console.Write((i + 1).ToString().PadLeft(7), Color.LightGray, Color.FromArgb(0x202020))
             Console.Write("".PadLeft(WIDTH - (WIDTH / 7) * 7), Color.LightGray, Color.FromArgb(0x202020))
             Console.WriteLine()
+            if forgotten.Length > 0 then
+                Console.WriteLine(pad_header " - Forgotten cards - ", Color.Red, Color.FromArgb(0x303030))
+                for data, key in forgotten do
+                    let ago_minutes = (now - data.LastReviewed) / TimeSpan.SecondsPerMinute
+                    let ago_string = sprintf "%02id%02ih%02im" (ago_minutes / TimeSpan.MinutesPerDay) ((ago_minutes / 60L) % 24L) (ago_minutes % 60L)
+                    Console.Write((sprintf "[%i] %s" data.Level key).PadRight(59), ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
+                    Console.Write($""" {ago_string.Replace("00d", "   ")} ago """, Color.LightGray, Color.FromArgb(0x202020))
+                    Console.Write($" Reviews: {data.Reviews.ToString().PadRight(3)} ", Color.Green, Color.FromArgb(0x202020))
+                    Console.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
+                    Console.WriteLine()
 
             Console.ReadKey() |> ignore
+
         let mutable loop = true
 
         while loop do
