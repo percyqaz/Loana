@@ -107,18 +107,22 @@ type VocabCard =
             }
             |> List.ofSeq
             |> CardLine.Create Color.White
-        let de_side =
+        let de_side_white, de_side_colored =
             let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
             CardLine.Create GERMAN_BG [
                 { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
                 { Text = n.Deutsch; FG = Color.White; BG = GERMAN_BG }
+            ],
+            CardLine.Create GERMAN_BG [
+                { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
+                { Text = n.Deutsch; FG = n.Guts.Gender.Color; BG = GERMAN_BG }
             ]
         {
             Meta = VocabCard.M_Tier3_RecogniseArticleDE(n)
             Front = fun () ->
                 CardSide.Create [
                     CardLine.Create GERMAN_BG []
-                    de_side
+                    de_side_white
                     CardLine.Create GERMAN_BG []
                     CardLine.Create Color.White []
                     CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
@@ -127,7 +131,7 @@ type VocabCard =
             Back = fun () ->
                 CardSide.Create [
                     CardLine.Create GERMAN_BG []
-                    de_side
+                    de_side_colored
                     CardLine.Create GERMAN_BG []
                     CardLine.Create Color.White []
                     en_side
@@ -158,7 +162,7 @@ type VocabCard =
             let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
             CardLine.Create GERMAN_BG [
                 { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
-                { Text = n.Deutsch; FG = Color.White; BG = GERMAN_BG }
+                { Text = n.Deutsch; FG = n.Guts.Gender.Color; BG = GERMAN_BG }
             ]
         {
             Meta = VocabCard.M_Tier4_RecallArticleDE(n)

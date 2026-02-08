@@ -54,7 +54,7 @@ type Card =
     member this.Key = this.Meta.Key
 
 [<AbstractClass>]
-type StudySession(cards: Card array) =
+type StudySession(title: string, cards: Card array) =
     let cards = ResizeArray<Card>(cards |> Seq.randomShuffle)
 
     let CARD_AREA = 20
@@ -89,13 +89,18 @@ type StudySession(cards: Card array) =
         horizontal_edge()
         side.Lines |> List.iter line
         horizontal_edge()
-        for i = i to CARD_AREA do
+        for _ = i to CARD_AREA do
             empty()
 
     let draw_log() =
         MenuRender.WriteLine(MenuRender.Pad " - Log - ", Color.LightGray, Color.FromArgb(0x202020))
         for l in log do
             MenuRender.WriteLine(l)
+
+    let draw_title() =
+        MenuRender.Write($" Loana: {title} ".PadRight(MenuRender.Width - 16), Color.White, Color.FromArgb(0x303030))
+        MenuRender.Write((sprintf " % 2i cards left " (cards.Count + 1)), Color.LightGreen, Color.FromArgb(0x303030))
+        MenuRender.WriteLine()
 
     member this.Start() =
         while cards.Count > 0 do
@@ -105,7 +110,7 @@ type StudySession(cards: Card array) =
             let front = current.Front()
             let back = current.Back()
 
-            MenuRender.WriteLine(MenuRender.Pad "Review session", Color.White, Color.FromArgb(0x303030))
+            draw_title()
             draw_card front
             MenuRender.WriteLine(MenuRender.Pad "[Space] Reveal", Color.LightGray, Color.FromArgb(0x303030))
             draw_log()
@@ -120,7 +125,7 @@ type StudySession(cards: Card array) =
                 | _ -> ()
 
             if not end_early then
-                MenuRender.WriteLine(MenuRender.Pad "Review session", Color.White, Color.FromArgb(0x303030))
+                draw_title()
                 draw_card back
                 MenuRender.Write(" [Z] Forgot ", Color.LightGray, Color.FromArgb(0x303030))
                 MenuRender.WriteLine(" [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width - 12), Color.LightGray, Color.FromArgb(0x303030))
@@ -146,8 +151,9 @@ type StudySession(cards: Card array) =
     member this.ReplaceFar(card: Card) =
         cards.Add(card)
 
-    member this.Log(string: string) =
-        log.Add(string)
+    member this.Log(message: string) =
+        Console.WriteLine(message)
+        log.Add(message)
         if log.Count > LOG_SIZE then log.RemoveAt(0)
 
     abstract member Forget: Card -> unit

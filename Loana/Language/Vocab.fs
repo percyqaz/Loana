@@ -36,10 +36,10 @@ type Gender =
 
     member this.Color : Color =
         match this with
-        | Masculine -> Color.Blue
-        | Neuter -> Color.Gray
-        | Feminine -> Color.Magenta
-        | Plural -> Color.Yellow
+        | Masculine -> Color.FromArgb(0x90A0E0)
+        | Neuter -> Color.LightGreen
+        | Feminine -> Color.FromArgb(0xE090C0)
+        | Plural -> Color.FromArgb(0xE0E090)
 
     static member Parse(string: string) : Gender =
         match string with

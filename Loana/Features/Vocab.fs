@@ -205,12 +205,12 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         let review () =
             let cards = this.DueReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             if cards.Length > 0 then
-                ReviewSession(cards, scheduler).Start()
+                ReviewSession(cards, scheduler, false).Start()
 
         let review_ahead () =
             let cards = this.AheadReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             if cards.Length > 0 then
-                ReviewSession(cards, scheduler).Start()
+                ReviewSession(cards, scheduler, true).Start()
 
         let learn () =
             let cards = this.LearningCards(get_filtered()) |> Seq.truncate 20 |> Array.ofSeq
@@ -388,6 +388,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             card_actions([], true)
             progress_bar([], true)
             MenuRender.WriteLine()
+            MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0x303030))
 
             MenuRender.Redraw()
 
