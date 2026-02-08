@@ -16,9 +16,9 @@ type Console =
     static member WriteLine(text: string) = Console.WriteLine(text, Color.White, Color.Black)
     static member WriteLine() = Console.WriteLine("", Color.White, Color.Black)
 
-type ConsoleRender(left: int, width: int) =
+type MenuRender() =
 
-    let mutable left = left
+    static let mutable width = 103
     let buffer = System.Text.StringBuilder()
 
     member this.FlushInline() : unit =
@@ -26,28 +26,14 @@ type ConsoleRender(left: int, width: int) =
         buffer.Clear() |> ignore
 
     member this.Redraw() : unit =
-        if left = 0 then
-            System.Console.SetCursorPosition(0, 0)
-            this.FlushInline()
-            let struct (original_left, original_top) = System.Console.GetCursorPosition()
-            let blank_line = String.replicate width " "
-            for i = original_top to System.Console.WindowHeight - 1 do
-                System.Console.SetCursorPosition(0, i)
-                System.Console.Write(blank_line)
-            System.Console.SetCursorPosition(original_left, original_top)
-        else
-            let struct (original_left, original_top) = System.Console.GetCursorPosition()
-            let mutable i = 0
-            for line in buffer.ToString().Split("\n") do
-                System.Console.SetCursorPosition(left, i)
-                System.Console.Write(line)
-                i <- i + 1
-            buffer.Clear() |> ignore
-            let blank_line = String.replicate width " "
-            for i = i - 1 to System.Console.WindowHeight - 1 do
-                System.Console.SetCursorPosition(left, i)
-                System.Console.Write(blank_line)
-            System.Console.SetCursorPosition(original_left, original_top)
+        System.Console.SetCursorPosition(0, 0)
+        this.FlushInline()
+        let struct (original_left, original_top) = System.Console.GetCursorPosition()
+        let blank_line = String.replicate width " "
+        for i = original_top to System.Console.WindowHeight - 1 do
+            System.Console.SetCursorPosition(0, i)
+            System.Console.Write(blank_line)
+        System.Console.SetCursorPosition(original_left, original_top)
 
     member this.Write(text: string, fg: Color, bg: Color) = buffer.Append(Console.ColorText(text, fg, bg)) |> ignore
     member this.Write(text: string, fg: Color) = this.Write(text, fg, Color.Black)
@@ -58,4 +44,11 @@ type ConsoleRender(left: int, width: int) =
     member this.WriteLine(text: string) = this.WriteLine(text, Color.White, Color.Black)
     member this.WriteLine() = this.WriteLine("", Color.White, Color.Black)
 
-    static member LeftWidth = 103
+    static member Pad(text: string) = text.PadLeft(MenuRender.Width / 2 + text.Length / 2).PadRight(MenuRender.Width)
+
+    static member Width = width
+    static member UpdateWidth() =
+        let old_width = width
+        // todo on linux: System.Environment.GetEnvironmentVariable("COLUMNS") |> printfn "%A"
+        width <- System.Console.WindowWidth / 2 * 2 - 1
+        if old_width <> width then Console.Clear()

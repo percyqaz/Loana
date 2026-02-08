@@ -202,9 +202,9 @@ type ReviewSchedule(path: string) =
         mem.[key] <- data
         let minutes = data.Interval / TimeSpan.SecondsPerMinute
         let interval = sprintf "%02id%02ih%02im" (minutes / TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
-        Console.Write((sprintf "[%i] %s" old_level key).PadRight(51), ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
+        Console.Write((sprintf "[%i] %s" old_level key).PadRight(51).Substring(0, 51), ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
         Console.Write(" -> ", Color.LightGray, Color.FromArgb(0x202020))
-        Console.Write(sprintf " Level %i " data.Level, ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
+        Console.Write(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
         Console.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
         Console.Write(sprintf " Next review: %s " interval, Color.LightGreen, Color.FromArgb(0x202020))
         Console.WriteLine()
