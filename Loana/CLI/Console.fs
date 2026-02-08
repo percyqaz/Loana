@@ -16,19 +16,19 @@ type Console =
     static member WriteLine(text: string) = Console.WriteLine(text, Color.White, Color.Black)
     static member WriteLine() = Console.WriteLine("", Color.White, Color.Black)
 
-// todo: can be static again
-type MenuRender() =
+/// Deferred block rendering for UIs
+type MenuRender =
 
     static let mutable width = 103
-    let buffer = System.Text.StringBuilder()
+    static let buffer = System.Text.StringBuilder()
 
-    member this.FlushInline() : unit =
+    static member FlushInline() : unit =
         System.Console.Write(buffer.ToString())
         buffer.Clear() |> ignore
 
-    member this.Redraw() : unit =
+    static member Redraw() : unit =
         System.Console.SetCursorPosition(0, 0)
-        this.FlushInline()
+        MenuRender.FlushInline()
         let struct (original_left, original_top) = System.Console.GetCursorPosition()
         let blank_line = String.replicate width " "
         for i = original_top to System.Console.WindowHeight - 1 do
@@ -36,14 +36,14 @@ type MenuRender() =
             System.Console.Write(blank_line)
         System.Console.SetCursorPosition(original_left, original_top)
 
-    member this.Write(text: string, fg: Color, bg: Color) = buffer.Append(Console.ColorText(text, fg, bg)) |> ignore
-    member this.Write(text: string, fg: Color) = this.Write(text, fg, Color.Black)
-    member this.Write(text: string) = this.Write(text, Color.White, Color.Black)
+    static member Write(text: string, fg: Color, bg: Color) = buffer.Append(Console.ColorText(text, fg, bg)) |> ignore
+    static member Write(text: string, fg: Color) = MenuRender.Write(text, fg, Color.Black)
+    static member Write(text: string) = MenuRender.Write(text, Color.White, Color.Black)
 
-    member this.WriteLine(text: string, color: Color, background: Color) = this.Write(text + "\n", color, background)
-    member this.WriteLine(text: string, color: Color) = this.WriteLine(text, color, Color.Black)
-    member this.WriteLine(text: string) = this.WriteLine(text, Color.White, Color.Black)
-    member this.WriteLine() = this.WriteLine("", Color.White, Color.Black)
+    static member WriteLine(text: string, color: Color, background: Color) = MenuRender.Write(text + "\n", color, background)
+    static member WriteLine(text: string, color: Color) = MenuRender.WriteLine(text, color, Color.Black)
+    static member WriteLine(text: string) = MenuRender.WriteLine(text, Color.White, Color.Black)
+    static member WriteLine() = MenuRender.WriteLine("", Color.White, Color.Black)
 
     static member Pad(text: string) = text.PadLeft(MenuRender.Width / 2 + text.Length / 2).PadRight(MenuRender.Width)
 

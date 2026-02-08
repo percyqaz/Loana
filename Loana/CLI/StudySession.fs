@@ -61,29 +61,28 @@ type StudySession(cards: Card array) =
     let LOG_SIZE = 20
 
     let log = ResizeArray()
-    let render = MenuRender()
 
     let draw_card(side: CardSide) =
         let edges_width = MenuRender.Width - 12
         let inner_width = edges_width - 4
-        let empty() = render.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0x101010))
+        let empty() = MenuRender.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0x101010))
         let horizontal_edge() =
-            render.Write("      ", Color.White, Color.FromArgb(0x101010))
-            render.Write("".PadRight(edges_width), Color.White, Color.FromArgb(0x303030))
-            render.Write("      ", Color.White, Color.FromArgb(0x101010))
-            render.WriteLine()
+            MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+            MenuRender.Write("".PadRight(edges_width), Color.White, Color.FromArgb(0x303030))
+            MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+            MenuRender.WriteLine()
         let mutable i = 5
         let line(line: CardLine) =
-            render.Write("      ", Color.White, Color.FromArgb(0x101010))
-            render.Write("  ", Color.White, Color.FromArgb(0x303030))
+            MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+            MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
 
-            render.Write(" ", Color.White, line.BG)
-            render.Write(line.Content)
-            render.Write("".PadLeft(inner_width - 1 - line.Length |> max 0), Color.White, line.BG)
+            MenuRender.Write(" ", Color.White, line.BG)
+            MenuRender.Write(line.Content)
+            MenuRender.Write("".PadLeft(inner_width - 1 - line.Length |> max 0), Color.White, line.BG)
 
-            render.Write("  ", Color.White, Color.FromArgb(0x303030))
-            render.Write("      ", Color.White, Color.FromArgb(0x101010))
-            render.WriteLine()
+            MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
+            MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+            MenuRender.WriteLine()
             i <- i + 1
         empty()
         empty()
@@ -94,9 +93,9 @@ type StudySession(cards: Card array) =
             empty()
 
     let draw_log() =
-        render.WriteLine(MenuRender.Pad " - Log - ", Color.LightGray, Color.FromArgb(0x202020))
+        MenuRender.WriteLine(MenuRender.Pad " - Log - ", Color.LightGray, Color.FromArgb(0x202020))
         for l in log do
-            render.WriteLine(l)
+            MenuRender.WriteLine(l)
 
     member this.Start() =
         while cards.Count > 0 do
@@ -106,11 +105,11 @@ type StudySession(cards: Card array) =
             let front = current.Front()
             let back = current.Back()
 
-            render.WriteLine(MenuRender.Pad "Review session", Color.White, Color.FromArgb(0x303030))
+            MenuRender.WriteLine(MenuRender.Pad "Review session", Color.White, Color.FromArgb(0x303030))
             draw_card front
-            render.WriteLine(MenuRender.Pad "[Space] Reveal", Color.LightGray, Color.FromArgb(0x303030))
+            MenuRender.WriteLine(MenuRender.Pad "[Space] Reveal", Color.LightGray, Color.FromArgb(0x303030))
             draw_log()
-            render.Redraw()
+            MenuRender.Redraw()
 
             let mutable loop = true
             let mutable end_early = false
@@ -121,12 +120,12 @@ type StudySession(cards: Card array) =
                 | _ -> ()
 
             if not end_early then
-                render.WriteLine(MenuRender.Pad "Review session", Color.White, Color.FromArgb(0x303030))
+                MenuRender.WriteLine(MenuRender.Pad "Review session", Color.White, Color.FromArgb(0x303030))
                 draw_card back
-                render.Write(" [Z] Forgot ", Color.LightGray, Color.FromArgb(0x303030))
-                render.WriteLine(" [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width - 12), Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.Write(" [Z] Forgot ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.WriteLine(" [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width - 12), Color.LightGray, Color.FromArgb(0x303030))
                 draw_log()
-                render.Redraw()
+                MenuRender.Redraw()
 
                 let mutable loop = true
                 while loop do
