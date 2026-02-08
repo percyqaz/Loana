@@ -27,7 +27,7 @@ type SelectMenu(options: SelectMenuOption array) =
         let mutable loop = true
         while loop do
             this.Draw()
-            match Console.ReadKey().Key with
+            match Console.ReadKey(true).Key with
             | ConsoleKey.Escape -> loop <- false
             | ConsoleKey.Enter -> options.[selected].Action()
             | ConsoleKey.UpArrow -> selected <- (selected + options.Length - 1) % options.Length

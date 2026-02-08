@@ -21,7 +21,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         | ValueSome data -> data.Level
         | ValueNone -> 0
 
-    member private this.AvailableCards(v: Vocab) : GuiCard seq =
+    member private this.AvailableCards(v: Vocab) : Card seq =
         seq {
             let tier_1 = VocabCard.C_Tier1_RecogniseDE(v)
             yield tier_1
@@ -30,7 +30,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 yield VocabCard.C_Tier2_RecallDE(v)
         }
 
-    member private this.AvailableCards(n: Noun) : GuiCard seq =
+    member private this.AvailableCards(n: Noun) : Card seq =
         seq {
             let tier_1 = VocabCard.C_Tier1_RecogniseDE(n.Translation)
             let tier_2 = VocabCard.C_Tier2_RecallDE(n.Translation)
@@ -60,13 +60,13 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | None -> ()
         }
 
-    member private this.AvailableCards(word: WordlistItem): GuiCard seq =
+    member private this.AvailableCards(word: WordlistItem): Card seq =
         match word with
         | Vocab v -> this.AvailableCards v
         | Noun n -> this.AvailableCards n
         | Verb v -> this.AvailableCards v.Infinitive
 
-    member this.AvailableCards(sources: string list) : GuiCard seq =
+    member this.AvailableCards(sources: string list) : Card seq =
         seq {
             for word in words.Entries do
                 if sources.IsEmpty || List.contains word.Source.File sources then
@@ -111,11 +111,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.PossibleCards() = this.PossibleCards([])
 
-    member this.FilterByTier(cards: GuiCard seq, min_tier: int, max_tier: int) =
+    member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) =
         cards
         |> Seq.where (fun c -> c.Meta.Tier >= min_tier && c.Meta.Tier <= max_tier)
 
-    member this.FilterByLevel(cards: GuiCard seq, minlevel: int, maxlevel: int) =
+    member this.FilterByLevel(cards: Card seq, minlevel: int, maxlevel: int) =
         cards
         |> Seq.where (fun c ->
             match scheduler.Get c.Key with
@@ -177,7 +177,6 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.Study() =
 
-        App.StartThread()
         let mutable selected_group = []
         let groups =
             seq {
@@ -206,26 +205,17 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         let review () =
             let cards = this.DueReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             if cards.Length > 0 then
-                Console.WriteLine(MenuRender.Pad " Reviewing in progress! ", Color.Green, Color.FromArgb(0x303030))
-                HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
-                Console.WriteLine(MenuRender.Pad " End of session. ", Color.Green, Color.FromArgb(0x303030))
-            Console.ReadKey() |> ignore
+                ReviewSession(cards, scheduler).Start()
 
         let review_ahead () =
             let cards = this.AheadReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
             if cards.Length > 0 then
-                Console.WriteLine(MenuRender.Pad " Reviewing (ahead) in progress! ", Color.Yellow, Color.FromArgb(0x303030))
-                HtmlWindow.ShowUntilClosed(ReviewSession(cards, scheduler).Init)
-                Console.WriteLine(MenuRender.Pad " End of session. ", Color.Green, Color.FromArgb(0x303030))
-            Console.ReadKey() |> ignore
+                ReviewSession(cards, scheduler).Start()
 
         let learn () =
             let cards = this.LearningCards(get_filtered()) |> Seq.truncate 20 |> Array.ofSeq
             if cards.Length > 0 then
-                Console.WriteLine(MenuRender.Pad " Learning in progress! ", Color.LightBlue, Color.FromArgb(0x303030))
-                HtmlWindow.ShowUntilClosed(LearnSession(cards, scheduler).Init)
-                Console.WriteLine(MenuRender.Pad " End of session. ", Color.Green, Color.FromArgb(0x303030))
-            Console.ReadKey() |> ignore
+                LearnSession(cards, scheduler).Start()
 
         let chores () =
             Console.WriteLine(MenuRender.Pad " Chores for selected deck(s) ", Color.White, Color.FromArgb(0x303030))
@@ -237,7 +227,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             Console.WriteLine(MenuRender.Pad (sprintf " - %i Non-urgent - " non_urgent.Length), Color.LightGray, Color.FromArgb(0x202020))
             for chore in non_urgent do Console.WriteLine(chore.Message, Color.Yellow)
 
-            Console.ReadKey() |> ignore
+            Console.ReadKey(true) |> ignore
 
         let stats () =
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
@@ -318,7 +308,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                     render.WriteLine()
 
             render.FlushInline()
-            Console.ReadKey() |> ignore
+            Console.ReadKey(true) |> ignore
 
         let mutable loop = true
 

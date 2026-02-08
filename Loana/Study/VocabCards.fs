@@ -1,114 +1,185 @@
 namespace Loana.Study
 
+open System.Drawing
 open Loana.Language
-open Loana.GUI
+open Loana.CLI
 
 type VocabCard =
 
+    static let GERMAN_BG = Color.FromArgb(0x400000)
+    static let ENGLISH_NOTE = Color.FromArgb(0x808080)
+    static let GERMAN_NOTE = Color.FromArgb(0xC0C0C0)
+
     static member M_Tier1_RecogniseDE(v: Vocab) = { Key = $"vocab-recognise-{v.Key}"; Tier = 1 }
     static member C_Tier1_RecogniseDE(v: Vocab) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
-        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+        let en_side =
+            seq {
+                yield { Text = v.English.Text; FG = Color.Black; BG = Color.White }
+                match v.English.Note with
+                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                | None -> ()
+                for alt in v.EnglishAlternatives do
+                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
+                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
+                    match alt.Note with
+                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                    | None -> ()
+            }
+            |> List.ofSeq
+            |> CardLine.Create Color.White
         {
             Meta = VocabCard.M_Tier1_RecogniseDE(v: Vocab)
-            Front =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="de-en">
-                <div class="de">{v.Deutsch}</div>
-                <div class="en">{en_html}</div>
-                </div>
-                """
+            Front = fun () ->
+                CardSide.Create [
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create Color.White []
+                    CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
+                    CardLine.Create Color.White []
+                ]
+            Back = fun () ->
+                CardSide.Create [
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create Color.White []
+                    en_side
+                    CardLine.Create Color.White []
+                ]
         }
 
     static member M_Tier2_RecallDE(v: Vocab) = { Key = $"vocab-recall-{v.Key}"; Tier = 2 }
     static member C_Tier2_RecallDE(v: Vocab) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""{a.Text} <span class="note">[{n}]</span>"""
-            | None -> a.Text
-        let en_html = (v.English :: v.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+        let en_side =
+            seq {
+                yield { Text = v.English.Text; FG = Color.Black; BG = Color.White }
+                match v.English.Note with
+                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                | None -> ()
+                for alt in v.EnglishAlternatives do
+                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
+                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
+                    match alt.Note with
+                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                    | None -> ()
+            }
+            |> List.ofSeq
+            |> CardLine.Create Color.White
         {
             Meta = VocabCard.M_Tier2_RecallDE(v)
-            Front =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">{v.Deutsch}</div>
-                </div>
-                """
+            Front = fun () ->
+                CardSide.Create [
+                    CardLine.Create Color.White []
+                    en_side
+                    CardLine.Create Color.White []
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create GERMAN_BG [ { Text = "???"; FG = Color.White; BG = GERMAN_BG } ]
+                    CardLine.Create GERMAN_BG []
+                ]
+            Back = fun () ->
+                CardSide.Create [
+                    CardLine.Create Color.White []
+                    en_side
+                    CardLine.Create Color.White []
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
+                    CardLine.Create GERMAN_BG []
+                ]
         }
 
     static member M_Tier3_RecogniseArticleDE(n: Noun) = { Key = $"noun-recognise-{n.KeyWithGender}"; Tier = 3 }
     static member C_Tier3_RecogniseArticleDE(n: Noun) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
-            | None -> $"""<span class="note">the </span>{a.Text}"""
-        let de_html =
+        let en_side =
+            seq {
+                yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
+                yield { Text = n.English.Text; FG = Color.Black; BG = Color.White }
+                match n.English.Note with
+                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                | None -> ()
+                for alt in n.EnglishAlternatives do
+                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
+                    yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
+                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
+                    match alt.Note with
+                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                    | None -> ()
+            }
+            |> List.ofSeq
+            |> CardLine.Create Color.White
+        let de_side =
             let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
-            $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
-        let en_html = (n.English :: n.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+            CardLine.Create GERMAN_BG [
+                { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
+                { Text = n.Deutsch; FG = Color.White; BG = GERMAN_BG }
+            ]
         {
             Meta = VocabCard.M_Tier3_RecogniseArticleDE(n)
-            Front =
-                $"""
-                <div class="de-en">
-                <div class="de">{de_html}</div>
-                <div class="en">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="de-en">
-                <div class="de">{de_html}</div>
-                <div class="en">{en_html}</div>
-                </div>
-                """
+            Front = fun () ->
+                CardSide.Create [
+                    CardLine.Create GERMAN_BG []
+                    de_side
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create Color.White []
+                    CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
+                    CardLine.Create Color.White []
+                ]
+            Back = fun () ->
+                CardSide.Create [
+                    CardLine.Create GERMAN_BG []
+                    de_side
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create Color.White []
+                    en_side
+                    CardLine.Create Color.White []
+                ]
         }
 
     static member M_Tier4_RecallArticleDE(n: Noun) = { Key = $"noun-recall-{n.KeyWithGender}"; Tier = 4 }
     static member C_Tier4_RecallArticleDE(n: Noun) =
-        let annotation_html(a: Annotation) =
-            match a.Note with
-            | Some n -> $"""<span class="note">the </span>{a.Text} <span class="note">[{n}]</span>"""
-            | None -> $"""<span class="note">the </span>{a.Text}"""
-        let de_html =
+        let en_side =
+            seq {
+                yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
+                yield { Text = n.English.Text; FG = Color.Black; BG = Color.White }
+                match n.English.Note with
+                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                | None -> ()
+                for alt in n.EnglishAlternatives do
+                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
+                    yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
+                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
+                    match alt.Note with
+                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
+                    | None -> ()
+            }
+            |> List.ofSeq
+            |> CardLine.Create Color.White
+        let de_side =
             let article = AnnotationTree.flatten_tree (Deutsch.definite_article n.Guts.Gender Case.Nominative)
-            $"""<span class="note">{article} </span><span style="color:#{n.Guts.Gender.Color.ToArgb().ToString("X06")};">{n.Deutsch}</span>"""
-        let en_html = (n.English :: n.EnglishAlternatives) |> Seq.map annotation_html |> String.concat ", "
+            CardLine.Create GERMAN_BG [
+                { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
+                { Text = n.Deutsch; FG = Color.White; BG = GERMAN_BG }
+            ]
         {
             Meta = VocabCard.M_Tier4_RecallArticleDE(n)
-            Front =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">???</div>
-                </div>
-                """
-            Back =
-                $"""
-                <div class="en-de">
-                <div class="en">{en_html}</div>
-                <div class="de">{de_html}</div>
-                </div>
-                """
+            Front = fun () ->
+                CardSide.Create [
+                    CardLine.Create Color.White []
+                    en_side
+                    CardLine.Create Color.White []
+                    CardLine.Create GERMAN_BG []
+                    CardLine.Create GERMAN_BG [ { Text = "???"; FG = Color.White; BG = GERMAN_BG } ]
+                    CardLine.Create GERMAN_BG []
+                ]
+            Back = fun () ->
+                CardSide.Create [
+                    CardLine.Create Color.White []
+                    en_side
+                    CardLine.Create Color.White []
+                    CardLine.Create GERMAN_BG []
+                    de_side
+                    CardLine.Create GERMAN_BG []
+                ]
         }
 
     static member M_Tier5_RecognisePluralDE(n: Noun) =

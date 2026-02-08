@@ -16,6 +16,7 @@ type Console =
     static member WriteLine(text: string) = Console.WriteLine(text, Color.White, Color.Black)
     static member WriteLine() = Console.WriteLine("", Color.White, Color.Black)
 
+// todo: can be static again
 type MenuRender() =
 
     static let mutable width = 103

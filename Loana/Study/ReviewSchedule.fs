@@ -197,18 +197,18 @@ type ReviewSchedule(path: string) =
         | true, data -> ValueSome data
         | false, _ -> ValueNone
 
-    member this.Schedule(key: string, data: ReviewData) =
+    member this.Schedule(key: string, data: ReviewData) : string =
         let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
         mem.[key] <- data
-        let minutes = data.Interval / TimeSpan.SecondsPerMinute
-        let interval = sprintf "%02id%02ih%02im" (minutes / TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
-        Console.Write((sprintf "[%i] %s" old_level key).PadRight(51).Substring(0, 51), ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
-        Console.Write(" -> ", Color.LightGray, Color.FromArgb(0x202020))
-        Console.Write(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
-        Console.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
-        Console.Write(sprintf " Next review: %s " interval, Color.LightGreen, Color.FromArgb(0x202020))
-        Console.WriteLine()
         db.Write(mem)
 
-    member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : unit =
+        let minutes = data.Interval / TimeSpan.SecondsPerMinute
+        let interval = sprintf "%02id%02ih%02im" (minutes / TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
+        Console.ColorText((sprintf "[%i] %s" old_level key).PadRight(MenuRender.Width - 52).Substring(0, MenuRender.Width - 52), ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
+        + Console.ColorText(" -> ", Color.LightGray, Color.FromArgb(0x202020))
+        + Console.ColorText(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
+        + Console.ColorText($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
+        + Console.ColorText(sprintf " Next review: %s " interval, Color.LightGreen, Color.FromArgb(0x202020))
+
+    member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : string =
         this.Schedule(key, f <| this.Get(key).Value <| DateTimeOffset.UtcNow.ToUnixTimeSeconds())

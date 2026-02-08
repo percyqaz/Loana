@@ -12,21 +12,10 @@
     <Tailcalls>True</Tailcalls>
   </PropertyGroup>
 
-  <PropertyGroup Label="Avalonia">
-    <AvaloniaNameGeneratorIsEnabled>False</AvaloniaNameGeneratorIsEnabled>
-    <EnableAvaloniaXamlCompilation>False</EnableAvaloniaXamlCompilation>
-    <AvaloniaXamlReportImportance>High</AvaloniaXamlReportImportance>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="CLI\Console.fs" />
-    <Compile Include="CLI\CliReviewSession.fs" />
+    <Compile Include="CLI\StudySession.fs" />
     <Compile Include="CLI\Menu.fs" />
-    <Folder Include="GUI\" />
-    <EmbeddedResource Include="GUI\index.html" />
-    <EmbeddedResource Include="GUI\style.css" />
-    <Compile Include="GUI\HtmlWindow.fs" />
     <Compile Include="Language\Vocab.fs" />
     <Compile Include="Language\Annotations.fs" />
     <Compile Include="Language\Declension\Deutsch.fs" />
@@ -34,8 +23,8 @@
     <Compile Include="Language\VerbDownloader.fs" />
     <Compile Include="Language\WordBank.fs" />
     <Compile Include="Study\ReviewSchedule.fs" />
-    <Compile Include="Study\GuiReviewSession.fs" />
-    <Compile Include="study\VocabCards.fs" />
+    <Compile Include="Study\ReviewSession.fs" />
+    <Compile Include="Study\VocabCards.fs" />
     <Compile Include="Features\Quizzes\Shared.fs" />
     <Compile Include="Features\Quizzes\Articles.fs" />
     <Compile Include="Features\Quizzes\PersonalPronouns.fs" />
@@ -44,16 +33,6 @@
     <Compile Include="Features\Vocab.fs" />
     <Compile Include="Features\Quizzes.fs" />
     <Compile Include="Features\Verbs.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.11" />
-    <PackageReference Include="Avalonia.FuncUI" Version="1.5.2" />
-    <PackageReference Include="Avalonia.HtmlRenderer" Version="11.2.0" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
 

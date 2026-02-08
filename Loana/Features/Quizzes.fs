@@ -87,7 +87,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
                     |> Seq.head
                 q.Study()
                 match scheduler.Get q.Key with
-                | ValueNone -> scheduler.Schedule(q.Key, ReviewData.Level1(now, 1))
-                | ValueSome d -> scheduler.Schedule(q.Key, d.Promote now)
+                | ValueNone -> scheduler.Schedule(q.Key, ReviewData.Level1(now, 1)) |> ignore
+                | ValueSome d -> scheduler.Schedule(q.Key, d.Promote now) |> ignore
             | "back" -> loop <- false
             | _ -> ()
