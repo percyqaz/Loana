@@ -31,6 +31,5 @@ type PersonalPronounsQuiz() =
                             yield GermanPracticeCard.Create(English.personal_pronoun person case, Deutsch.personal_pronoun person case)
                 }
                 |> Array.ofSeq
-                |> CliReviewSession
-                |> _.Start()
+                |> fun cs -> QuizSession("Quiz", cs).Start()
             | _ -> ()

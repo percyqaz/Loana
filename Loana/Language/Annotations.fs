@@ -39,7 +39,7 @@ module AnnotationTree =
             Layer: int
         }
 
-    let internal render (annotations: AnnotationTree) : unit =
+    let internal render (annotations: AnnotationTree, background: Color) : ResizeArray<string> =
         let frags = ResizeArray<ConsoleAnnotationFragment>()
 
         let mutable position = 0
@@ -123,12 +123,14 @@ module AnnotationTree =
 
         walk (annotations) |> ignore
         let lines = frags |> Seq.groupBy (fun x -> x.Layer) |> Seq.sortBy fst |> Seq.map (snd >> Seq.sortBy _.Start >> Array.ofSeq) |> Seq.toArray
+        let output_lines = ResizeArray<string>()
         let render_line (line: ConsoleAnnotationFragment array) : unit =
             let mutable p = 0
+            let mutable output = ""
             for frag in line do
-                Console.Write(String.replicate (frag.Start - p) " ")
+                output <- output + Console.ColorText(String.replicate (frag.Start - p) " ", Color.White, background)
 
-                if frag.Layer = 0 then Console.Write(frag.Text)
+                if frag.Layer = 0 then output <- output + Console.ColorText(frag.Text, Color.White, background)
                 else
                     let padded =
                         if frag.Text.Length <= (frag.Finish - frag.Start) then
@@ -137,7 +139,8 @@ module AnnotationTree =
                             String.replicate lpadding "-" + frag.Text + String.replicate rpadding "-"
                         else
                             frag.Text.Substring(0, frag.Finish - frag.Start)
-                    Console.Write(padded, frag.Color)
+                    output <- output + Console.ColorText(padded, frag.Color, background)
                 p <- frag.Finish
-            Console.WriteLine("")
+            output_lines.Add(output)
         lines |> Array.iter render_line
+        output_lines

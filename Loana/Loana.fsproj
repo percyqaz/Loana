@@ -15,6 +15,7 @@
   <ItemGroup>
     <Compile Include="CLI\Console.fs" />
     <Compile Include="CLI\StudySession.fs" />
+    <Compile Include="CLI\QuizSession.fs" />
     <Compile Include="CLI\Menu.fs" />
     <Compile Include="Language\Vocab.fs" />
     <Compile Include="Language\Annotations.fs" />

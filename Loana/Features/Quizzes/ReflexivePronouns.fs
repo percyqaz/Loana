@@ -24,6 +24,5 @@ type ReflexivePronounsQuiz() =
                             yield GermanPracticeCard.Create(English.reflexive_pronoun person case, Deutsch.reflexive_pronoun person case)
                 }
                 |> Array.ofSeq
-                |> CliReviewSession
-                |> _.Start()
+                |> fun cs -> QuizSession("Quiz", cs).Start()
             | _ -> ()

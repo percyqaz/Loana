@@ -4,44 +4,19 @@ open System
 open System.Drawing
 open Loana.CLI
 
-type CliCard =
-    {
-        Front: unit -> unit
-        Back: unit -> unit
-        Answer: string
-    }
-
-type CliReviewSession(cards: CliCard array) =
-
-    let cards = ResizeArray<CliCard>(cards |> Seq.randomShuffle)
-
-    member this.Start() =
-        while cards.Count > 0 do
-            let next = cards.[0]
-            cards.RemoveAt(0)
-
-            Console.Clear()
-            next.Front()
-
-            if Console.ReadLine() <> next.Answer then
-                Console.WriteLine(" Mistake! See below: ", Color.Black, Color.Red)
-                next.Back()
-                cards.Insert(min 5 cards.Count, next)
-                Console.ReadLine() |> ignore
-
 type CardFragment = internal { Text: string; FG: Color; BG: Color }
 type CardLine =
-    private { Content: string; BG: Color; Length: int }
+    internal { Content: string; BG: Color; Length: int }
     static member Empty(bg: Color) = { Content = ""; BG = bg; Length = 0 }
     static member (+) (this: CardLine, extra: CardFragment) =
         { Content = this.Content + Console.ColorText(extra.Text, extra.FG, extra.BG); BG = this.BG; Length = this.Length + extra.Text.Length }
     static member Create(bg: Color) = List.fold (+) (CardLine.Empty(bg))
 
 type CardSide =
-    private { Lines: CardLine list; Width: int }
-    static member Empty = { Lines = []; Width = 0 }
+    private { Lines: CardLine list }
+    static member Empty = { Lines = [] }
     static member (+) (this: CardSide, line: CardLine) =
-        { Lines = this.Lines @ [line]; Width = max this.Width line.Length }
+        { Lines = this.Lines @ [line] }
     static member Create = List.fold (+) CardSide.Empty
 
 type CardMeta = { Key: string; Tier: int }
@@ -93,7 +68,6 @@ type StudySession(title: string, cards: Card array) =
             empty()
 
     let draw_log() =
-        MenuRender.WriteLine(MenuRender.Pad " - Log - ", Color.LightGray, Color.FromArgb(0x202020))
         for l in log do
             MenuRender.WriteLine(l)
 
@@ -146,7 +120,7 @@ type StudySession(title: string, cards: Card array) =
         Console.ReadKey(true) |> ignore
 
     member this.ReplaceNear(card: Card) =
-        cards.Insert(min 5 cards.Count, card)
+        cards.Insert(min 4 cards.Count, card)
 
     member this.ReplaceFar(card: Card) =
         cards.Add(card)

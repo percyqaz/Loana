@@ -59,6 +59,5 @@ type ArticlesQuiz() =
                 |> Seq.randomShuffle
                 |> Seq.truncate 50
                 |> Array.ofSeq
-                |> CliReviewSession
-                |> _.Start()
+                |> fun cs -> QuizSession("Quiz", cs).Start()
             | _ -> ()
