@@ -168,11 +168,114 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.sortBy snd
         |> Seq.map fst
 
-    member inline this.Stats<^T when ^T : (member Key: string)>(cards: ^T seq) : (int * int) seq =
+    member inline this.LevelDistribution<^T when ^T : (member Key: string)>(cards: ^T seq) : (int * int) seq =
         cards
         |> Seq.map this.LevelOf
         |> Seq.countBy id
         |> Seq.sortBy fst
+
+    member this.Review (cards: Card seq) =
+        let cards = this.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+        if cards.Length > 0 then ReviewSession(cards, scheduler, false).Start()
+
+    member this.ReviewAhead (cards: Card seq) =
+        let cards = this.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+        if cards.Length > 0 then ReviewSession(cards, scheduler, true).Start()
+
+    member this.Learn (cards: Card seq) =
+        let cards = this.LearningCards(cards) |> Seq.truncate 20 |> Array.ofSeq
+        if cards.Length > 0 then LearnSession(cards, scheduler).Start()
+
+    member this.ChoresList () =
+        Console.WriteLine(MenuRender.Pad " Chores list ", Color.White, Color.FromArgb(0x303030))
+        let chores = this.Chores() |> Seq.cache
+        let urgent = chores |> Seq.filter _.Urgent |> Seq.truncate 20 |> Array.ofSeq
+        let non_urgent = chores |> Seq.filter (_.Urgent >> not) |> Seq.truncate 20 |> Array.ofSeq
+
+        Console.WriteLine(MenuRender.Pad (sprintf " - %i Urgent - " urgent.Length), Color.LightGray, Color.FromArgb(0x202020))
+        for chore in urgent do Console.WriteLine(chore.Message, Color.DeepPink)
+        Console.WriteLine(MenuRender.Pad (sprintf " - %i Non-urgent - " non_urgent.Length), Color.LightGray, Color.FromArgb(0x202020))
+        for chore in non_urgent do Console.WriteLine(chore.Message, Color.Yellow)
+
+        Console.ReadKey(true) |> ignore
+
+    member this.Stats(all_cards: Card seq) : unit =
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+
+        let by_hour =
+            this.AheadReviewCards(all_cards, now)
+            |> Seq.map (fun c -> (scheduler.Get c.Key).Value.NextReview - now)
+            |> Seq.takeWhile (fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
+            |> Seq.countBy (fun c -> c / TimeSpan.SecondsPerHour)
+            |> Map.ofSeq
+
+        let by_day =
+            this.AheadReviewCards(all_cards, now)
+            |> Seq.map (fun c -> (scheduler.Get c.Key).Value.NextReview - now)
+            |> Seq.takeWhile (fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
+            |> Seq.countBy (fun c -> c / TimeSpan.SecondsPerDay)
+            |> Map.ofSeq
+
+        let forgotten =
+            all_cards
+            |> Seq.choose (fun c -> match scheduler.Get c.Key with ValueSome v when (v.Reviews > v.Level && v.Level < 4) || v.Difficulty > 5 -> Some (v, c.Key) | _ -> None)
+            |> Seq.sortByDescending (fst >> _.LastReviewed)
+            |> Seq.truncate 20
+            |> Array.ofSeq
+
+        let upcoming_bar (data, threshold) =
+            for i = 0 to MenuRender.Width - 1 do
+                let hit = (Map.tryFind (int64 i) data |> Option.defaultValue 0) > threshold
+                MenuRender.Write(" ", Color.White, if hit then Color.Green else Color.FromArgb(0x101010))
+            MenuRender.WriteLine()
+
+        MenuRender.WriteLine(MenuRender.Pad " Stats for selected deck(s) ", Color.LightGray, Color.FromArgb(0x303030))
+        MenuRender.WriteLine(MenuRender.Pad " - Distribution - ", Color.LightGray, Color.FromArgb(0x202020))
+        all_cards
+        |> this.LevelDistribution
+        |> Seq.iter (fun (level, count) ->
+            MenuRender.Write(sprintf "[%i]" level, ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
+            MenuRender.Write(String.replicate (count / 100) " ", Color.White, ReviewData.LevelColors.[level])
+            MenuRender.WriteLine((sprintf " %i cards" count).PadRight(MenuRender.Width - (count / 100) - 3), Color.LightGray, Color.FromArgb(0x101010))
+        )
+
+        MenuRender.WriteLine(MenuRender.Pad " - Upcoming workload (axis in days) - ", Color.LightGray, Color.FromArgb(0x303030))
+        upcoming_bar(by_hour, 250)
+        upcoming_bar(by_hour, 200)
+        upcoming_bar(by_hour, 150)
+        upcoming_bar(by_hour, 100)
+        upcoming_bar(by_hour, 50)
+
+        for i = 0 to MenuRender.Width / 24 - 1 do
+            MenuRender.Write("½".PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
+            MenuRender.Write((i + 1).ToString().PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
+        MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 24) * 24), Color.LightGray, Color.FromArgb(0x202020))
+        MenuRender.WriteLine()
+
+        MenuRender.WriteLine(MenuRender.Pad " - Upcoming workload (axis in weeks) - ", Color.LightGray, Color.FromArgb(0x303030))
+        upcoming_bar(by_day, 500)
+        upcoming_bar(by_day, 400)
+        upcoming_bar(by_day, 300)
+        upcoming_bar(by_day, 200)
+        upcoming_bar(by_day, 100)
+        for i = 0 to MenuRender.Width / 7 - 1 do
+            MenuRender.Write((i + 1).ToString().PadLeft(7), Color.LightGray, Color.FromArgb(0x202020))
+        MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 7) * 7), Color.LightGray, Color.FromArgb(0x202020))
+        MenuRender.WriteLine()
+
+        if forgotten.Length > 0 then
+            MenuRender.WriteLine(MenuRender.Pad " - Forgotten cards - ", Color.Red, Color.FromArgb(0x303030))
+            for data, key in forgotten do
+                let ago_minutes = (now - data.LastReviewed) / TimeSpan.SecondsPerMinute
+                let ago_string = sprintf "%02id%02ih%02im" (ago_minutes / TimeSpan.MinutesPerDay) ((ago_minutes / 60L) % 24L) (ago_minutes % 60L)
+                MenuRender.Write((sprintf "[%i] %s" data.Level key).PadRight(MenuRender.Width - 44).Substring(0, MenuRender.Width - 44), ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
+                MenuRender.Write($""" {ago_string.Replace("00d", "   ")} ago """, Color.LightGray, Color.FromArgb(0x202020))
+                MenuRender.Write($" Reviews: {data.Reviews.ToString().PadRight(3)} ", Color.Green, Color.FromArgb(0x202020))
+                MenuRender.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
+                MenuRender.WriteLine()
+
+        MenuRender.FlushInline()
+        Console.ReadKey(true) |> ignore
 
     member this.Study() =
 
@@ -200,112 +303,6 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
         let get_filtered() =
             this.AvailableCards(selected_group) |> fst current_filter
-
-        let review () =
-            let cards = this.DueReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
-            if cards.Length > 0 then
-                ReviewSession(cards, scheduler, false).Start()
-
-        let review_ahead () =
-            let cards = this.AheadReviewCards(get_filtered(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
-            if cards.Length > 0 then
-                ReviewSession(cards, scheduler, true).Start()
-
-        let learn () =
-            let cards = this.LearningCards(get_filtered()) |> Seq.truncate 20 |> Array.ofSeq
-            if cards.Length > 0 then
-                LearnSession(cards, scheduler).Start()
-
-        let chores () =
-            Console.WriteLine(MenuRender.Pad " Chores for selected deck(s) ", Color.White, Color.FromArgb(0x303030))
-            let urgent = this.Chores() |> Seq.filter _.Urgent |> Seq.truncate 20 |> Array.ofSeq
-            let non_urgent = this.Chores() |> Seq.filter (_.Urgent >> not) |> Seq.truncate 20 |> Array.ofSeq
-
-            Console.WriteLine(MenuRender.Pad (sprintf " - %i Urgent - " urgent.Length), Color.LightGray, Color.FromArgb(0x202020))
-            for chore in urgent do Console.WriteLine(chore.Message, Color.DeepPink)
-            Console.WriteLine(MenuRender.Pad (sprintf " - %i Non-urgent - " non_urgent.Length), Color.LightGray, Color.FromArgb(0x202020))
-            for chore in non_urgent do Console.WriteLine(chore.Message, Color.Yellow)
-
-            Console.ReadKey(true) |> ignore
-
-        let stats () =
-            let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-            let all_cards = get_filtered()
-
-            let by_hour =
-                this.AheadReviewCards(all_cards, now)
-                |> Seq.map (fun c -> (scheduler.Get c.Key).Value.NextReview - now)
-                |> Seq.takeWhile (fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
-                |> Seq.countBy (fun c -> c / TimeSpan.SecondsPerHour)
-                |> Map.ofSeq
-
-            let by_day =
-                this.AheadReviewCards(all_cards, now)
-                |> Seq.map (fun c -> (scheduler.Get c.Key).Value.NextReview - now)
-                |> Seq.takeWhile (fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
-                |> Seq.countBy (fun c -> c / TimeSpan.SecondsPerDay)
-                |> Map.ofSeq
-
-            let forgotten =
-                all_cards
-                |> Seq.choose (fun c -> match scheduler.Get c.Key with ValueSome v when (v.Reviews > v.Level && v.Level < 4) || v.Difficulty > 5 -> Some (v, c.Key) | _ -> None)
-                |> Seq.sortByDescending (fst >> _.LastReviewed)
-                |> Seq.truncate 20
-                |> Array.ofSeq
-
-            let upcoming_bar (data, threshold) =
-                for i = 0 to MenuRender.Width - 1 do
-                    let hit = (Map.tryFind (int64 i) data |> Option.defaultValue 0) > threshold
-                    MenuRender.Write(" ", Color.White, if hit then Color.Green else Color.FromArgb(0x101010))
-                MenuRender.WriteLine()
-
-            MenuRender.WriteLine(MenuRender.Pad " Stats for selected deck(s) ", Color.LightGray, Color.FromArgb(0x303030))
-            MenuRender.WriteLine(MenuRender.Pad " - Distribution - ", Color.LightGray, Color.FromArgb(0x202020))
-            all_cards
-            |> this.Stats
-            |> Seq.iter (fun (level, count) ->
-                MenuRender.Write(sprintf "[%i]" level, ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
-                MenuRender.Write(String.replicate (count / 100) " ", Color.White, ReviewData.LevelColors.[level])
-                MenuRender.WriteLine((sprintf " %i cards" count).PadRight(MenuRender.Width - (count / 100) - 3), Color.LightGray, Color.FromArgb(0x101010))
-            )
-
-            MenuRender.WriteLine(MenuRender.Pad " - Upcoming workload (axis in days) - ", Color.LightGray, Color.FromArgb(0x303030))
-            upcoming_bar(by_hour, 250)
-            upcoming_bar(by_hour, 200)
-            upcoming_bar(by_hour, 150)
-            upcoming_bar(by_hour, 100)
-            upcoming_bar(by_hour, 50)
-
-            for i = 0 to MenuRender.Width / 24 - 1 do
-                MenuRender.Write("½".PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
-                MenuRender.Write((i + 1).ToString().PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
-            MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 24) * 24), Color.LightGray, Color.FromArgb(0x202020))
-            MenuRender.WriteLine()
-
-            MenuRender.WriteLine(MenuRender.Pad " - Upcoming workload (axis in weeks) - ", Color.LightGray, Color.FromArgb(0x303030))
-            upcoming_bar(by_day, 500)
-            upcoming_bar(by_day, 400)
-            upcoming_bar(by_day, 300)
-            upcoming_bar(by_day, 200)
-            upcoming_bar(by_day, 100)
-            for i = 0 to MenuRender.Width / 7 - 1 do
-                MenuRender.Write((i + 1).ToString().PadLeft(7), Color.LightGray, Color.FromArgb(0x202020))
-            MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 7) * 7), Color.LightGray, Color.FromArgb(0x202020))
-            MenuRender.WriteLine()
-
-            if forgotten.Length > 0 then
-                MenuRender.WriteLine(MenuRender.Pad " - Forgotten cards - ", Color.Red, Color.FromArgb(0x303030))
-                for data, key in forgotten do
-                    let ago_minutes = (now - data.LastReviewed) / TimeSpan.SecondsPerMinute
-                    let ago_string = sprintf "%02id%02ih%02im" (ago_minutes / TimeSpan.MinutesPerDay) ((ago_minutes / 60L) % 24L) (ago_minutes % 60L)
-                    MenuRender.Write((sprintf "[%i] %s" data.Level key).PadRight(MenuRender.Width - 44).Substring(0, MenuRender.Width - 44), ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
-                    MenuRender.Write($""" {ago_string.Replace("00d", "   ")} ago """, Color.LightGray, Color.FromArgb(0x202020))
-                    MenuRender.Write($" Reviews: {data.Reviews.ToString().PadRight(3)} ", Color.Green, Color.FromArgb(0x202020))
-                    MenuRender.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
-                    MenuRender.WriteLine()
-
-            MenuRender.FlushInline()
-            Console.ReadKey(true) |> ignore
 
         let mutable loop = true
 
@@ -395,10 +392,10 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | ConsoleKey.UpArrow -> previous_selection()
             | ConsoleKey.DownArrow -> next_selection()
             | ConsoleKey.Escape -> loop <- false
-            | ConsoleKey.Enter -> stats()
-            | ConsoleKey.L -> learn()
-            | ConsoleKey.R -> review()
-            | ConsoleKey.A -> review_ahead()
-            | ConsoleKey.C -> chores()
+            | ConsoleKey.Enter -> this.Stats(get_filtered())
+            | ConsoleKey.L -> this.Learn(get_filtered())
+            | ConsoleKey.R -> this.Review(get_filtered())
+            | ConsoleKey.A -> this.ReviewAhead(get_filtered())
+            | ConsoleKey.C -> this.ChoresList()
             | ConsoleKey.F -> cycle_filter()
             | _ -> ()
