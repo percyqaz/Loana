@@ -16,7 +16,6 @@
     <Compile Include="CLI\Console.fs" />
     <Compile Include="CLI\StudySession.fs" />
     <Compile Include="CLI\QuizSession.fs" />
-    <Compile Include="CLI\Menu.fs" />
     <Compile Include="Language\Vocab.fs" />
     <Compile Include="Language\Annotations.fs" />
     <Compile Include="Language\Declension\Deutsch.fs" />
@@ -32,6 +31,7 @@
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\VocabDeck.fs" />
     <Compile Include="Verbs.fs" />
+    <Compile Include="Menu.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

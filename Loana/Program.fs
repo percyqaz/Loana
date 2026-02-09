@@ -2,8 +2,6 @@
 open System.Drawing
 open Loana.CLI
 open Loana.Data
-open Loana.Quizzes
-open Loana.Vocab
 open Loana
 
 type Loana =
@@ -18,10 +16,8 @@ Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0x30
 
 let data_path = Path.Combine(Loana.GetFilePath(), "../Data")
 let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
-let wordlist = WordBank.ReadDirectory(Path.Combine(data_path, "Vocab"))
+let words = WordBank.ReadDirectory(Path.Combine(data_path, "Vocab"))
 let sentence_list = WordBank.ReadDirectory(Path.Combine(data_path, "B1-Goethe"))
-let vocab_deck = VocabDeck(scheduler, wordlist)
-let b1_deck = VocabDeck(scheduler, sentence_list)
 
 let mysterious_flame =
     let p = "           " in let s = 80 * 25 in let b = Array.zeroCreate (s + 81) in let c = " .:*sS#$"
@@ -44,10 +40,4 @@ while not System.Console.KeyAvailable do
     mysterious_flame()
 System.Console.ReadKey() |> ignore
 
-SelectMenu(
-    [|
-        { Name = "Vocab"; Action = fun () -> vocab_deck.Study() }
-        { Name = "Quizzes"; Action = fun () -> QuizScheduler(scheduler).Study() }
-        { Name = "Add Verbs"; Action = fun () -> Verbs.AddVerbs() }
-    |]
-).Show()
+Menu(words, scheduler).Run()
