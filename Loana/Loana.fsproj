@@ -26,9 +26,7 @@
     <Compile Include="Data\Words.fs" />
     <Compile Include="Quizzes\Shared.fs" />
     <Compile Include="Quizzes\Articles.fs" />
-    <Compile Include="Quizzes\PersonalPronouns.fs" />
-    <Compile Include="Quizzes\ReflexivePronouns.fs" />
-    <Compile Include="Quizzes\PossessivePronouns.fs" />
+    <Compile Include="Quizzes\Pronouns.fs" />
     <Compile Include="Quizzes\Quizzes.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />
     <Compile Include="Vocab\VocabCards.fs" />

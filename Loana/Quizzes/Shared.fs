@@ -23,7 +23,7 @@ module internal ArticleConstants =
 
     let KLEIN : Adjective = { Translation = Wordlist.parse_vocab "klein = small" }
 
-type GermanPracticeCard =
+type GermanPracticeQuestion =
 
     static let GERMAN_BG = Color.FromArgb(0x200000)
     static let ANSWER_BG = Color.FromArgb(0x050505)
@@ -34,3 +34,10 @@ type GermanPracticeCard =
             Back = AnnotationTree.to_question_side(back, ANSWER_BG)
             Answer = AnnotationTree.flatten_tree back
         }
+
+type Quiz =
+    {
+        Name: string
+        Key: string
+        Questions: unit -> Question array
+    }

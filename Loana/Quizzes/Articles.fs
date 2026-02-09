@@ -1,67 +1,66 @@
 ﻿namespace Loana.Quizzes
 
-open System
-open System.Drawing
-open Loana.CLI
 open Loana.Language
 
-type ArticlesQuiz() =
+module Articles =
 
-    let mutable cases = Set.ofList [Case.Dative; Case.Accusative; Case.Nominative; Case.Genitive]
-    let mutable adjective = false
-    let mutable definite = true
-    let mutable indefinite = false
+    let DEFINITE : Quiz =
+        {
+            Name = "Definite Articles"
+            Key = "quiz-definite-articles"
+            Questions = fun () ->
+                seq {
+                    let adjective = None
+                    for noun in NOUNS do
+                        for case in Case.LIST do
+                            yield GermanPracticeQuestion.Create(
+                                English.definite_fragment adjective noun case,
+                                Deutsch.definite_fragment adjective noun case
+                            )
+                }
+                |> Seq.randomShuffle
+                |> Array.ofSeq
+        }
 
-    member this.Study() : int option =
+    let INDEFINITE : Quiz =
+        {
+            Name = "Indefinite Articles"
+            Key = "quiz-indefinite-articles"
+            Questions = fun () ->
+                seq {
+                    let adjective = None
+                    for noun in NOUNS do
+                        for case in Case.LIST do
+                            if not noun.Guts.IsPlural then
+                                yield GermanPracticeQuestion.Create(
+                                    English.indefinite_fragment adjective noun case,
+                                    Deutsch.indefinite_fragment adjective noun case
+                                )
+                }
+                |> Seq.randomShuffle
+                |> Array.ofSeq
+        }
 
-        let mutable result = None
-        let mutable loop = true
-        while loop do
-            Console.WriteLine(sprintf "Studying: Articles", Color.LimeGreen)
-            Console.WriteLine(String.concat ", " (cases |> Seq.map (sprintf "%A")), Color.LimeGreen)
-            Console.WriteLine((if definite then "definite" else "") + " | " + (if indefinite then "indefinite" else ""), Color.LimeGreen)
-            if adjective then
-                Console.WriteLine(" + adjective", Color.LimeGreen)
-
-            match Console.ReadLine() with
-            | "-nominative" -> cases <- cases.Remove Case.Nominative
-            | "+nominative" -> cases <- cases.Add Case.Nominative
-            | "-accusative" -> cases <- cases.Remove Case.Accusative
-            | "+accusative" -> cases <- cases.Add Case.Nominative
-            | "-dative" -> cases <- cases.Remove Case.Dative
-            | "+dative" -> cases <- cases.Add Case.Dative
-            | "-genitive" -> cases <- cases.Remove Case.Genitive
-            | "+genitive" -> cases <- cases.Add Case.Genitive
-            | "-adjective" -> adjective <- false
-            | "+adjective" -> adjective <- true
-            | "-definite" -> definite <- false
-            | "+definite" -> definite <- true
-            | "-indefinite" -> indefinite <- false
-            | "+indefinite" -> indefinite <- true
-            | "back" ->
-                loop <- false
-            | "ok" ->
-                loop <- false
-                result <-
-                    seq {
-                        let adjective = if adjective then Some KLEIN else None
-                        for noun in NOUNS do
-                            for case in cases do
-                                if definite then
-                                    yield GermanPracticeCard.Create(
-                                        English.definite_fragment adjective noun case,
-                                        Deutsch.definite_fragment adjective noun case
-                                    )
-                                if indefinite && not noun.Guts.IsPlural then
-                                    yield GermanPracticeCard.Create(
-                                        English.indefinite_fragment adjective noun case,
-                                        Deutsch.indefinite_fragment adjective noun case
-                                    )
-                    }
-                    |> Seq.randomShuffle
-                    |> Seq.truncate 50
-                    |> Array.ofSeq
-                    |> fun cs -> QuizSession("Articles", cs).Start()
-            | _ -> ()
-
-        result
+    let MIXED : Quiz =
+        {
+            Name = "Mixed Articles"
+            Key = "quiz-mixed-articles"
+            Questions = fun () ->
+                seq {
+                    let adjective = Some KLEIN
+                    for noun in NOUNS do
+                        for case in Case.LIST do
+                            yield GermanPracticeQuestion.Create(
+                                English.definite_fragment adjective noun case,
+                                Deutsch.definite_fragment adjective noun case
+                            )
+                            if not noun.Guts.IsPlural then
+                                yield GermanPracticeQuestion.Create(
+                                    English.indefinite_fragment adjective noun case,
+                                    Deutsch.indefinite_fragment adjective noun case
+                                )
+                }
+                |> Seq.randomShuffle
+                |> Seq.truncate 50
+                |> Array.ofSeq
+        }

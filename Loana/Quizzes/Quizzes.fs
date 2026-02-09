@@ -5,36 +5,16 @@ open System.Drawing
 open Loana.CLI
 open Loana.Data
 
-type Quiz =
-    {
-        Name: string
-        Key: string
-        Study: unit -> int option
-    }
-
 type QuizScheduler(scheduler: ReviewSchedule) =
 
     let quizzes = [|
-        {
-            Name = "Articles"
-            Key = "quiz-articles"
-            Study = fun () -> ArticlesQuiz().Study()
-        }
-        {
-            Name = "Personal Pronouns"
-            Key = "quiz-personal-pronouns"
-            Study = fun () -> PersonalPronounsQuiz().Study()
-        }
-        {
-            Name = "Reflexive Pronouns"
-            Key = "quiz-reflexive-pronouns"
-            Study = fun () -> ReflexivePronounsQuiz().Study()
-        }
-        {
-            Name = "Possessive Pronouns"
-            Key = "quiz-possessive-pronouns"
-            Study = fun () -> PossessivePronounsQuiz().Study()
-        }
+        Articles.DEFINITE
+        Articles.INDEFINITE
+        Articles.MIXED
+
+        Pronouns.PERSONAL
+        Pronouns.REFLEXIVE
+        Pronouns.POSSESSIVE
     |]
 
     member this.Learning() =
@@ -85,7 +65,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
                 let q =
                     Seq.concat [this.DueReview now; this.Learning(); this.AheadReview now]
                     |> Seq.head
-                match q.Study() with
+                match QuizSession(q.Name, q.Questions()).Start() with
                 | None -> ()
                 | Some v ->
                     match scheduler.Get q.Key with
