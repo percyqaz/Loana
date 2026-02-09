@@ -189,7 +189,3 @@ type WordBank() =
 
     member this.Entries = entries.AsReadOnly()
     member this.Groups = groups.AsReadOnly()
-
-    member this.Stats() =
-        Console.WriteLine(sprintf " %i Entries " this.Entries.Count, Color.LightGreen, Color.FromArgb(0x202020))
-        Console.ReadLine() |> ignore
