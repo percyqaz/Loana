@@ -7,8 +7,9 @@ open Loana.Language
 
 type ReflexivePronounsQuiz() =
 
-    member this.Study() =
+    member this.Study() : int option =
 
+        let mutable result = None
         let mutable loop = true
         while loop do
             Console.WriteLine(sprintf "Studying: Reflexive Pronouns", Color.LimeGreen)
@@ -18,11 +19,13 @@ type ReflexivePronounsQuiz() =
                 loop <- false
             | "ok" ->
                 loop <- false
-                seq {
-                    for person in Person.LIST do
-                        for case in [false; true] do
-                            yield GermanPracticeCard.Create(English.reflexive_pronoun person case, Deutsch.reflexive_pronoun person case)
-                }
-                |> Array.ofSeq
-                |> fun cs -> QuizSession("Quiz", cs).Start()
+                result <-
+                    seq {
+                        for person in Person.LIST do
+                            for case in [false; true] do
+                                yield GermanPracticeCard.Create(English.reflexive_pronoun person case, Deutsch.reflexive_pronoun person case)
+                    }
+                    |> Array.ofSeq
+                    |> fun cs -> QuizSession("Reflexive Pronouns", cs).Start()
             | _ -> ()
+        result

@@ -6,7 +6,7 @@ open Loana.CLI
 
 type CardFragment = internal { Text: string; FG: Color; BG: Color }
 type CardLine =
-    internal { Content: string; BG: Color; Length: int }
+    private { Content: string; BG: Color; Length: int }
     static member Empty(bg: Color) = { Content = ""; BG = bg; Length = 0 }
     static member (+) (this: CardLine, extra: CardFragment) =
         { Content = this.Content + Console.ColorText(extra.Text, extra.FG, extra.BG); BG = this.BG; Length = this.Length + extra.Text.Length }

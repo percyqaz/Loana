@@ -9,8 +9,9 @@ type PersonalPronounsQuiz() =
 
     let mutable cases = Set.ofList [Case.Dative; Case.Accusative; Case.Nominative]
 
-    member this.Study() =
+    member this.Study() : int option =
 
+        let mutable result = None
         let mutable loop = true
         while loop do
             Console.WriteLine(sprintf "Studying: Personal Pronouns, %s" (String.concat ", " (cases |> Seq.map (sprintf "%A"))), Color.LimeGreen)
@@ -25,11 +26,14 @@ type PersonalPronounsQuiz() =
                 loop <- false
             | "ok" ->
                 loop <- false
-                seq {
-                    for person in Person.LIST do
-                        for case in cases do
-                            yield GermanPracticeCard.Create(English.personal_pronoun person case, Deutsch.personal_pronoun person case)
-                }
-                |> Array.ofSeq
-                |> fun cs -> QuizSession("Quiz", cs).Start()
+                result <-
+                    seq {
+                        for person in Person.LIST do
+                            for case in cases do
+                                yield GermanPracticeCard.Create(English.personal_pronoun person case, Deutsch.personal_pronoun person case)
+                    }
+                    |> Array.ofSeq
+                    |> fun cs -> QuizSession("Personal Pronouns", cs).Start()
             | _ -> ()
+
+        result

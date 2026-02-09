@@ -25,20 +25,12 @@ module internal ArticleConstants =
 
 type GermanPracticeCard =
 
-    static let GERMAN_BG = Color.FromArgb(0x400000)
-    static let ANSWER_BG = Color.FromArgb(0x202020)
+    static let GERMAN_BG = Color.FromArgb(0x200000)
+    static let ANSWER_BG = Color.FromArgb(0x050505)
 
-    static member Create(front: AnnotationTree, back: AnnotationTree) : QuizCard =
+    static member Create(front: AnnotationTree, back: AnnotationTree) : Question =
         {
-            Front =
-                let f = (AnnotationTree.flatten_tree front).Length in
-                AnnotationTree.render(front, GERMAN_BG)
-                |> Seq.map (fun l -> { BG = GERMAN_BG; Content = l; Length = f })
-                |> List.ofSeq
-            Back =
-                let b = (AnnotationTree.flatten_tree back).Length in
-                AnnotationTree.render(back, ANSWER_BG)
-                |> Seq.map (fun l -> { BG = ANSWER_BG; Content = l; Length = b })
-                |> List.ofSeq
+            Front = AnnotationTree.to_question_side(front, GERMAN_BG)
+            Back = AnnotationTree.to_question_side(back, ANSWER_BG)
             Answer = AnnotationTree.flatten_tree back
         }

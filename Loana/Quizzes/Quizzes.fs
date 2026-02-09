@@ -9,7 +9,7 @@ type Quiz =
     {
         Name: string
         Key: string
-        Study: unit -> unit
+        Study: unit -> int option
     }
 
 type QuizScheduler(scheduler: ReviewSchedule) =
@@ -85,9 +85,15 @@ type QuizScheduler(scheduler: ReviewSchedule) =
                 let q =
                     Seq.concat [this.DueReview now; this.Learning(); this.AheadReview now]
                     |> Seq.head
-                q.Study()
-                match scheduler.Get q.Key with
-                | ValueNone -> scheduler.Schedule(q.Key, ReviewData.Level1(now, 1)) |> ignore
-                | ValueSome d -> scheduler.Schedule(q.Key, d.Promote now) |> ignore
+                match q.Study() with
+                | None -> ()
+                | Some v ->
+                    match scheduler.Get q.Key with
+                    | ValueNone -> scheduler.Schedule(q.Key, ReviewData.Level1(now, 1)) |> Console.WriteLine
+                    | ValueSome d ->
+                        if v < 0 then scheduler.Schedule(q.Key, d.Demote now) |> Console.WriteLine
+                        elif v > 0 then scheduler.Schedule(q.Key, d.Promote now) |> Console.WriteLine
+                        else scheduler.Schedule(q.Key, d.Promote now) |> Console.WriteLine
+                    Console.ReadKey(true) |> ignore
             | "back" -> loop <- false
             | _ -> ()

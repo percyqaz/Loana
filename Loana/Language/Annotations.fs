@@ -39,7 +39,7 @@ module AnnotationTree =
             Layer: int
         }
 
-    let internal render (annotations: AnnotationTree, background: Color) : ResizeArray<string> =
+    let to_question_side (annotations: AnnotationTree, background: Color) : QuestionSide =
         let frags = ResizeArray<ConsoleAnnotationFragment>()
 
         let mutable position = 0
@@ -122,25 +122,25 @@ module AnnotationTree =
             highest_layer
 
         walk (annotations) |> ignore
-        let lines = frags |> Seq.groupBy (fun x -> x.Layer) |> Seq.sortBy fst |> Seq.map (snd >> Seq.sortBy _.Start >> Array.ofSeq) |> Seq.toArray
-        let output_lines = ResizeArray<string>()
-        let render_line (line: ConsoleAnnotationFragment array) : unit =
-            let mutable p = 0
-            let mutable output = ""
-            for frag in line do
-                output <- output + Console.ColorText(String.replicate (frag.Start - p) " ", Color.White, background)
+        let lines = frags |> Seq.groupBy (fun x -> x.Layer) |> Seq.sortBy fst |> Seq.map (snd >> Seq.sortBy _.Start >> Array.ofSeq) |> Seq.toList
+        let render_line (line: ConsoleAnnotationFragment array) : QuestionLine =
+            seq {
+                let mutable p = 0
+                for frag in line do
+                    yield { Text = String.replicate (frag.Start - p) " "; FG = Color.White }
 
-                if frag.Layer = 0 then output <- output + Console.ColorText(frag.Text, Color.White, background)
-                else
-                    let padded =
-                        if frag.Text.Length <= (frag.Finish - frag.Start) then
-                            let lpadding = ((frag.Finish - frag.Start) - frag.Text.Length) / 2
-                            let rpadding = ((frag.Finish - frag.Start) - frag.Text.Length + 1) / 2
-                            String.replicate lpadding "-" + frag.Text + String.replicate rpadding "-"
-                        else
-                            frag.Text.Substring(0, frag.Finish - frag.Start)
-                    output <- output + Console.ColorText(padded, frag.Color, background)
-                p <- frag.Finish
-            output_lines.Add(output)
-        lines |> Array.iter render_line
-        output_lines
+                    if frag.Layer = 0 then yield { Text = frag.Text; FG = Color.White }
+                    else
+                        let padded =
+                            if frag.Text.Length <= (frag.Finish - frag.Start) then
+                                let lpadding = ((frag.Finish - frag.Start) - frag.Text.Length) / 2
+                                let rpadding = ((frag.Finish - frag.Start) - frag.Text.Length + 1) / 2
+                                String.replicate lpadding "-" + frag.Text + String.replicate rpadding "-"
+                            else
+                                frag.Text.Substring(0, frag.Finish - frag.Start)
+                        yield { Text = padded; FG = frag.Color }
+                    p <- frag.Finish
+            }
+            |> List.ofSeq
+            |> QuestionLine.Create
+        { Lines = QuestionLine.Create [] :: (lines |> List.map render_line) @ [QuestionLine.Create []]; BG = background }

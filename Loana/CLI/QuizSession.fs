@@ -4,84 +4,95 @@ open System
 open System.Drawing
 open Loana.CLI
 
-type QuizCard =
+type QuestionFragment = internal { Text: string; FG: Color }
+type QuestionLine =
+    private { Content: QuestionFragment list; Length: int }
+    static member Empty = { Content = []; Length = 0 }
+    static member (+) (this: QuestionLine, extra: QuestionFragment) =
+        { Content = this.Content @ [extra]; Length = this.Length + extra.Text.Length }
+    static member Create = List.fold (+) QuestionLine.Empty
+
+type QuestionSide = { BG: Color; Lines: QuestionLine list }
+
+type Question =
     {
-        Front: CardLine list
-        Back: CardLine list
+        Front: QuestionSide
+        Back: QuestionSide
         Answer: string
     }
 
-type QuizSession(title: string, cards: QuizCard array) =
-    let cards = ResizeArray<QuizCard>(cards |> Seq.randomShuffle)
+type QuizSession(title: string, questions: Question array) =
+    let questions = ResizeArray<Question>(questions |> Seq.randomShuffle)
 
-    let CARD_AREA = 20
+    let QUESTION_AREA = 20
     let LOG_SIZE = 20
 
     let log = ResizeArray()
     let edges_width = MenuRender.Width - 12
     let inner_width = edges_width - 4
-
-    let ANSWER_BG = Color.FromArgb(0x202020)
+    let mutable mistakes = 0
 
     let empty() = MenuRender.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0x101010))
+
     let horizontal_edge() =
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.Write("".PadRight(edges_width), Color.White, Color.FromArgb(0x303030))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.WriteLine()
-    let line(i: int ref) (line: CardLine) =
+
+    let line (bg: Color) (line: QuestionLine) =
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
 
-        MenuRender.Write(" ", Color.White, line.BG)
-        MenuRender.Write(line.Content)
-        MenuRender.Write("".PadLeft(inner_width - 1 - line.Length |> max 0), Color.White, line.BG)
+        MenuRender.Write(" ", Color.White, bg)
+        for p in line.Content do
+            MenuRender.Write(p.Text, p.FG, bg)
+        MenuRender.Write("".PadLeft(inner_width - 1 - line.Length |> max 0), Color.White, bg)
 
         MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.WriteLine()
-        i.Value <- i.Value + 1
 
-    let draw_front(front: CardLine list) : int * int =
+    let draw_front(front: QuestionSide, back: QuestionSide) : int * int =
         empty()
         empty()
         horizontal_edge()
-        let i = ref 5
-        front |> List.iter (line i)
-        line i (CardLine.Create ANSWER_BG [])
+        front.Lines |> List.iter (line front.BG)
+        line back.BG (QuestionLine.Create [])
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write(" ", Color.White, ANSWER_BG)
+        MenuRender.Write(" ", Color.White, back.BG)
         MenuRender.Write("".PadLeft(inner_width - 2), Color.White, Color.Black)
-        MenuRender.Write(" ", Color.White, ANSWER_BG)
+        MenuRender.Write(" ", Color.White, back.BG)
         MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.WriteLine()
-        line i (CardLine.Create ANSWER_BG [])
+        back.Lines |> List.iter (fun _ -> line back.BG (QuestionLine.Create []))
         horizontal_edge()
-        for _ = i.Value to CARD_AREA do
+        let i = 5 + front.Lines.Length + 1 + back.Lines.Length
+        for _ = i to QUESTION_AREA do
             empty()
-        (9, i.Value - 2)
+        (9, i - 1 - back.Lines.Length)
 
-    let draw_back(front: CardLine list, back: CardLine list, input: string) =
+    let draw_back(front: QuestionSide, back: QuestionSide, input: string) =
         empty()
         empty()
         horizontal_edge()
-        let i = ref 5
-        front |> List.iter (line i)
-        line i (CardLine.Create ANSWER_BG [])
+        front.Lines |> List.iter (line front.BG)
+        line back.BG (QuestionLine.Create [])
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write(" ", Color.White, ANSWER_BG)
+        MenuRender.Write(" ", Color.White, back.BG)
         MenuRender.Write(input, Color.White, Color.Black)
         MenuRender.Write("".PadLeft(inner_width - 2 - input.Length), Color.White, Color.Black)
-        MenuRender.Write(" ", Color.White, ANSWER_BG)
+        MenuRender.Write(" ", Color.White, back.BG)
         MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
         MenuRender.WriteLine()
-        back |> List.iter (line i)
+        back.Lines |> List.iter (line back.BG)
         horizontal_edge()
-        for _ = i.Value to CARD_AREA do
+        let i = 5 + front.Lines.Length + 1 + back.Lines.Length
+        for _ = i to QUESTION_AREA do
             empty()
 
     let draw_log() =
@@ -90,22 +101,26 @@ type QuizSession(title: string, cards: QuizCard array) =
 
     let draw_title() =
         MenuRender.Write($" Loana: {title} ".PadRight(MenuRender.Width - 16), Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write((sprintf " % 2i cards left " (cards.Count + 1)), Color.LightGreen, Color.FromArgb(0x303030))
+        MenuRender.Write((sprintf " % 2i cards left " (questions.Count + 1)), Color.LightGreen, Color.FromArgb(0x303030))
         MenuRender.WriteLine()
 
-    member this.Start() =
-        while cards.Count > 0 do
-            let current = cards.[0]
-            cards.RemoveAt(0)
+    member this.Start() : int option =
+        let mutable quit_early = false
+
+        while questions.Count > 0 do
+            let current = questions.[0]
+            questions.RemoveAt(0)
 
             draw_title()
-            let (x, y) = draw_front current.Front
+            let (x, y) = draw_front(current.Front, current.Back)
             MenuRender.WriteLine(MenuRender.Pad "[Enter] Submit", Color.LightGray, Color.FromArgb(0x303030))
             draw_log()
             MenuRender.Redraw()
+            let struct (x2, y2) = Console.GetCursorPosition()
             Console.SetCursorPosition(x, y)
 
             let input = Console.ReadLine()
+            Console.SetCursorPosition(x2, y2)
             if input <> current.Answer then
 
                 draw_title()
@@ -117,15 +132,29 @@ type QuizSession(title: string, cards: QuizCard array) =
                 let mutable loop = true
                 while loop do
                     match Console.ReadKey(true).Key with
-                    | ConsoleKey.Escape -> cards.Clear(); loop <- false
+                    | ConsoleKey.Escape -> questions.Clear(); quit_early <- true; loop <- false
                     | ConsoleKey.Enter -> this.ReplaceNear current; loop <- false
                     | _ -> ()
 
-        Console.WriteLine(MenuRender.Pad " Session ended. ", Color.LightGreen, Color.FromArgb(0x303030))
-        Console.ReadKey(true) |> ignore
+        Console.WriteLine(MenuRender.Pad $" Session ended. {mistakes} mistakes! ", Color.LightGreen, Color.FromArgb(0x202020))
 
-    member this.ReplaceNear(card: QuizCard) =
-        cards.Insert(min 4 cards.Count, card)
+        let mutable result = None
+        if quit_early then
+            Console.ReadKey(true) |> ignore
+        else
+            Console.WriteLine(" [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width), Color.LightGray, Color.FromArgb(0x303030))
+            while result.IsNone do
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.OemComma -> result <- Some -1
+                | ConsoleKey.OemPeriod -> result <- Some 0
+                | ConsoleKey.Oem2 -> result <- Some 1
+                | _ -> ()
+
+        result
+
+    member this.ReplaceNear(card: Question) =
+        mistakes <- mistakes + 1
+        questions.Insert(min 4 questions.Count, card)
 
     member this.Log(message: string) =
         Console.WriteLine(message)

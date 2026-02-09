@@ -10,8 +10,9 @@ type PossessivePronounsQuiz() =
     let mutable cases = Set.ofList [Case.Dative; Case.Accusative; Case.Nominative; Case.Genitive]
     let mutable adjective = false
 
-    member this.Study() =
+    member this.Study() : int option =
 
+        let mutable result = None
         let mutable loop = true
         while loop do
             Console.WriteLine(sprintf "Studying: Possessive Pronouns", Color.LimeGreen)
@@ -34,18 +35,21 @@ type PossessivePronounsQuiz() =
                 loop <- false
             | "ok" ->
                 loop <- false
-                seq {
-                    let adjective = if adjective then Some KLEIN else None
-                    for person in Person.LIST do
-                        for noun in NOUNS do
-                            for case in cases do
-                                yield GermanPracticeCard.Create(
-                                    English.possessive_fragment person adjective noun case,
-                                    Deutsch.possessive_fragment person adjective noun case
-                                )
-                }
-                |> Seq.randomShuffle
-                |> Seq.truncate 50
-                |> Array.ofSeq
-                |> fun cs -> QuizSession("Quiz", cs).Start()
+                result <-
+                    seq {
+                        let adjective = if adjective then Some KLEIN else None
+                        for person in Person.LIST do
+                            for noun in NOUNS do
+                                for case in cases do
+                                    yield GermanPracticeCard.Create(
+                                        English.possessive_fragment person adjective noun case,
+                                        Deutsch.possessive_fragment person adjective noun case
+                                    )
+                    }
+                    |> Seq.randomShuffle
+                    |> Seq.truncate 50
+                    |> Array.ofSeq
+                    |> fun cs -> QuizSession("Possessive Pronouns", cs).Start()
             | _ -> ()
+
+        result

@@ -12,8 +12,9 @@ type ArticlesQuiz() =
     let mutable definite = true
     let mutable indefinite = false
 
-    member this.Study() =
+    member this.Study() : int option =
 
+        let mutable result = None
         let mutable loop = true
         while loop do
             Console.WriteLine(sprintf "Studying: Articles", Color.LimeGreen)
@@ -41,23 +42,26 @@ type ArticlesQuiz() =
                 loop <- false
             | "ok" ->
                 loop <- false
-                seq {
-                    let adjective = if adjective then Some KLEIN else None
-                    for noun in NOUNS do
-                        for case in cases do
-                            if definite then
-                                yield GermanPracticeCard.Create(
-                                    English.definite_fragment adjective noun case,
-                                    Deutsch.definite_fragment adjective noun case
-                                )
-                            if indefinite && not noun.Guts.IsPlural then
-                                yield GermanPracticeCard.Create(
-                                    English.indefinite_fragment adjective noun case,
-                                    Deutsch.indefinite_fragment adjective noun case
-                                )
-                }
-                |> Seq.randomShuffle
-                |> Seq.truncate 50
-                |> Array.ofSeq
-                |> fun cs -> QuizSession("Quiz", cs).Start()
+                result <-
+                    seq {
+                        let adjective = if adjective then Some KLEIN else None
+                        for noun in NOUNS do
+                            for case in cases do
+                                if definite then
+                                    yield GermanPracticeCard.Create(
+                                        English.definite_fragment adjective noun case,
+                                        Deutsch.definite_fragment adjective noun case
+                                    )
+                                if indefinite && not noun.Guts.IsPlural then
+                                    yield GermanPracticeCard.Create(
+                                        English.indefinite_fragment adjective noun case,
+                                        Deutsch.indefinite_fragment adjective noun case
+                                    )
+                    }
+                    |> Seq.randomShuffle
+                    |> Seq.truncate 50
+                    |> Array.ofSeq
+                    |> fun cs -> QuizSession("Articles", cs).Start()
             | _ -> ()
+
+        result
