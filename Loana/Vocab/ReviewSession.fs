@@ -1,8 +1,8 @@
-namespace Loana.GUI
+namespace Loana.Vocab
 
 open System
 open Loana.CLI
-open Loana.Study
+open Loana.Data
 
 type LearnSession(cards: Card array, scheduler: ReviewSchedule) =
     inherit StudySession("Learning session", cards)

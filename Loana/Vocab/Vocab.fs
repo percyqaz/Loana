@@ -1,11 +1,10 @@
-namespace Loana.Features
+namespace Loana.Vocab
 
 open System
 open System.Drawing
 open Loana.CLI
 open Loana.Language
-open Loana.Study
-open Loana.GUI
+open Loana.Data
 
 type Chore =
     { Message: string; Urgent: bool }

@@ -1,8 +1,9 @@
-﻿namespace Loana.Features
+﻿namespace Loana.Quizzes
 
 open System.Drawing
 open Loana.CLI
 open Loana.Language
+open Loana.Data
 
 [<AutoOpen>]
 module internal ArticleConstants =

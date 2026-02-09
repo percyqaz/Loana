@@ -1,4 +1,4 @@
-namespace Loana.Study
+namespace Loana.Data
 
 open System
 open System.Text

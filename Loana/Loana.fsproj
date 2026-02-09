@@ -22,18 +22,18 @@
     <Compile Include="Language\Declension\Deutsch.fs" />
     <Compile Include="Language\Declension\English.fs" />
     <Compile Include="Language\VerbDownloader.fs" />
-    <Compile Include="Language\WordBank.fs" />
-    <Compile Include="Study\ReviewSchedule.fs" />
-    <Compile Include="Study\ReviewSession.fs" />
-    <Compile Include="Study\VocabCards.fs" />
-    <Compile Include="Features\Quizzes\Shared.fs" />
-    <Compile Include="Features\Quizzes\Articles.fs" />
-    <Compile Include="Features\Quizzes\PersonalPronouns.fs" />
-    <Compile Include="Features\Quizzes\ReflexivePronouns.fs" />
-    <Compile Include="Features\Quizzes\PossessivePronouns.fs" />
-    <Compile Include="Features\Vocab.fs" />
-    <Compile Include="Features\Quizzes.fs" />
-    <Compile Include="Features\Verbs.fs" />
+    <Compile Include="Data\ReviewSchedule.fs" />
+    <Compile Include="Data\Words.fs" />
+    <Compile Include="Quizzes\Shared.fs" />
+    <Compile Include="Quizzes\Articles.fs" />
+    <Compile Include="Quizzes\PersonalPronouns.fs" />
+    <Compile Include="Quizzes\ReflexivePronouns.fs" />
+    <Compile Include="Quizzes\PossessivePronouns.fs" />
+    <Compile Include="Quizzes\Quizzes.fs" />
+    <Compile Include="Vocab\ReviewSession.fs" />
+    <Compile Include="Vocab\VocabCards.fs" />
+    <Compile Include="Vocab\Vocab.fs" />
+    <Compile Include="Verbs.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

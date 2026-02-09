@@ -1,4 +1,4 @@
-namespace Loana.Study
+namespace Loana.Vocab
 
 open System.Drawing
 open Loana.Language

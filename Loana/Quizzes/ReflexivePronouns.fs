@@ -1,4 +1,4 @@
-﻿namespace Loana.Features
+﻿namespace Loana.Quizzes
 
 open System
 open System.Drawing

@@ -1,24 +1,21 @@
-﻿namespace Loana.Features
+﻿namespace Loana.Quizzes
 
 open System
 open System.Drawing
 open Loana.CLI
 open Loana.Language
 
-type ArticlesQuiz() =
+type PossessivePronounsQuiz() =
 
     let mutable cases = Set.ofList [Case.Dative; Case.Accusative; Case.Nominative; Case.Genitive]
     let mutable adjective = false
-    let mutable definite = true
-    let mutable indefinite = false
 
     member this.Study() =
 
         let mutable loop = true
         while loop do
-            Console.WriteLine(sprintf "Studying: Articles", Color.LimeGreen)
+            Console.WriteLine(sprintf "Studying: Possessive Pronouns", Color.LimeGreen)
             Console.WriteLine(String.concat ", " (cases |> Seq.map (sprintf "%A")), Color.LimeGreen)
-            Console.WriteLine((if definite then "definite" else "") + " | " + (if indefinite then "indefinite" else ""), Color.LimeGreen)
             if adjective then
                 Console.WriteLine(" + adjective", Color.LimeGreen)
 
@@ -33,27 +30,18 @@ type ArticlesQuiz() =
             | "+genitive" -> cases <- cases.Add Case.Genitive
             | "-adjective" -> adjective <- false
             | "+adjective" -> adjective <- true
-            | "-definite" -> definite <- false
-            | "+definite" -> definite <- true
-            | "-indefinite" -> indefinite <- false
-            | "+indefinite" -> indefinite <- true
             | "back" ->
                 loop <- false
             | "ok" ->
                 loop <- false
                 seq {
                     let adjective = if adjective then Some KLEIN else None
-                    for noun in NOUNS do
-                        for case in cases do
-                            if definite then
+                    for person in Person.LIST do
+                        for noun in NOUNS do
+                            for case in cases do
                                 yield GermanPracticeCard.Create(
-                                    English.definite_fragment adjective noun case,
-                                    Deutsch.definite_fragment adjective noun case
-                                )
-                            if indefinite && not noun.Guts.IsPlural then
-                                yield GermanPracticeCard.Create(
-                                    English.indefinite_fragment adjective noun case,
-                                    Deutsch.indefinite_fragment adjective noun case
+                                    English.possessive_fragment person adjective noun case,
+                                    Deutsch.possessive_fragment person adjective noun case
                                 )
                 }
                 |> Seq.randomShuffle

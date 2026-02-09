@@ -1,8 +1,9 @@
-﻿namespace Loana.Language
+﻿namespace Loana.Data
 
 open System
 open System.Drawing
 open Loana.CLI
+open Loana.Language
 
 module Wordlist =
 

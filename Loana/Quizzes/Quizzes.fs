@@ -1,9 +1,9 @@
-﻿namespace Loana.Features
+﻿namespace Loana.Quizzes
 
 open System
 open System.Drawing
 open Loana.CLI
-open Loana.Study
+open Loana.Data
 
 type Quiz =
     {

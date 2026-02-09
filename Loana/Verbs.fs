@@ -1,4 +1,4 @@
-namespace Loana.Features
+namespace Loana
 
 open System
 open System.IO
