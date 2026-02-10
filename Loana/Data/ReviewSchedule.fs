@@ -126,6 +126,16 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(level, difficulty, this.Interval)
         }
 
+    member this.Bump(now: int64) =
+        let next_review_plus_day = this.NextReview + TimeSpan.SecondsPerDay
+        let now_plus_day = now + TimeSpan.SecondsPerDay
+        let new_internal = max now_plus_day next_review_plus_day - this.LastReviewed
+        let difficulty = this.Difficulty - 1 |> max 1
+        { this with
+            Difficulty = difficulty
+            Interval = new_internal
+        }
+
 type ReviewScheduleFile(path: string) =
 
     let VERSION = 2
@@ -197,7 +207,7 @@ type ReviewSchedule(path: string) =
         | true, data -> ValueSome data
         | false, _ -> ValueNone
 
-    member this.Schedule(key: string, data: ReviewData) : string =
+    member this.Schedule(key: string, data: ReviewData, now: int64) : string =
         let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
         mem.[key] <- data
         db.Write(mem)
@@ -205,7 +215,11 @@ type ReviewSchedule(path: string) =
         + Console.ColorText(" -> ", Color.LightGray, Color.FromArgb(0x202020))
         + Console.ColorText(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
         + Console.ColorText($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
-        + Console.ColorText($" Next review: {MenuRender.FormatInterval(data.Interval)} " , Color.LightGreen, Color.FromArgb(0x202020))
+        + Console.ColorText($" Next review: {MenuRender.FormatInterval(data.NextReview - now)} " , Color.LightGreen, Color.FromArgb(0x202020))
 
     member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : string =
-        this.Schedule(key, f <| this.Get(key).Value <| DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        this.Schedule(key, f <| this.Get(key).Value <| now, now)
+
+    member this.Bump(key: string) : string =
+        this.Reschedule(key, _.Bump)

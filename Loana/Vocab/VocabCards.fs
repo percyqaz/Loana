@@ -10,7 +10,13 @@ type VocabCard =
     static let ENGLISH_NOTE = Color.FromArgb(0x808080)
     static let GERMAN_NOTE = Color.FromArgb(0xC0C0C0)
 
-    static member M_Tier1_RecogniseDE(v: Vocab) = { Key = $"vocab-recognise-{v.Key}"; Tier = 1 }
+    static member M_Tier1_RecogniseDE(v: Vocab) =
+        {
+            Key = $"vocab-recognise-{v.Key}"
+            Tier = 1
+            ReferenceKey = v.Key
+            BumpKey = None
+        }
     static member C_Tier1_RecogniseDE(v: Vocab) =
         let en_side =
             seq {
@@ -49,7 +55,13 @@ type VocabCard =
                 ]
         }
 
-    static member M_Tier2_RecallDE(v: Vocab) = { Key = $"vocab-recall-{v.Key}"; Tier = 2 }
+    static member M_Tier2_RecallDE(v: Vocab) =
+        {
+            Key = $"vocab-recall-{v.Key}"
+            Tier = 2
+            ReferenceKey = v.Key
+            BumpKey = Some $"vocab-recognise-{v.Key}"
+        }
     static member C_Tier2_RecallDE(v: Vocab) =
         let en_side =
             seq {
@@ -88,7 +100,13 @@ type VocabCard =
                 ]
         }
 
-    static member M_Tier3_RecogniseArticleDE(n: Noun) = { Key = $"noun-recognise-{n.KeyWithGender}"; Tier = 3 }
+    static member M_Tier3_RecogniseArticleDE(n: Noun) =
+        {
+            Key = $"noun-recognise-{n.KeyWithGender}"
+            Tier = 3
+            ReferenceKey = n.Translation.Key
+            BumpKey = None
+        }
     static member C_Tier3_RecogniseArticleDE(n: Noun) =
         let en_side =
             seq {
@@ -139,7 +157,13 @@ type VocabCard =
                 ]
         }
 
-    static member M_Tier4_RecallArticleDE(n: Noun) = { Key = $"noun-recall-{n.KeyWithGender}"; Tier = 4 }
+    static member M_Tier4_RecallArticleDE(n: Noun) =
+        {
+            Key = $"noun-recall-{n.KeyWithGender}"
+            Tier = 4
+            ReferenceKey = n.Translation.Key
+            BumpKey = Some $"noun-recognise-{n.KeyWithGender}"
+        }
     static member C_Tier4_RecallArticleDE(n: Noun) =
         let en_side =
             seq {

@@ -19,7 +19,7 @@ type CardSide =
         { Lines = this.Lines @ [line] }
     static member Create = List.fold (+) CardSide.Empty
 
-type CardMeta = { Key: string; Tier: int }
+type CardMeta = { Key: string; ReferenceKey: string; Tier: int; BumpKey: string option }
 type Card =
     {
         Meta: CardMeta

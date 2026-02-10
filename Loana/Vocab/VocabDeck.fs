@@ -175,11 +175,19 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.sortBy fst
 
     member this.Review (cards: Card seq) =
-        let cards = this.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+        let cards =
+            this.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.distinctBy _.Meta.ReferenceKey
+            |> Seq.truncate 50
+            |> Array.ofSeq
         if cards.Length > 0 then ReviewSession(cards, scheduler, false).Start()
 
     member this.ReviewAhead (cards: Card seq) =
-        let cards = this.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 50 |> Array.ofSeq
+        let cards =
+            this.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.distinctBy _.Meta.ReferenceKey
+            |> Seq.truncate 50
+            |> Array.ofSeq
         if cards.Length > 0 then ReviewSession(cards, scheduler, true).Start()
 
     member this.Learn (cards: Card seq) =
