@@ -110,10 +110,10 @@ type StudySession(title: string, cards: Card array) =
                 while loop do
                     match Console.ReadKey(true).Key with
                     | ConsoleKey.Escape -> cards.Clear(); loop <- false
-                    | ConsoleKey.Z -> this.Forget current; loop <- false
-                    | ConsoleKey.OemComma -> this.Demote current; loop <- false
-                    | ConsoleKey.OemPeriod -> this.Keep current; loop <- false
-                    | ConsoleKey.Oem2 -> this.Promote current; loop <- false
+                    | ConsoleKey.Z -> Console.Beep(220, 50); this.Forget current; loop <- false
+                    | ConsoleKey.OemComma -> Console.Beep(440, 50); Console.Beep(294, 50); this.Demote current; loop <- false
+                    | ConsoleKey.OemPeriod -> Console.Beep(440, 50); Console.Beep(554, 50); this.Keep current; loop <- false
+                    | ConsoleKey.Oem2 -> Console.Beep(440, 50); Console.Beep(659, 50); this.Promote current; loop <- false
                     | _ -> ()
 
         Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0x303030))

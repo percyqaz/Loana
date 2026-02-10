@@ -17,6 +17,8 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         Pronouns.POSSESSIVE
     |]
 
+    member this.Quizzes : Quiz seq = quizzes
+
     member this.Learning() =
         quizzes
         |> Seq.where (fun c -> (scheduler.Get c.Key).IsNone)
@@ -45,35 +47,20 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         |> Seq.sortBy snd
         |> Seq.map fst
 
-    member this.Study() =
+    member this.Auto() : Quiz =
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        Seq.concat [this.DueReview now; this.Learning(); this.AheadReview now]
+        |> Seq.head
 
-        let mutable loop = true
-        while loop do
-            Console.Clear()
-            Console.WriteLine("Quiz learner :)")
+    member this.Study(quiz: Quiz) =
+        match QuizSession(quiz.Name, quiz.Questions()).Start() with
+        | None -> ()
+        | Some v ->
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-            for q in this.DueReview(now) do
-                Console.WriteLine(" " + q.Name, Color.Green)
-            for q in this.Learning() do
-                Console.WriteLine(" " + q.Name, Color.LightBlue)
-            for q in this.AheadReview(now) do
-                Console.WriteLine(" " + q.Name, Color.Yellow)
-
-            match Console.ReadLine() with
-            | "ok"
-            | "" ->
-                let q =
-                    Seq.concat [this.DueReview now; this.Learning(); this.AheadReview now]
-                    |> Seq.head
-                match QuizSession(q.Name, q.Questions()).Start() with
-                | None -> ()
-                | Some v ->
-                    match scheduler.Get q.Key with
-                    | ValueNone -> scheduler.Schedule(q.Key, ReviewData.Level1(now, 1)) |> Console.WriteLine
-                    | ValueSome d ->
-                        if v < 0 then scheduler.Schedule(q.Key, d.Demote now) |> Console.WriteLine
-                        elif v > 0 then scheduler.Schedule(q.Key, d.Promote now) |> Console.WriteLine
-                        else scheduler.Schedule(q.Key, d.Promote now) |> Console.WriteLine
-                    Console.ReadKey(true) |> ignore
-            | "back" -> loop <- false
-            | _ -> ()
+            match scheduler.Get quiz.Key with
+            | ValueNone -> scheduler.Schedule(quiz.Key, ReviewData.Level1(now, 1)) |> Console.WriteLine
+            | ValueSome d ->
+                if v < 0 then scheduler.Schedule(quiz.Key, d.Demote now) |> Console.WriteLine
+                elif v > 0 then scheduler.Schedule(quiz.Key, d.Promote now) |> Console.WriteLine
+                else scheduler.Schedule(quiz.Key, d.Promote now) |> Console.WriteLine
+            Console.ReadKey(true) |> ignore

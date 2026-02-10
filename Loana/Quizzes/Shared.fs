@@ -35,9 +35,16 @@ type GermanPracticeQuestion =
             Answer = AnnotationTree.flatten_tree back
         }
 
+[<CustomEquality; NoComparison>]
 type Quiz =
     {
         Name: string
         Key: string
         Questions: unit -> Question array
     }
+    override this.Equals(obj: obj) =
+        match obj with
+        | :? Quiz as q -> q.Name = this.Name
+        | _ -> false
+    override this.GetHashCode (): int =
+        this.Name.GetHashCode()

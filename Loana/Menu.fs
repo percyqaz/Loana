@@ -5,17 +5,25 @@ open System.Drawing
 open Loana.CLI
 open Loana.Data
 open Loana.Vocab
+open Loana.Quizzes
+
+type MenuSelection =
+    | VocabGroup of string list
+    | Quiz of Quiz
 
 type Menu(words: WordBank, scheduler: ReviewSchedule) =
 
     let vocab: VocabDeck = VocabDeck(scheduler, words)
+    let quizzes: QuizScheduler = QuizScheduler(scheduler)
 
-    let WORD_GROUPS =
+    let SELECTION_OPTIONS =
         seq {
             for group in words.Groups do
-                yield List.ofSeq group.Lists
-                yield! group.Lists |> Seq.map List.singleton
-            yield []
+                yield VocabGroup (List.ofSeq group.Lists)
+                yield! group.Lists |> Seq.map List.singleton |> Seq.map VocabGroup
+            yield VocabGroup []
+            for quiz in quizzes.Quizzes do
+                yield Quiz quiz
         }
         |> Array.ofSeq
 
@@ -25,19 +33,19 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
         (fun cards -> vocab.FilterByTier(cards, 2, 999)), "Unlocks only"
     |]
 
-    let mutable selected_group = []
+    let mutable selection = VocabGroup []
     let mutable current_filter = FILTERS.[0]
 
     let next_selection() =
-        selected_group <- WORD_GROUPS.[(Array.IndexOf(WORD_GROUPS, selected_group) + 1) % WORD_GROUPS.Length]
+        selection <- SELECTION_OPTIONS.[(Array.IndexOf(SELECTION_OPTIONS, selection) + 1) % SELECTION_OPTIONS.Length]
     let previous_selection() =
-        selected_group <- WORD_GROUPS.[(Array.IndexOf(WORD_GROUPS, selected_group) + WORD_GROUPS.Length - 1) % WORD_GROUPS.Length]
+        selection <- SELECTION_OPTIONS.[(Array.IndexOf(SELECTION_OPTIONS, selection) + SELECTION_OPTIONS.Length - 1) % SELECTION_OPTIONS.Length]
 
     let cycle_filter() =
         current_filter <- FILTERS.[(Array.IndexOf(FILTERS, current_filter) + 1) % FILTERS.Length]
 
-    let get_filtered() =
-        vocab.AvailableCards(selected_group) |> fst current_filter
+    let get_filtered(wordlists) =
+        vocab.AvailableCards(wordlists) |> fst current_filter
 
     member private this.RenderVocabDashboard() =
         let BAR_SIZE = (MenuRender.Width - 28 - 21) / 2
@@ -77,7 +85,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             MenuRender.Write((sprintf " %.1f%% " mature_percent).PadRight(8), Color.Green, Color.FromArgb(0x102010 * m))
             MenuRender.Write(sprintf "| % 5i " total_cards, Color.White, Color.FromArgb(0x202020 * m))
 
-        MenuRender.Write(" The Word Eater :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0x202020))
+        MenuRender.Write(" Loana Dashboard :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0x202020))
         MenuRender.Write(
             $"  Filter: {snd current_filter} ".PadRight(28),
             (if snd current_filter = "None" then Color.LightGray else Color.DeepPink),
@@ -90,7 +98,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             let word_lists = List.ofSeq group.Lists
             MenuRender.Write(
                 $"@ {group.Name.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
-                (if selected_group = word_lists then Color.Yellow else Color.White),
+                (if selection = VocabGroup word_lists then Color.Yellow else Color.White),
                 Color.FromArgb(0x303030)
             )
             card_actions(word_lists, true)
@@ -100,7 +108,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             for wl in group.Lists do
                 MenuRender.Write(
                     $"| {wl.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
-                    (if selected_group = [wl] then Color.Yellow else Color.LightGreen),
+                    (if selection = VocabGroup [wl] then Color.Yellow else Color.LightGreen),
                     Color.FromArgb(0x202020)
                 )
                 card_actions([wl], false)
@@ -109,31 +117,78 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
 
         MenuRender.Write(
             "** ALL CARDS ** ".PadRight(BAR_SIZE + 3),
-            (if selected_group = [] then Color.Yellow else Color.White),
+            (if selection = VocabGroup [] then Color.Yellow else Color.White),
             Color.FromArgb(0x303030)
         )
         card_actions([], true)
         progress_bar([], true)
         MenuRender.WriteLine()
-        MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0x303030))
-        MenuRender.Redraw()
+
+    member this.RenderQuizDashboard() =
+
+        let BAR_SIZE = 45
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        let progress_bar(data: ReviewData voption) =
+            match data with
+            | ValueNone ->
+                MenuRender.Write("[", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+                MenuRender.Write(" N/A ".PadRight(BAR_SIZE), Color.LightGray, Color.FromArgb(0x606060))
+                MenuRender.Write("]", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+            | ValueSome data ->
+                let progress = if now > data.NextReview then 1.0f else float32 (now - data.LastReviewed) / float32 data.Interval
+                let f_c = progress * float32 BAR_SIZE |> floor |> int
+                let e_c = BAR_SIZE - f_c
+                MenuRender.Write("[", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+                MenuRender.Write(String.replicate f_c " ", Color.White, Color.Green)
+                MenuRender.Write(String.replicate e_c " ", Color.White, Color.FromArgb(0x303030))
+                MenuRender.Write("]", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+
+        for quiz in quizzes.Quizzes do
+            let schedule = scheduler.Get quiz.Key
+            let level = schedule |> ValueOption.map _.Level |> ValueOption.defaultValue 0
+            let next_review = schedule |> ValueOption.map _.NextReview |> ValueOption.defaultValue now
+            MenuRender.Write($"| {quiz.Name} ".PadRight(MenuRender.Width - 72), (if selection = Quiz quiz then Color.Yellow else Color.LightGreen), Color.FromArgb(0x202020))
+            MenuRender.Write(sprintf " Level %i " level, ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
+            progress_bar schedule
+            if next_review <= now then
+                MenuRender.Write(" DUE ".PadLeft(16), Color.Green, Color.FromArgb(0x202020))
+            else
+                MenuRender.Write($" {MenuRender.FormatInterval(next_review - now)} ".PadLeft(16), Color.Yellow, Color.FromArgb(0x202020))
+            MenuRender.WriteLine()
 
     member this.Run() =
         let mutable loop = true
         while loop do
-
             MenuRender.UpdateWidth()
-            this.RenderVocabDashboard()
 
-            match Console.ReadKey(true).Key with
-            | ConsoleKey.UpArrow -> previous_selection()
-            | ConsoleKey.DownArrow -> next_selection()
-            | ConsoleKey.Escape -> loop <- false
-            | ConsoleKey.Enter -> vocab.Stats(get_filtered())
-            | ConsoleKey.L -> vocab.Learn(get_filtered())
-            | ConsoleKey.R -> vocab.Review(get_filtered())
-            | ConsoleKey.A -> vocab.ReviewAhead(get_filtered())
-            | ConsoleKey.C -> vocab.ChoresList()
-            | ConsoleKey.F -> cycle_filter()
-            | ConsoleKey.Q -> Quizzes.QuizScheduler(scheduler).Study()
-            | _ -> ()
+            match selection with
+            | VocabGroup wordlists ->
+                this.RenderVocabDashboard()
+                this.RenderQuizDashboard()
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.Redraw()
+
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.Escape -> loop <- false
+                | ConsoleKey.UpArrow -> previous_selection()
+                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.Enter -> vocab.Stats(get_filtered(wordlists))
+                | ConsoleKey.L -> vocab.Learn(get_filtered(wordlists))
+                | ConsoleKey.R -> vocab.Review(get_filtered(wordlists))
+                | ConsoleKey.A -> vocab.ReviewAhead(get_filtered(wordlists))
+                | ConsoleKey.C -> vocab.ChoresList()
+                | ConsoleKey.F -> cycle_filter()
+                | _ -> ()
+            | Quiz quiz ->
+                this.RenderVocabDashboard()
+                this.RenderQuizDashboard()
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Quiz  [A] Auto ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.Redraw()
+
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.Escape -> loop <- false
+                | ConsoleKey.UpArrow -> previous_selection()
+                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.Enter -> quizzes.Study(quiz)
+                | ConsoleKey.A -> quizzes.Study(quizzes.Auto())
+                | _ -> ()

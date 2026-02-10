@@ -46,6 +46,10 @@ type MenuRender =
     static member WriteLine() = MenuRender.WriteLine("", Color.White, Color.Black)
 
     static member Pad(text: string) = text.PadLeft(MenuRender.Width / 2 + text.Length / 2).PadRight(MenuRender.Width)
+    static member FormatInterval(seconds: int64) =
+        let minutes = seconds / System.TimeSpan.SecondsPerMinute
+        let interval = sprintf "%02id%02ih%02im" (minutes / System.TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
+        interval.Replace("00d", "   ")
 
     static member Width = width
     static member UpdateWidth() =
