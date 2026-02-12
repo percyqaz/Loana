@@ -14,10 +14,20 @@ if System.OperatingSystem.IsWindows() then
 
 Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0x303030))
 
-let data_path = Path.Combine(Loana.GetFilePath(), "../Data")
+let config = ResizeArray(try File.ReadAllLines("config") with :? FileNotFoundException -> [||])
+let data_path =
+    while config.Count < 1 || not (Directory.Exists(config.[0])) do
+        Console.Write("Enter a path to store data: ")
+        let user_input = System.Console.ReadLine()
+        if Directory.Exists(user_input) then
+            config.Add(user_input)
+            File.WriteAllLines("config", [|user_input|])
+        else
+            Console.WriteLine("That path doesn't exist, put in something else")
+    config.[0]
+
 let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
-let words = WordBank.ReadDirectory(Path.Combine(data_path, "Vocab"))
-let sentence_list = WordBank.ReadDirectory(Path.Combine(data_path, "B1-Goethe"))
+let words = WordBank.ReadDirectory(Path.Combine(data_path))
 
 let mysterious_flame =
     let p = "           " in let s = 80 * 25 in let b = Array.zeroCreate (s + 81) in let c = " .:*sS#$"
