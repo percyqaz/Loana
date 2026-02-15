@@ -58,10 +58,10 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
 
             let m = if is_group then 2 else 1
 
-            MenuRender.Write(sprintf " % 5i " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x101020 * m))
-            MenuRender.Write(sprintf " % 5i " (Seq.length due), Color.Green, Color.FromArgb(0x102010 * m))
-            MenuRender.Write(sprintf " % 5i " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202010 * m))
-            MenuRender.Write(sprintf " % 5i " (Seq.length available), Color.White, Color.FromArgb(0x202020 * m))
+            MenuRender.Write(sprintf " %5i " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x101020 * m))
+            MenuRender.Write(sprintf " %5i " (Seq.length due), Color.Green, Color.FromArgb(0x102010 * m))
+            MenuRender.Write(sprintf " %5i " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202010 * m))
+            MenuRender.Write(sprintf " %5i " (Seq.length available), Color.White, Color.FromArgb(0x202020 * m))
 
         let progress_bar(word_lists: string list, is_group: bool) =
             let all_cards_ever = vocab.PossibleCards(word_lists)
@@ -83,7 +83,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             MenuRender.Write(String.replicate l_c " ", Color.White, Color.FromArgb(0x80AAFF))
             MenuRender.Write("]", Color.FromArgb(0x606060 * m), Color.FromArgb(0x303030 * m))
             MenuRender.Write((sprintf " %.1f%% " mature_percent).PadRight(8), Color.Green, Color.FromArgb(0x102010 * m))
-            MenuRender.Write(sprintf "| % 5i " total_cards, Color.White, Color.FromArgb(0x202020 * m))
+            MenuRender.Write(sprintf "| %5i " total_cards, Color.White, Color.FromArgb(0x202020 * m))
 
         MenuRender.Write(" Loana Dashboard :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0x202020))
         MenuRender.Write(
@@ -91,7 +91,10 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             (if snd current_filter = "None" then Color.LightGray else Color.DeepPink),
             Color.FromArgb(0x101010)
         )
-        MenuRender.Write((sprintf " %i chores " (Seq.length (vocab.Chores() |> Seq.filter _.Urgent))).PadLeft(BAR_SIZE + 18), Color.Pink, Color.FromArgb(0x202020))
+        MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0x202020))
+        MenuRender.Write(sprintf " %3i " vocab.LearnBatchSize, Color.LightBlue, Color.FromArgb(0x202040))
+        MenuRender.Write(sprintf " %3i " vocab.ReviewBatchSize, Color.Green, Color.FromArgb(0x204020))
+        MenuRender.Write((sprintf " %i chores " (Seq.length (vocab.Chores() |> Seq.filter _.Urgent))).PadLeft(16), Color.Pink, Color.FromArgb(0x202020))
         MenuRender.WriteLine()
         for group in words.Groups do
 
@@ -178,6 +181,8 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.A -> vocab.ReviewAhead(get_filtered(wordlists))
                 | ConsoleKey.C -> vocab.ChoresList()
                 | ConsoleKey.F -> cycle_filter()
+                | ConsoleKey.OemMinus -> vocab.DecreaseBatchSize()
+                | ConsoleKey.OemPlus -> vocab.IncreaseBatchSize()
                 | _ -> ()
             | Quiz quiz ->
                 this.RenderVocabDashboard()

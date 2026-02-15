@@ -13,6 +13,8 @@ type Chore =
 
 type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
+    static let mutable study_size_multiplier = 5
+
     member this.Scheduler = scheduler
 
     member inline this.LevelOf<^T when ^T : (member Key: string)>(c: ^T) : int =
@@ -178,7 +180,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         let cards =
             this.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.Meta.ReferenceKey
-            |> Seq.truncate 50
+            |> Seq.truncate this.ReviewBatchSize
             |> Array.ofSeq
         if cards.Length > 0 then ReviewSession(cards, scheduler, false).Start()
 
@@ -186,12 +188,12 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         let cards =
             this.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.Meta.ReferenceKey
-            |> Seq.truncate 50
+            |> Seq.truncate this.ReviewBatchSize
             |> Array.ofSeq
         if cards.Length > 0 then ReviewSession(cards, scheduler, true).Start()
 
     member this.Learn (cards: Card seq) =
-        let cards = this.LearningCards(cards) |> Seq.truncate 20 |> Array.ofSeq
+        let cards = this.LearningCards(cards) |> Seq.truncate this.LearnBatchSize |> Array.ofSeq
         if cards.Length > 0 then LearnSession(cards, scheduler).Start()
 
     member this.ChoresList () =
@@ -206,6 +208,15 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         for chore in non_urgent do Console.WriteLine(chore.Message, Color.Yellow)
 
         Console.ReadKey(true) |> ignore
+
+    member this.LearnBatchSize = 4 * study_size_multiplier
+    member this.ReviewBatchSize = 10 * study_size_multiplier
+
+    member this.IncreaseBatchSize() =
+        study_size_multiplier <- study_size_multiplier + 1 |> min 20
+
+    member this.DecreaseBatchSize() =
+        study_size_multiplier <- study_size_multiplier - 1 |> max 1
 
     member this.Stats(all_cards: Card seq) : unit =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
