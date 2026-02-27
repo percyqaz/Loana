@@ -12,6 +12,7 @@ if System.OperatingSystem.IsWindows() then
     System.Console.CursorVisible <- false
     System.Console.Title <- "Loana v0.1"
 
+System.Console.Clear()
 Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0x303030))
 
 let config = ResizeArray(try File.ReadAllLines("config") with :? FileNotFoundException -> [||])

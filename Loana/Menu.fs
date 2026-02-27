@@ -181,8 +181,10 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.A -> vocab.ReviewAhead(get_filtered(wordlists))
                 | ConsoleKey.C -> vocab.ChoresList()
                 | ConsoleKey.F -> cycle_filter()
-                | ConsoleKey.OemMinus -> vocab.DecreaseBatchSize()
-                | ConsoleKey.OemPlus -> vocab.IncreaseBatchSize()
+                | ConsoleKey.OemMinus
+                | ConsoleKey.Subtract -> vocab.DecreaseBatchSize()
+                | ConsoleKey.OemPlus
+                | ConsoleKey.Add -> vocab.IncreaseBatchSize()
                 | _ -> ()
             | Quiz quiz ->
                 this.RenderVocabDashboard()

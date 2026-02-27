@@ -147,7 +147,8 @@ type QuizSession(title: string, questions: Question array) =
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.OemComma -> result <- Some -1
                 | ConsoleKey.OemPeriod -> result <- Some 0
-                | ConsoleKey.Oem2 -> result <- Some 1
+                | ConsoleKey.Oem2
+                | ConsoleKey.Divide -> result <- Some 1
                 | _ -> ()
 
         result
