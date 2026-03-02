@@ -23,7 +23,7 @@ type ReviewSession(cards: Card array, scheduler: ReviewSchedule, ahead: bool) =
         scheduler.Reschedule(card.Key, _.Demote) |> this.Log
     override this.Keep (card: Card) =
         scheduler.Reschedule(card.Key, _.Keep) |> this.Log
-        match card.Meta.BumpKey with None -> () | Some easier_card -> scheduler.Bump(easier_card) |> this.Log
+        if card.Meta.BumpKey.IsSome then scheduler.Bump(card.Meta) |> this.Log
     override this.Promote (card: Card) =
         scheduler.Reschedule(card.Key, _.Promote) |> this.Log
-        match card.Meta.BumpKey with None -> () | Some easier_card -> scheduler.Bump(easier_card) |> this.Log
+        if card.Meta.BumpKey.IsSome then scheduler.Bump(card.Meta) |> this.Log

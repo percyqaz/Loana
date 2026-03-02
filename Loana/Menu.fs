@@ -31,6 +31,10 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
         id, "None";
         (fun cards -> vocab.FilterByTier(cards, 1, 1)), "New words only"
         (fun cards -> vocab.FilterByTier(cards, 2, 999)), "Unlocks only"
+        (fun cards ->
+            let easier_cards = cards |> Seq.choose(_.Meta.BumpKey) |> Set.ofSeq
+            cards |> Seq.filter(fun x -> not (easier_cards.Contains(x.Key)))
+        ), "Bump-first"
     |]
 
     let mutable selection = VocabGroup []
@@ -44,7 +48,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
     let cycle_filter() =
         current_filter <- FILTERS.[(Array.IndexOf(FILTERS, current_filter) + 1) % FILTERS.Length]
 
-    let get_filtered(wordlists) =
+    let get_filtered(wordlists: string list) =
         vocab.AvailableCards(wordlists) |> fst current_filter
 
     member private this.RenderVocabDashboard() =
@@ -58,10 +62,10 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
 
             let m = if is_group then 2 else 1
 
-            MenuRender.Write(sprintf " %5i " (Seq.length learning), Color.LightBlue, Color.FromArgb(0x101020 * m))
-            MenuRender.Write(sprintf " %5i " (Seq.length due), Color.Green, Color.FromArgb(0x102010 * m))
-            MenuRender.Write(sprintf " %5i " (Seq.length ahead), Color.Yellow, Color.FromArgb(0x202010 * m))
-            MenuRender.Write(sprintf " %5i " (Seq.length available), Color.White, Color.FromArgb(0x202020 * m))
+            MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0x101020 * m))
+            MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0x102010 * m))
+            MenuRender.Write( $" %5i{Seq.length ahead} ", Color.Yellow, Color.FromArgb(0x202010 * m))
+            MenuRender.Write( $" %5i{Seq.length available} ", Color.White, Color.FromArgb(0x202020 * m))
 
         let progress_bar(word_lists: string list, is_group: bool) =
             let all_cards_ever = vocab.PossibleCards(word_lists)

@@ -12,9 +12,6 @@ if System.OperatingSystem.IsWindows() then
     System.Console.CursorVisible <- false
     System.Console.Title <- "Loana v0.1"
 
-System.Console.Clear()
-Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0x303030))
-
 let config = ResizeArray(try File.ReadAllLines("config") with :? FileNotFoundException -> [||])
 let data_path =
     while config.Count < 1 || not (Directory.Exists(config.[0])) do
@@ -26,6 +23,9 @@ let data_path =
         else
             Console.WriteLine("That path doesn't exist, put in something else")
     config.[0]
+
+System.Console.Clear()
+Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0x303030))
 
 let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
 let words = WordBank.ReadDirectory(Path.Combine(data_path))

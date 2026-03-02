@@ -126,14 +126,14 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(level, difficulty, this.Interval)
         }
 
-    member this.Bump(now: int64) =
-        let next_review_plus_day = this.NextReview + TimeSpan.SecondsPerDay
+    member this.Bump(now: int64, parent_interval: int64) =
+        let new_next_review = this.NextReview + TimeSpan.SecondsPerDay + parent_interval / 2L
         let now_plus_day = now + TimeSpan.SecondsPerDay
-        let new_internal = max now_plus_day next_review_plus_day - this.LastReviewed
+        let new_interval = max now_plus_day new_next_review - this.LastReviewed
         let difficulty = this.Difficulty - 1 |> max 1
         { this with
             Difficulty = difficulty
-            Interval = new_internal
+            Interval = new_interval
         }
 
 type ReviewScheduleFile(path: string) =
@@ -221,5 +221,5 @@ type ReviewSchedule(path: string) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         this.Schedule(key, f <| this.Get(key).Value <| now, now)
 
-    member this.Bump(key: string) : string =
-        this.Reschedule(key, _.Bump)
+    member this.Bump(meta: CardMeta) : string =
+        this.Reschedule(meta.BumpKey.Value, fun data now -> data.Bump(now, this.Get(meta.Key).Value.Interval))
