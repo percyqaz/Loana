@@ -30,7 +30,7 @@
     <Compile Include="Vocab\ReviewSession.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\VocabDeck.fs" />
-    <Compile Include="Verbs.fs" />
+    <Compile Include="Verbs\Verbs.fs" />
     <Compile Include="Menu.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

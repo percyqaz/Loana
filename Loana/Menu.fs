@@ -96,9 +96,9 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             Color.FromArgb(0x101010)
         )
         MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0x202020))
-        MenuRender.Write(sprintf " %3i " vocab.LearnBatchSize, Color.LightBlue, Color.FromArgb(0x202040))
-        MenuRender.Write(sprintf " %3i " vocab.ReviewBatchSize, Color.Green, Color.FromArgb(0x204020))
-        MenuRender.Write((sprintf " %i chores " (Seq.length (vocab.Chores() |> Seq.filter _.Urgent))).PadLeft(16), Color.Pink, Color.FromArgb(0x202020))
+        MenuRender.Write( $" %3i{vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0x202040))
+        MenuRender.Write( $" %3i{vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0x204020))
+        MenuRender.Write( $" %i{Seq.length (vocab.Chores() |> Seq.filter _.Urgent)} chores ".PadLeft(16), Color.Pink, Color.FromArgb(0x202020))
         MenuRender.WriteLine()
         for group in words.Groups do
 
@@ -155,7 +155,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
             let level = schedule |> ValueOption.map _.Level |> ValueOption.defaultValue 0
             let next_review = schedule |> ValueOption.map _.NextReview |> ValueOption.defaultValue now
             MenuRender.Write($"| {quiz.Name} ".PadRight(MenuRender.Width - 72), (if selection = Quiz quiz then Color.Yellow else Color.LightGreen), Color.FromArgb(0x202020))
-            MenuRender.Write(sprintf " Level %i " level, ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
+            MenuRender.Write($" Level %i{level} ", ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
             progress_bar schedule
             if next_review <= now then
                 MenuRender.Write(" DUE ".PadLeft(16), Color.Green, Color.FromArgb(0x202020))

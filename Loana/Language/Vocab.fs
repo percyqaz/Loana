@@ -136,7 +136,7 @@ type Vocab =
     member this.Key = Key.of_german this.Deutsch
     member this.EnglishKey = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
 
-    member this.DetectVerb = this.English.Text.StartsWith("to ") && this.EnglishAlternatives |> List.forall (fun x -> x.Text.StartsWith("to "))
+    member this.DetectVerb = this.English.Text.StartsWith("to ") && this.EnglishAlternatives |> List.forall _.Text.StartsWith("to ")
     member this.DetectNoun = this.Deutsch.Length > 0 && Char.IsUpper(this.Deutsch.[0])
 
     static member Parse(s: string) =
