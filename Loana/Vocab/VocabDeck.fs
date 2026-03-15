@@ -31,6 +31,26 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 yield VocabCard.C_Tier2_RecallDE(v)
         }
 
+    member private this.AvailableCards(v: Verb) : Card seq =
+        seq {
+            let tier_1 = VocabCard.C_Tier1_RecogniseDE(v.Infinitive)
+            let tier_2 = VocabCard.C_Tier2_RecallDE(v.Infinitive)
+            yield tier_1
+
+            if this.LevelOf tier_1 >= 2 then
+                yield tier_2
+                
+            match v.PastParticiple with
+            | Something pp ->
+                let tier_3 = VocabCard.C_Tier3_RecognisePastParticipleDE(pp)
+                let tier_4 = VocabCard.C_Tier4_RecallPastParticipleDE(pp)
+                if this.LevelOf tier_2 >= 4 then
+                    yield tier_3
+                if this.LevelOf tier_3 >= 2 then
+                    yield tier_4
+            | _ -> ()
+        }
+
     member private this.AvailableCards(n: Noun) : Card seq =
         seq {
             let tier_1 = VocabCard.C_Tier1_RecogniseDE(n.Translation)
@@ -65,7 +85,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         match word with
         | Vocab v -> this.AvailableCards v
         | Noun n -> this.AvailableCards n
-        | Verb v -> this.AvailableCards v.Infinitive
+        | Verb v -> this.AvailableCards v
 
     member this.AvailableCards(sources: string list) : Card seq =
         seq {
@@ -81,6 +101,17 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         seq {
             yield VocabCard.M_Tier1_RecogniseDE(v)
             yield VocabCard.M_Tier2_RecallDE(v)
+        }
+
+    member private this.PossibleCards(v: Verb) : CardMeta seq =
+        seq {
+            yield VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
+            yield VocabCard.M_Tier2_RecallDE(v.Infinitive)
+            match v.PastParticiple with
+            | Something pp ->
+                yield VocabCard.M_Tier3_RecognisePastParticipleDE(pp)
+                yield VocabCard.M_Tier4_RecallPastParticipleDE(pp)
+            | _ -> ()
         }
 
     member private this.PossibleCards(n: Noun) : CardMeta seq =
@@ -100,7 +131,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         match word with
         | Vocab v -> this.PossibleCards v
         | Noun n -> this.PossibleCards n
-        | Verb v -> this.PossibleCards v.Infinitive
+        | Verb v -> this.PossibleCards v
 
     member this.PossibleCards(sources: string list) : CardMeta seq =
         seq {

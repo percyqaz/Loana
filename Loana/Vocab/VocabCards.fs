@@ -211,15 +211,25 @@ type VocabCard =
         }
 
     static member M_Tier5_RecognisePluralDE(n: Noun) =
-        assert(n.Guts.IsPlural)
+        assert n.Guts.IsPlural
         { VocabCard.M_Tier3_RecogniseArticleDE(n) with Tier = 5 }
     static member C_Tier5_RecognisePluralDE(n: Noun) =
-        assert(n.Guts.IsPlural)
+        assert n.Guts.IsPlural
         { VocabCard.C_Tier3_RecogniseArticleDE(n) with Meta = VocabCard.M_Tier5_RecognisePluralDE(n) }
 
     static member M_Tier6_RecallPluralDE(n: Noun) =
-        assert(n.Guts.IsPlural)
+        assert n.Guts.IsPlural
         { VocabCard.M_Tier4_RecallArticleDE(n) with Tier = 6 }
     static member C_Tier6_RecallPluralDE(n: Noun) =
-        assert(n.Guts.IsPlural)
+        assert n.Guts.IsPlural
         { VocabCard.C_Tier4_RecallArticleDE(n) with Meta = VocabCard.M_Tier6_RecallPluralDE(n) }
+
+    static member M_Tier3_RecognisePastParticipleDE(v: Vocab) =
+        { VocabCard.M_Tier1_RecogniseDE(v) with Tier = 3 }
+    static member C_Tier3_RecognisePastParticipleDE(v: Vocab) =
+        { VocabCard.C_Tier1_RecogniseDE(v) with Meta = VocabCard.M_Tier3_RecognisePastParticipleDE(v) }
+        
+    static member M_Tier4_RecallPastParticipleDE(v: Vocab) =
+        { VocabCard.M_Tier2_RecallDE(v) with Tier = 4 }
+    static member C_Tier4_RecallPastParticipleDE(v: Vocab) =
+        { VocabCard.C_Tier2_RecallDE(v) with Meta = VocabCard.M_Tier4_RecallPastParticipleDE(v) }
