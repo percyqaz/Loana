@@ -57,18 +57,24 @@ type VerbInflection =
     | SimplePast of TensePerson
     | Imperative of ImperativePerson
     
+    member this.AsQuiz =
+        match this with
+        | Present _ -> VerbQuiz.Present
+        | SimplePast _ -> VerbQuiz.SimplePast
+        | Imperative _ -> VerbQuiz.Imperative
+
     override this.ToString() =
         match this with
-        | Present p -> sprintf "pr-%O" p
-        | SimplePast p -> sprintf "pa-%O" p
-        | Imperative p -> sprintf "im-%O" p
+        | Present p -> sprintf "pr/%O" p
+        | SimplePast p -> sprintf "pa/%O" p
+        | Imperative p -> sprintf "im/%O" p
         
     static member Parse(value: string) =
-        if value.StartsWith("pr-") then
+        if value.StartsWith("pr/") then
             TensePerson.Parse(value.Substring(3)) |> Present
-        elif value.StartsWith("pa-") then
+        elif value.StartsWith("pa/") then
             TensePerson.Parse(value.Substring(3)) |> SimplePast
-        elif value.StartsWith("im-") then
+        elif value.StartsWith("im/") then
             ImperativePerson.Parse(value.Substring(3)) |> Imperative
         else
             failwithf "Unrecognised verb inflection '%s'" value

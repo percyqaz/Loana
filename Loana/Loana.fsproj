@@ -29,11 +29,12 @@
     <Compile Include="Quizzes\Articles.fs" />
     <Compile Include="Quizzes\Pronouns.fs" />
     <Compile Include="Quizzes\Quizzes.fs" />
-    <Compile Include="Verbs\VerbDeck.fs" />
-    <Compile Include="Verbs\VerbCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\VocabDeck.fs" />
+    <Compile Include="Verbs\VerbSession.fs" />
+    <Compile Include="Verbs\VerbCards.fs" />
+    <Compile Include="Verbs\VerbDeck.fs" />
 
     <Compile Include="Menu.fs" />
     <Compile Include="Program.fs" />

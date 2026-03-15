@@ -58,11 +58,11 @@ type VerbBank(path: string) =
         | true, data -> ValueSome data
         | false, _ -> ValueNone
 
-    member this.Update(verb: Verb, inflections: Map<VerbInflection, string>) =
+    member this.Update(verb: Verb, inflections: Map<VerbInflection, string>) : unit =
         mem.[verb.Infinitive.Deutsch] <- inflections
         db.Write(mem)
     
-    member this.Ensure(verb: Verb) =
+    member this.Ensure(verb: Verb) : Map<VerbInflection, string> =
         let mutable inflections = this.Get(verb) |> ValueOption.defaultValue Map.empty
         let mutable missing = false
         for q in verb.Quizzes do
@@ -93,3 +93,4 @@ type VerbBank(path: string) =
                 inflections <- inflections.Add(key, value)
             this.Update(verb, inflections)
             Console.WriteLine(sprintf "Added missing inflections for '%O'" verb)
+        inflections

@@ -182,7 +182,19 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             |> Seq.distinctBy _.Meta.ReferenceKey
             |> Seq.truncate this.ReviewBatchSize
             |> Array.ofSeq
-        if cards.Length > 0 then ReviewSession(cards, scheduler, false).Start()
+        if cards.Length > 0 then
+            let result = ReviewSession(cards, scheduler, false).Start()
+            Console.WriteLine(
+                MenuRender.Pad (
+                    sprintf "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
+                        (if result.EndEarly then " early" else "")
+                        result.Good result.Ok result.Bad result.NotGood
+                        (100.0f * (float32 result.Good / (float32 result.NotGood + 0.01f)))
+                ),
+                Color.LightGreen,
+                Color.FromArgb(0x303030)
+            )
+            Console.ReadKey(true) |> ignore
 
     member this.ReviewAhead (cards: Card seq) =
         let cards =
@@ -190,11 +202,35 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             |> Seq.distinctBy _.Meta.ReferenceKey
             |> Seq.truncate this.ReviewBatchSize
             |> Array.ofSeq
-        if cards.Length > 0 then ReviewSession(cards, scheduler, true).Start()
+        if cards.Length > 0 then
+            let result = ReviewSession(cards, scheduler, true).Start()
+            Console.WriteLine(
+                MenuRender.Pad (
+                    sprintf "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
+                        (if result.EndEarly then " early" else "")
+                        result.Good result.Ok result.Bad result.NotGood
+                        (100.0f * (float32 result.Good / (float32 result.NotGood + 0.01f)))
+                ),
+                Color.LightGreen,
+                Color.FromArgb(0x303030)
+            )
+            Console.ReadKey(true) |> ignore
 
     member this.Learn (cards: Card seq) =
         let cards = this.LearningCards(cards) |> Seq.truncate this.LearnBatchSize |> Array.ofSeq
-        if cards.Length > 0 then LearnSession(cards, scheduler).Start()
+        if cards.Length > 0 then
+            let result = LearnSession(cards, scheduler).Start()
+            Console.WriteLine(
+                MenuRender.Pad (
+                    sprintf "Session ended%s! [%i|%i] (%.1f)"
+                        (if result.EndEarly then " early" else "")
+                        result.Good result.NotGood
+                        (1.0f + float32 result.NotGood / (float32 result.Good + 0.01f))
+                    ),
+                Color.LightGreen,
+                Color.FromArgb(0x303030)
+            )
+            Console.ReadKey(true) |> ignore
 
     member this.ChoresList () =
         Console.WriteLine(MenuRender.Pad " Chores list ", Color.White, Color.FromArgb(0x303030))
@@ -266,7 +302,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         upcoming_bar(by_hour, 50)
 
         for i = 0 to MenuRender.Width / 24 - 1 do
-            MenuRender.Write("½".PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
+            MenuRender.Write("ï¿½".PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
             MenuRender.Write((i + 1).ToString().PadLeft(12), Color.LightGray, Color.FromArgb(0x202020))
         MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 24) * 24), Color.LightGray, Color.FromArgb(0x202020))
         MenuRender.WriteLine()

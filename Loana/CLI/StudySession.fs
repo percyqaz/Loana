@@ -28,14 +28,24 @@ type Card =
     }
     member this.Key = this.Meta.Key
 
+type StudySessionResult =
+    {
+        EndEarly: bool
+        Good: int
+        Ok: int
+        Bad: int
+        Forgot: int
+    }
+    member this.NotGood = this.Ok + this.Bad + this.Forgot
+
 [<AbstractClass>]
 type StudySession(title: string, cards: Card array) =
     let cards = ResizeArray<Card>(cards |> Seq.randomShuffle)
 
     let CARD_AREA = 20
-    let LOG_SIZE = 20
+    let LOG_SIZE = 16
 
-    let log = ResizeArray()
+    static let log = ResizeArray()
 
     let draw_card(side: CardSide) =
         let edges_width = MenuRender.Width - 12
@@ -76,7 +86,9 @@ type StudySession(title: string, cards: Card array) =
         MenuRender.Write((sprintf " % 2i cards left " (cards.Count + 1)), Color.LightGreen, Color.FromArgb(0x303030))
         MenuRender.WriteLine()
 
-    member this.Start() =
+    member this.Start() : StudySessionResult =
+        let buttons = [|0; 0; 0; 0|]
+        let mutable end_early = false
         while cards.Count > 0 do
             let current = cards.[0]
             cards.RemoveAt(0)
@@ -91,7 +103,6 @@ type StudySession(title: string, cards: Card array) =
             MenuRender.Redraw()
 
             let mutable loop = true
-            let mutable end_early = false
             while loop do
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Spacebar -> loop <- false
@@ -109,16 +120,30 @@ type StudySession(title: string, cards: Card array) =
                 let mutable loop = true
                 while loop do
                     match Console.ReadKey(true).Key with
-                    | ConsoleKey.Escape -> cards.Clear(); loop <- false
-                    | ConsoleKey.Z -> this.Forget current; loop <- false
-                    | ConsoleKey.OemComma -> this.Demote current; loop <- false
-                    | ConsoleKey.OemPeriod -> this.Keep current; loop <- false
+                    | ConsoleKey.Escape ->
+                        cards.Clear()
+                        end_early <- true
+                        loop <- false
+                    | ConsoleKey.Z ->
+                        buttons.[3] <- buttons.[3] + 1
+                        this.Forget current
+                        loop <- false
+                    | ConsoleKey.OemComma ->
+                        buttons.[2] <- buttons.[2] + 1
+                        this.Demote current
+                        loop <- false
+                    | ConsoleKey.OemPeriod ->
+                        buttons.[1] <- buttons.[1] + 1
+                        this.Keep current
+                        loop <- false
                     | ConsoleKey.Oem2
-                    | ConsoleKey.Divide -> this.Promote current; loop <- false
+                    | ConsoleKey.Divide ->
+                        buttons.[0] <- buttons.[0] + 1
+                        this.Promote current
+                        loop <- false
                     | _ -> ()
-
-        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0x303030))
-        Console.ReadKey(true) |> ignore
+                    
+        { EndEarly = end_early; Good = buttons.[0]; Ok = buttons.[1]; Bad = buttons.[2]; Forgot = buttons.[3] }
 
     member this.ReplaceNear(card: Card) =
         cards.Insert(min 4 cards.Count, card)

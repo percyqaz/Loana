@@ -25,7 +25,7 @@ type QuizSession(title: string, questions: Question array) =
     let questions = ResizeArray<Question>(questions |> Seq.randomShuffle)
 
     let QUESTION_AREA = 20
-    let LOG_SIZE = 20
+    let LOG_SIZE = 16
 
     let log = ResizeArray()
     let edges_width = MenuRender.Width - 12
@@ -112,7 +112,7 @@ type QuizSession(title: string, questions: Question array) =
             questions.RemoveAt(0)
 
             draw_title()
-            let (x, y) = draw_front(current.Front, current.Back)
+            let x, y = draw_front(current.Front, current.Back)
             MenuRender.WriteLine(MenuRender.Pad "[Enter] Submit", Color.LightGray, Color.FromArgb(0x303030))
             draw_log()
             MenuRender.Redraw()
