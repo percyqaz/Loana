@@ -2,6 +2,7 @@
 
 open System
 open System.Drawing
+open System.IO
 open Loana.CLI
 open Loana.Language
 
@@ -41,6 +42,34 @@ module Wordlist =
                 | Some Gender.Neuter -> Neuter guts_plural
                 | Some Gender.Plural -> Plural
         }
+        
+    let internal parse_verb_inner(vocab: Vocab, tags: string list) : Verb =
+        let mutable mtags = tags
+        let mutable quizzes: VerbQuiz list = []
+        let mutable pp: Knowledge<Vocab> = if tags <> [] then Nothing else ToBeDetermined
+        let mutable dative = false
+        
+        while mtags <> [] do
+            let next = mtags.Head
+            mtags <- mtags.Tail
+            match next with
+            | "pa" | "pr" | "im" ->
+                quizzes <- quizzes @ [VerbQuiz.Parse(next)]
+            | "dat" ->
+                if dative then failwith "Dative specified twice"
+                if quizzes <> [] then failwith "Dative must be specified before quizzes"
+                dative <- true
+            | "pp" ->
+                pp <- Something (Vocab.Parse (String.concat " " mtags))
+                mtags <- []
+            | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next vocab
+            
+        {
+            Infinitive = vocab
+            PastParticiple = pp
+            Quizzes = quizzes |> List.distinct
+            Dative = dative
+        }
 
     let internal parse_core (line: string) : Vocab * string list =
         if line = "" then failwith "Cannot parse empty line as a noun"
@@ -74,8 +103,6 @@ type WordlistEntry =
         Item: WordlistItem
     }
 
-open System.IO
-
 type WordlistGroup = { Name: string; Lists: ResizeArray<string> }
 
 type WordBank() =
@@ -83,79 +110,68 @@ type WordBank() =
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
 
-    let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string>()
-    let deduplicate_en = Collections.Generic.Dictionary<string, Vocab * string>()
+    let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string * int>()
+    let deduplicate_en = Collections.Generic.Dictionary<string, Vocab * string * int>()
 
-    let mutable current_verb = None
-
-    let finish_verb(source: Source) =
-        match current_verb with
-        | Some v -> entries.Add { Item = Verb v; Source = source }; current_verb <- None
-        | None -> ()
-
-    let check_duplicate (source: Source) (v: Vocab) : unit =
+    let check_duplicate (source: Source) (line_n: int) (v: Vocab) : unit =
 
         let ded_de = v.Key
         if deduplicate_de.ContainsKey(ded_de) then
-            let duplicate_of, d_source = deduplicate_de.[ded_de]
-            failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
+            let duplicate_of, d_source, d_line = deduplicate_de.[ded_de]
+            if d_source <> source.File || d_line <> line_n then
+                failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
         else
-            deduplicate_de.Add(ded_de, (v, source.File))
+            deduplicate_de.Add(ded_de, (v, source.File, line_n))
 
         let ded_en = v.EnglishKey
         if deduplicate_en.ContainsKey(ded_en) then
-            let duplicate_of, d_source = deduplicate_en.[ded_en]
-            failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
+            let duplicate_of, d_source, d_line = deduplicate_en.[ded_en]
+            if d_source <> source.File || d_line <> line_n then
+                failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
         else
-            deduplicate_en.Add(ded_en, (v, source.File))
+            deduplicate_en.Add(ded_en, (v, source.File, line_n))
 
-    let add_vocab (source: Source) (line: string) : unit =
-        finish_verb source
+    let add_vocab (source: Source) (line_n: int) (line: string) : unit =
         let v, tags = Wordlist.parse_core line
 
-        check_duplicate source v
+        check_duplicate source line_n v
 
         if v.DetectVerb then
-            // todo: support :pp deutsch = english notation
-            current_verb <- Some { Infinitive = v; PastParticiple = Nothing; Inflections = [] }
+            let verb = Wordlist.parse_verb_inner(v, tags)
+            match verb.PastParticiple with
+            | Something pp -> check_duplicate source line_n pp
+            | _ -> ()
+            entries.Add { Item = Verb verb; Source = source }
+            
         elif v.DetectNoun && tags <> [] then
-            entries.Add { Item = Wordlist.parse_noun_inner(v, tags) |> Noun; Source = source }
+            let noun = Wordlist.parse_noun_inner(v, tags)
+            match noun.Plural with
+            | Something plural -> check_duplicate source line_n plural
+            | _ -> ()
+            entries.Add { Item = Noun noun; Source = source }
+            
         else
             entries.Add { Item = Vocab v; Source = source }
 
-    let add_inflection (source: Source) (line: string) : unit =
-        let v, _ = Wordlist.parse_core line
-
-        check_duplicate source v
-
-        match current_verb with
-        | Some verb ->
-            current_verb <- Some (verb.WithInflection(v))
-        | None -> failwithf "Verb inflection not attached to a verb: %s" line
-
-    let add_dynamic (source: Source) (line: string) : unit =
+    let add_dynamic (source: Source) (line_n: int) (line: string) : unit =
         if line = "" || line.StartsWith "#" then
             () // reserved for comments for now
-        elif line.[0] = ' ' then
-            add_inflection source line
-        else
-            add_vocab source line
+        add_vocab source line_n line
 
-    member this.TryAdd(source: Source, line: string) : Result<unit, string> =
-        try add_dynamic source line; Ok()
+    member this.TryAdd(source: Source, line_n: int, line: string) : Result<unit, string> =
+        try add_dynamic source line_n line; Ok()
         with err -> Error err.Message
 
     member this.ReadFile(source: Source, path: string) =
         File.ReadAllLines(path)
         |> Seq.where (fun line -> line.Trim() <> "")
-        |> Seq.iter (fun line ->
-            match this.TryAdd(source, line) with
+        |> Seq.iteri (fun i line ->
+            match this.TryAdd(source, i, line) with
             | Ok() -> ()
             | Error reason ->
                 Console.Write($" {source.File}: ", Color.LightBlue, Color.FromArgb 0x202020)
                 Console.WriteLine(" " + reason, Color.Red)
         )
-        finish_verb source
 
     member this.ReadDirectory(path: string) =
         let meta_list = Path.Combine(path, "wordlists.meta")

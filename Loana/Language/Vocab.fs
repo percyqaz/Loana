@@ -205,29 +205,33 @@ type Adjective =
     member this.EnglishAlternatives = this.Translation.EnglishAlternatives
 
     member this.Key = Key.of_german this.Deutsch
-
-type VerbPerson =
-    | FirstSingular
-    | FirstThirdPluralFormal
-    | SecondSingular
-    | SecondPlural
-    | ThirdSingular
-
-    static member OfPerson(person: Person) =
-        match person with
-        | Person.First false -> FirstSingular
-        | Person.First true
-        | Person.Third Gender.Plural
-        | Person.Formal -> FirstThirdPluralFormal
-        | Person.Second false -> SecondSingular
-        | Person.Second true -> SecondPlural
-        | Person.Third _ -> ThirdSingular
+        
+type VerbQuiz =
+    | Present
+    | SimplePast
+    | Imperative
+    override this.ToString() =
+        match this with
+        | Present -> "pr"
+        | SimplePast -> "pa"
+        | Imperative -> "im"
+    static member Parse(value: string) =
+        match value with
+        | "pr" -> Present
+        | "pa" -> SimplePast
+        | "im" -> Imperative
+        | _ -> failwithf "Unrecognised verb quiz '%s'" value
 
 type Verb =
     {
         Infinitive: Vocab
         PastParticiple: Knowledge<Vocab>
-        Inflections: Vocab list
+        Dative: bool
+        Quizzes: VerbQuiz list
     }
-    member this.WithInflection(vocab: Vocab) = { this with Inflections = this.Inflections @ [vocab] }
-    override this.ToString() = this.Infinitive.ToString()
+    override this.ToString() =
+        match this.PastParticiple with
+        | ToBeDetermined -> this.Infinitive.ToString()
+        | Nothing -> sprintf "%O :%s" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString()))
+        | Something pp -> sprintf "%O :%s pp %O" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString())) pp
+   

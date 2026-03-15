@@ -1,4 +1,4 @@
-namespace Loana
+namespace Loana.Verbs
 
 open System
 open System.IO
@@ -9,14 +9,7 @@ open Loana.Language
 type Verbs =
 
     static member AddVerb(input: string) : unit =
-        let verb = VerbDownloader.extend_verb { Infinitive = Vocab.Parse input; PastParticiple = Nothing; Inflections = [] }
-        let lines =
-            seq {
-                yield verb.Infinitive.ToString()
-                for inflection in verb.Inflections do
-                    yield " " + inflection.ToString()
-            }
-        File.AppendAllLines("C:/Users/percy/Desktop/Source/Loana/Wordlists/core-verbs.wordlist", lines)
+        failwith "nyi"
 
     static member AddVerbs() =
         let mutable loop = true
