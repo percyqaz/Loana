@@ -6,15 +6,18 @@ open Loana.CLI
 open Loana.Data
 open Loana.Vocab
 open Loana.Quizzes
+open Loana.Verbs
 
 type MenuSelection =
     | VocabGroup of string list
+    | VerbMode
     | Quiz of Quiz
 
-type Menu(words: WordBank, scheduler: ReviewSchedule) =
+type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
 
     let vocab: VocabDeck = VocabDeck(scheduler, words)
     let quizzes: QuizScheduler = QuizScheduler(scheduler)
+    let verb_deck: VerbDeck = VerbDeck(scheduler, words, verbs)
 
     let SELECTION_OPTIONS =
         seq {
@@ -22,6 +25,7 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
                 yield VocabGroup (List.ofSeq group.Lists)
                 yield! group.Lists |> Seq.map List.singleton |> Seq.map VocabGroup
             yield VocabGroup []
+            yield VerbMode
             for quiz in quizzes.Quizzes do
                 yield Quiz quiz
         }
@@ -53,12 +57,14 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
 
     member private this.RenderVocabDashboard() =
         let BAR_SIZE = (MenuRender.Width - 28 - 21) / 2
+        
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
         let card_actions(word_lists: string list, is_group: bool) =
             let available = vocab.AvailableCards(word_lists) |> fst current_filter
             let learning = vocab.LearningCards(available)
-            let due = vocab.DueReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-            let ahead = vocab.AheadReviewCards(available, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            let due = vocab.DueReviewCards(available, now)
+            let ahead = vocab.AheadReviewCards(available, now)
 
             let m = if is_group then 2 else 1
 
@@ -130,6 +136,29 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
         card_actions([], true)
         progress_bar([], true)
         MenuRender.WriteLine()
+        
+    member this.RenderVerbModeDashboard() =
+        let BAR_SIZE = (MenuRender.Width - 28 - 21) / 2
+        MenuRender.Write(
+            "** VERB MODE ** ".PadRight(BAR_SIZE + 3),
+            (if selection = VerbMode then Color.Yellow else Color.White),
+            Color.FromArgb(0x101010)
+        )
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        let available = verb_deck.AvailableEntries()
+        let learning = verb_deck.LearningEntries(available)
+        let due = verb_deck.DueReviewEntries(available, now)
+        let ahead = verb_deck.AheadReviewEntries(available, now)
+
+        MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0x101020))
+        MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0x102010))
+        MenuRender.Write( $" %5i{Seq.length ahead} ", Color.Yellow, Color.FromArgb(0x202010))
+        MenuRender.Write( $" %5i{Seq.length available} ", Color.White, Color.FromArgb(0x202020))
+
+        MenuRender.Write(String.replicate (BAR_SIZE + 2) " ", Color.White, Color.FromArgb(0x101010))
+        MenuRender.Write(" ----- ".PadRight(8), Color.Green, Color.FromArgb(0x102010))
+        MenuRender.Write("| ----- ", Color.White, Color.FromArgb(0x202020))
+        MenuRender.WriteLine()
 
     member this.RenderQuizDashboard() =
 
@@ -167,11 +196,12 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
         let mutable loop = true
         while loop do
             MenuRender.UpdateWidth()
+            this.RenderVocabDashboard()
+            this.RenderVerbModeDashboard()
+            this.RenderQuizDashboard()
 
             match selection with
             | VocabGroup wordlists ->
-                this.RenderVocabDashboard()
-                this.RenderQuizDashboard()
                 MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0x303030))
                 MenuRender.Redraw()
 
@@ -190,9 +220,20 @@ type Menu(words: WordBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.OemPlus
                 | ConsoleKey.Add -> vocab.IncreaseBatchSize()
                 | _ -> ()
+                
+            | VerbMode ->
+                MenuRender.WriteLine(MenuRender.Pad " [L] Learn  [R] Review ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.Redraw()
+
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.Escape -> loop <- false
+                | ConsoleKey.UpArrow -> previous_selection()
+                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.L -> verb_deck.Learn(verb_deck.LearningEntries(verb_deck.AvailableEntries()))
+                | ConsoleKey.R -> verb_deck.Review(verb_deck.DueReviewEntries(verb_deck.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
+                | _ -> ()
+                
             | Quiz quiz ->
-                this.RenderVocabDashboard()
-                this.RenderQuizDashboard()
                 MenuRender.WriteLine(MenuRender.Pad " [Enter] Quiz  [A] Auto ", Color.LightGray, Color.FromArgb(0x303030))
                 MenuRender.Redraw()
 

@@ -29,6 +29,7 @@ Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0x30
 
 let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
 let words = WordBank.ReadDirectory(Path.Combine(data_path))
+let verbs = VerbBank(Path.Combine(data_path, "verbs.verblist"))
 
 let mysterious_flame =
     let p = "           " in let s = 80 * 25 in let b = Array.zeroCreate (s + 81) in let c = " .:*sS#$"
@@ -51,4 +52,4 @@ while not System.Console.KeyAvailable do
     mysterious_flame()
 System.Console.ReadKey() |> ignore
 
-Menu(words, scheduler).Run()
+Menu(words, verbs, scheduler).Run()

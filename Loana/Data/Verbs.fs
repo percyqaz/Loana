@@ -13,7 +13,11 @@ type VerbFile(path: string) =
         let entries = Dictionary<string, Map<VerbInflection, string>>()
         let mutable current_verb: string option = None
         let mutable current_inflections = Map.empty
-        File.ReadAllLines(path)
+        try
+            File.ReadAllLines(path)
+        with
+        | :? FileNotFoundException ->
+            [||]
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iter (fun line ->
             if line.[0] = '|' then
@@ -45,7 +49,7 @@ type VerbFile(path: string) =
         File.WriteAllLines(temp_path, lines)
 
         try File.Delete(bak_path) with _ -> ()
-        File.Move(path, bak_path)
+        try File.Move(path, bak_path) with :? FileNotFoundException -> ()
         File.Move(temp_path, path)
         
 type VerbBank(path: string) =

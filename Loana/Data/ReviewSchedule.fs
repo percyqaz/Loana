@@ -194,7 +194,7 @@ type ReviewScheduleFile(path: string) =
         bw.Dispose()
 
         try File.Delete(bak_path) with _ -> ()
-        File.Move(path, bak_path)
+        try File.Move(path, bak_path) with :? FileNotFoundException -> ()
         File.Move(temp_path, path)
 
 type ReviewSchedule(path: string) =
