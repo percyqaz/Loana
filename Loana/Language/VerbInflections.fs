@@ -1,6 +1,4 @@
-namespace Loana.Verbs
-
-open Loana.Language
+namespace Loana.Language
 
 type ImperativePerson =
     | ThirdPluralFormal

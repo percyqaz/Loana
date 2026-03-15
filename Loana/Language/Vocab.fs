@@ -206,6 +206,7 @@ type Adjective =
 
     member this.Key = Key.of_german this.Deutsch
         
+[<RequireQualifiedAccess>]
 type VerbQuiz =
     | Present
     | SimplePast

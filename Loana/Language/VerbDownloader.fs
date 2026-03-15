@@ -1,22 +1,21 @@
-﻿namespace Loana.Verbs
+﻿namespace Loana.Language
 
 open System
 open System.Text.RegularExpressions
 open System.Net.Http
 open Loana.CLI
-open Loana.Language
 
 module VerbDownloader =
 
     let http_client = new HttpClient()
 
     let private download_de_verb_page(verb: string) =
-        http_client.GetStringAsync(new Uri(sprintf "https://conjugator.reverso.net/conjugation-german-verb-%s.html" (Uri.EscapeDataString verb)))
+        http_client.GetStringAsync(Uri(sprintf "https://conjugator.reverso.net/conjugation-german-verb-%s.html" (Uri.EscapeDataString verb)))
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
     let private download_en_verb_page(verb: string) =
-        http_client.GetStringAsync(new Uri(sprintf "https://conjugator.reverso.net/conjugation-english-verb-%s.html" (Uri.EscapeDataString verb)))
+        http_client.GetStringAsync(Uri(sprintf "https://conjugator.reverso.net/conjugation-english-verb-%s.html" (Uri.EscapeDataString verb)))
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
@@ -82,10 +81,10 @@ module VerbDownloader =
         seq {
             for q in verb.Quizzes do
                 match q with
-                | Present ->
+                | VerbQuiz.Present ->
                     for person in Person.LIST do yield VerbInflection.Present (TensePerson.OfPerson person), de de_present_tense person
-                | SimplePast -> for person in Person.LIST do yield VerbInflection.SimplePast (TensePerson.OfPerson person), de de_past_tense person
-                | Imperative -> failwith "nyi"
+                | VerbQuiz.SimplePast -> for person in Person.LIST do yield VerbInflection.SimplePast (TensePerson.OfPerson person), de de_past_tense person
+                | VerbQuiz.Imperative -> failwith "nyi"
         }
         
     // let extend_verb_legacy(verb: Verb) : Verb =

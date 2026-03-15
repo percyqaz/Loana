@@ -20,9 +20,8 @@
     <Compile Include="Language\Annotations.fs" />
     <Compile Include="Language\Declension\Deutsch.fs" />
     <Compile Include="Language\Declension\English.fs" />
-    <Compile Include="Verbs\Inflections.fs" />
-    <Compile Include="Verbs\Downloader.fs" />
-    <Compile Include="Verbs\Verbs.fs" />
+    <Compile Include="Language\VerbInflections.fs" />
+    <Compile Include="Language\VerbDownloader.fs" />
     <Compile Include="Data\ReviewSchedule.fs" />
     <Compile Include="Data\Words.fs" />
     <Compile Include="Data\Verbs.fs" />
@@ -30,6 +29,8 @@
     <Compile Include="Quizzes\Articles.fs" />
     <Compile Include="Quizzes\Pronouns.fs" />
     <Compile Include="Quizzes\Quizzes.fs" />
+    <Compile Include="Verbs\VerbDeck.fs" />
+    <Compile Include="Verbs\VerbCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\VocabDeck.fs" />

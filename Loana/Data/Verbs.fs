@@ -1,10 +1,11 @@
 ﻿namespace Loana.Data
 
 open System
+open System.Drawing
 open System.IO
 open System.Collections.Generic
+open Loana.CLI
 open Loana.Language
-open Loana.Verbs
 
 type VerbFile(path: string) =
 
@@ -63,6 +64,32 @@ type VerbBank(path: string) =
     
     member this.Ensure(verb: Verb) =
         let mutable inflections = this.Get(verb) |> ValueOption.defaultValue Map.empty
-        for key, value in VerbDownloader.fetch_verb_inflections(verb) do
-            inflections <- inflections.Add(key, value)
-        this.Update(verb, inflections)
+        let mutable missing = false
+        for q in verb.Quizzes do
+            match q with
+            | VerbQuiz.Present ->
+                if
+                    not (inflections.ContainsKey(VerbInflection.Present TensePerson.ThirdSingular)
+                    || inflections.ContainsKey(VerbInflection.Present TensePerson.FirstSingular))
+                then
+                    Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
+                    missing <- true
+            | VerbQuiz.SimplePast ->
+                if
+                    not (inflections.ContainsKey(VerbInflection.SimplePast TensePerson.ThirdSingular)
+                    || inflections.ContainsKey(VerbInflection.SimplePast TensePerson.FirstSingular))
+                then
+                    Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
+                    missing <- true
+            | VerbQuiz.Imperative ->
+                if
+                    not (inflections.ContainsKey(VerbInflection.Imperative ImperativePerson.SecondSingular))
+                then
+                    Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
+                    missing <- true
+                    
+        if missing then
+            for key, value in VerbDownloader.fetch_verb_inflections(verb) do
+                inflections <- inflections.Add(key, value)
+            this.Update(verb, inflections)
+            Console.WriteLine(sprintf "Added missing inflections for '%O'" verb)
