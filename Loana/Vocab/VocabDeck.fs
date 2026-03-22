@@ -220,7 +220,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                     sprintf "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
                         (if result.EndEarly then " early" else "")
                         result.Good result.Ok result.Bad result.NotGood
-                        (100.0f * (float32 result.Good / (float32 result.NotGood + 0.01f)))
+                        (100.0f * (float32 result.Good / (float32 result.Good + float32 result.NotGood + 0.01f)))
                 ),
                 Color.LightGreen,
                 Color.FromArgb(0x303030)
@@ -240,7 +240,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                     sprintf "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
                         (if result.EndEarly then " early" else "")
                         result.Good result.Ok result.Bad result.NotGood
-                        (100.0f * (float32 result.Good / (float32 result.NotGood + 0.01f)))
+                        (100.0f * (float32 result.Good / (float32 result.Good + float32 result.NotGood + 0.01f)))
                 ),
                 Color.LightGreen,
                 Color.FromArgb(0x303030)
