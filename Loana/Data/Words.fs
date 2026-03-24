@@ -178,7 +178,6 @@ type WordBank() =
         if File.Exists(meta_list) |> not then
             Console.WriteLine(sprintf "'%s' doesn't exist!" meta_list, Color.Red)
         else
-            Console.WriteLine(sprintf "Reading wordlist meta from '%s'" meta_list)
             let mutable group : WordlistGroup option = None
             for line in File.ReadAllLines(meta_list) do
                 if line.StartsWith("#") then
