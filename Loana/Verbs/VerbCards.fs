@@ -38,19 +38,19 @@ type VerbCard =
             |> CardLine.Create QUESTION_BG
         let answer_bg, quiz_hint =
             match i with
-            | Present _ -> PRESENT_BG, " [Present Tense] "
-            | SimplePast _ -> SIMPLE_PAST_BG, " [Simple Past Tense] "
-            | Imperative _ -> IMPERATIVE_BG, " [Imperative] "
+            | Present _ -> PRESENT_BG, " [present] "
+            | SimplePast _ -> SIMPLE_PAST_BG, " [simple past] "
+            | Imperative _ -> IMPERATIVE_BG, " [imperative] "
         let pronoun =
             match i with
             | Present p
             | SimplePast p ->
                 match p with
                 | FirstSingular -> "ich"
-                | FirstThirdPluralFormal -> List.randomChoice ["wir"; "sie [plural]"; "Sie"]
+                | FirstThirdPluralFormal -> List.randomChoice ["wir"; "sie [p]"; "Sie"]
                 | SecondSingular -> "du"
                 | SecondPlural -> "ihr"
-                | ThirdSingular -> List.randomChoice ["er"; "sie"; "es"] // todo: tag verbs that use only es
+                | ThirdSingular -> List.randomChoice ["er"; "sie [f]"; "es"] // todo: tag verbs that use only es
             | Imperative p ->
                 match p with
                 | ImperativePerson.SecondPlural -> "(ihr)"

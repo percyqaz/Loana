@@ -3,6 +3,7 @@
 open System
 open System.Drawing
 open System.Text.RegularExpressions
+open Loana.CLI
 
 module Key =
 
@@ -116,6 +117,14 @@ type Annotation =
         match this.Note with
         | Some note -> sprintf "%s [%s]" this.Text note
         | None -> this.Text
+        
+    member this.HighlightString =
+        match this.Note with
+        | Some note ->
+            Console.ColorText(this.Text, Color.White, Color.Black) +
+            " " +
+            Console.ColorText("[" + note + "]", Color.LightGray, Color.Black)
+        | None -> Console.ColorText(this.Text, Color.White, Color.Black)
 
     static member Parse(s: string) =
         let m = Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
@@ -132,6 +141,16 @@ type Vocab =
     }
     override this.ToString() =
         sprintf "%s = %s" this.Deutsch this.EnglishKey
+        
+    member this.HighlightString =
+        let color =
+            if this.DetectVerb then Color.FromArgb(0xffddff)
+            elif this.DetectNoun then Color.FromArgb(0xddffdd)
+            else Color.White
+        
+        Console.ColorText(this.Deutsch, color, Color.Black) +
+        Console.ColorText(" = ", Color.LightGray, Color.Black) +
+        String.concat ", " (this.English :: this.EnglishAlternatives |> Seq.map _.HighlightString)
 
     member this.Key = Key.of_german this.Deutsch
     member this.EnglishKey = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
@@ -194,6 +213,30 @@ type Noun =
             | Something plural -> sprintf "%O :%O plural %O" this.Translation this.Guts.Gender plural
             | Nothing -> sprintf "%O :%O no_plural" this.Translation this.Guts.Gender
             | ToBeDetermined -> sprintf "%O :%O" this.Translation this.Guts.Gender
+            
+    member this.HighlightString : string =
+        match this.Guts with
+        | Plural ->
+            this.Translation.HighlightString +
+            Console.ColorText(" :p", Gender.Plural.Color, Color.Black)
+        | Masculine p
+        | Feminine p
+        | Neuter p ->
+            let gender_highlight_string = Console.ColorText(" :" + this.Guts.Gender.ToString(), this.Guts.Gender.Color, Color.Black)
+            match p with
+            | Something plural ->
+                this.Translation.HighlightString +
+                gender_highlight_string +
+                Console.ColorText(" plural ", Gender.Plural.Color, Color.Black) +
+                plural.HighlightString
+            | Nothing -> 
+                this.Translation.HighlightString +
+                gender_highlight_string +
+                Console.ColorText(" no_plural", Gender.Plural.Color, Color.Black)
+            | ToBeDetermined -> 
+                this.Translation.HighlightString +
+                gender_highlight_string
+        
 
 type Adjective =
     {
@@ -235,4 +278,16 @@ type Verb =
         | ToBeDetermined -> this.Infinitive.ToString()
         | Nothing -> sprintf "%O :%s" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString()))
         | Something pp -> sprintf "%O :%s pp %O" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString())) pp
+        
+    member this.HighlightString =
+        match this.PastParticiple with
+        | ToBeDetermined -> this.Infinitive.HighlightString
+        | Nothing ->
+            this.Infinitive.HighlightString +
+            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map _.ToString())), Color.FromArgb(0xffddff), Color.Black)
+        | Something pp ->
+            this.Infinitive.HighlightString +
+            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map _.ToString())), Color.FromArgb(0xffddff), Color.Black) +
+            Console.ColorText(" pp ", Color.FromArgb(0xffdddd), Color.Black) +
+            pp.HighlightString
    

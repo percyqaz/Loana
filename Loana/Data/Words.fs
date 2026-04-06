@@ -93,6 +93,17 @@ type WordlistItem =
     | Noun of Noun
     | Verb of Verb
     | Vocab of Vocab
+    override this.ToString() =
+        match this with
+        | Noun n -> n.ToString()
+        | Verb v -> v.ToString()
+        | Vocab v -> v.ToString()
+        
+    member this.HighlightString =
+        match this with
+        | Noun n -> n.HighlightString
+        | Verb v -> v.HighlightString
+        | Vocab v -> v.HighlightString
 
 [<Struct>]
 type Source = { Group: string; File: string }
@@ -104,53 +115,69 @@ type WordlistEntry =
     }
 
 type WordlistGroup = { Name: string; Lists: ResizeArray<string> }
+type DuplicateEntry = { SourceFile: string; Line: int; Item: WordlistItem }
 
-type WordBank() =
+type WordBank(path: string) =
 
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
 
-    let deduplicate_de = Collections.Generic.Dictionary<string, Vocab * string * int>()
-    let deduplicate_en = Collections.Generic.Dictionary<string, Vocab * string * int>()
+    let deduplicate_de = Collections.Generic.Dictionary<string, DuplicateEntry>()
+    let deduplicate_en = Collections.Generic.Dictionary<string, DuplicateEntry>()
 
-    let check_duplicate (source: Source) (line_n: int) (v: Vocab) : unit =
+    let check_duplicate (source: Source, line_n: int, vocab: Vocab, item: WordlistItem) : unit =
 
-        let ded_de = v.Key
+        let ded_de = vocab.Key
         if deduplicate_de.ContainsKey(ded_de) then
-            let duplicate_of, d_source, d_line = deduplicate_de.[ded_de]
-            if d_source <> source.File || d_line <> line_n then
-                failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
+            let existing_conflict = deduplicate_de.[ded_de]
+            
+            let identical = item = existing_conflict.Item
+            let skip_if_uncategorised = source.File = "uncategorised" && identical
+            
+            if not skip_if_uncategorised && (existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n) then
+                failwithf "%s German definition! \n %s (%s:%i)\n %s (%s:%i)"
+                    (if identical then "Duplicate" else "Conflict with")
+                    item.HighlightString source.File line_n
+                    existing_conflict.Item.HighlightString existing_conflict.SourceFile existing_conflict.Line
         else
-            deduplicate_de.Add(ded_de, (v, source.File, line_n))
+            deduplicate_de.Add(ded_de, { SourceFile = source.File; Line = line_n; Item = item })
 
-        let ded_en = v.EnglishKey
+        let ded_en = vocab.EnglishKey
         if deduplicate_en.ContainsKey(ded_en) then
-            let duplicate_of, d_source, d_line = deduplicate_en.[ded_en]
-            if d_source <> source.File || d_line <> line_n then
-                failwithf "'%O' conflicts with '%O' in '%s'" v duplicate_of d_source
+            let existing_conflict = deduplicate_en.[ded_en]
+            
+            let identical = item = existing_conflict.Item
+            let skip_if_uncategorised = source.File = "uncategorised" && identical
+            
+            if not skip_if_uncategorised && (existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n) then
+                failwithf "%s English definition! \n %s (%s:%i)\n %s (%s:%i)"
+                    (if identical then "Duplicate" else "Conflict with")
+                    item.HighlightString source.File line_n
+                    existing_conflict.Item.HighlightString existing_conflict.SourceFile existing_conflict.Line
         else
-            deduplicate_en.Add(ded_en, (v, source.File, line_n))
+            deduplicate_en.Add(ded_en, { SourceFile = source.File; Line = line_n; Item = item })
 
     let add_vocab (source: Source) (line_n: int) (line: string) : unit =
         let v, tags = Wordlist.parse_core line
 
-        check_duplicate source line_n v
-
         if v.DetectVerb then
             let verb = Wordlist.parse_verb_inner(v, tags)
             match verb.PastParticiple with
-            | Something pp -> check_duplicate source line_n pp
+            | Something pp -> check_duplicate(source, line_n, pp, Verb verb)
             | _ -> ()
+            check_duplicate(source, line_n, v, Verb verb)
             entries.Add { Item = Verb verb; Source = source }
             
         elif v.DetectNoun && tags <> [] then
             let noun = Wordlist.parse_noun_inner(v, tags)
             match noun.Plural with
-            | Something plural -> check_duplicate source line_n plural
+            | Something plural -> check_duplicate(source, line_n, plural, Noun noun)
             | _ -> ()
+            check_duplicate(source, line_n, v, Noun noun)
             entries.Add { Item = Noun noun; Source = source }
             
         else
+            check_duplicate(source, line_n, v, Vocab v)
             entries.Add { Item = Vocab v; Source = source }
 
     let add_dynamic (source: Source) (line_n: int) (line: string) : unit =
@@ -162,8 +189,8 @@ type WordBank() =
         try add_dynamic source line_n line; Ok()
         with err -> Error err.Message
 
-    member this.ReadFile(source: Source, path: string) =
-        File.ReadAllLines(path)
+    member this.ReadFile(source: Source, file_path: string) =
+        File.ReadAllLines(file_path)
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iteri (fun i line ->
             match this.TryAdd(source, i, line) with
@@ -173,7 +200,12 @@ type WordBank() =
                 Console.WriteLine(" " + reason, Color.Red)
         )
 
-    member this.ReadDirectory(path: string) =
+    member private this.Reload() =
+        groups.Clear()
+        entries.Clear()
+        deduplicate_de.Clear()
+        deduplicate_en.Clear()
+        
         let meta_list = Path.Combine(path, "wordlists.meta")
         if File.Exists(meta_list) |> not then
             Console.WriteLine(sprintf "'%s' doesn't exist!" meta_list, Color.Red)
@@ -198,10 +230,25 @@ type WordBank() =
                     let filename = line.Trim()
                     Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" filename, Color.Red)
 
-    static member ReadDirectory(path: string) : WordBank =
-        let words = WordBank()
-        words.ReadDirectory(path)
+    static member FromDirectory(path: string) : WordBank =
+        let words = WordBank(path)
+        words.Reload()
         words
 
     member this.Entries = entries.AsReadOnly()
     member this.Groups = groups.AsReadOnly()
+    
+    member this.Categorise() =
+        let options = this.Groups |> Seq.collect _.Lists |> Seq.except ["uncategorised"] |> Seq.toArray
+        for entry in this.Entries |> Seq.where(fun e -> e.Source.File = "uncategorised") do
+            Console.Clear()
+            Console.WriteLine()
+            Console.WriteLine(entry.Item.HighlightString)
+            Console.WriteLine()
+            for i, option in Array.indexed options do
+                Console.Write($" %02i{i} ", Color.LightGray, Color.SlateGray)
+                Console.WriteLine(option)
+            match Int32.TryParse(Console.ReadLine()) with
+            | true, n when n >= 0 && n < options.Length ->
+                File.AppendAllLines(Path.Combine(path, options.[n] + ".wordlist"), [entry.Item.ToString()])
+            | _ -> ()
