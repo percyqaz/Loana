@@ -277,17 +277,17 @@ type Verb =
         match this.PastParticiple with
         | ToBeDetermined -> this.Infinitive.ToString()
         | Nothing -> sprintf "%O :%s" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString()))
-        | Something pp -> sprintf "%O :%s pp %O" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString())) pp
+        | Something pp -> sprintf "%O :%spp %O" this.Infinitive (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))) pp
         
     member this.HighlightString =
         match this.PastParticiple with
         | ToBeDetermined -> this.Infinitive.HighlightString
         | Nothing ->
             this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map _.ToString())), Color.FromArgb(0xffddff), Color.Black)
+            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xffddff), Color.Black)
         | Something pp ->
             this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map _.ToString())), Color.FromArgb(0xffddff), Color.Black) +
-            Console.ColorText(" pp ", Color.FromArgb(0xffdddd), Color.Black) +
+            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xffddff), Color.Black) +
+            Console.ColorText("pp ", Color.FromArgb(0xffdddd), Color.Black) +
             pp.HighlightString
    

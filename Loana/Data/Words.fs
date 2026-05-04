@@ -130,11 +130,12 @@ type WordBank(path: string) =
         let ded_de = vocab.Key
         if deduplicate_de.ContainsKey(ded_de) then
             let existing_conflict = deduplicate_de.[ded_de]
-            
             let identical = item = existing_conflict.Item
-            let skip_if_uncategorised = source.File = "uncategorised" && identical
             
-            if not skip_if_uncategorised && (existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n) then
+            if source.File = "uncategorised" && identical then
+                failwith ""
+            
+            if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
                 failwithf "%s German definition! \n %s (%s:%i)\n %s (%s:%i)"
                     (if identical then "Duplicate" else "Conflict with")
                     item.HighlightString source.File line_n
@@ -145,11 +146,9 @@ type WordBank(path: string) =
         let ded_en = vocab.EnglishKey
         if deduplicate_en.ContainsKey(ded_en) then
             let existing_conflict = deduplicate_en.[ded_en]
-            
             let identical = item = existing_conflict.Item
-            let skip_if_uncategorised = source.File = "uncategorised" && identical
             
-            if not skip_if_uncategorised && (existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n) then
+            if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
                 failwithf "%s English definition! \n %s (%s:%i)\n %s (%s:%i)"
                     (if identical then "Duplicate" else "Conflict with")
                     item.HighlightString source.File line_n
@@ -195,6 +194,7 @@ type WordBank(path: string) =
         |> Seq.iteri (fun i line ->
             match this.TryAdd(source, i, line) with
             | Ok() -> ()
+            | Error "" -> ()
             | Error reason ->
                 Console.Write($" {source.File}: ", Color.LightBlue, Color.FromArgb 0x202020)
                 Console.WriteLine(" " + reason, Color.Red)
@@ -246,8 +246,8 @@ type WordBank(path: string) =
             Console.WriteLine(entry.Item.HighlightString)
             Console.WriteLine()
             for i, option in Array.indexed options do
-                Console.Write($" %02i{i} ", Color.LightGray, Color.SlateGray)
-                Console.WriteLine(option)
+                Console.Write($"[%02i{i}]", Color.LightGray, Color.SlateGray)
+                Console.WriteLine(" " + option)
             match Int32.TryParse(Console.ReadLine()) with
             | true, n when n >= 0 && n < options.Length ->
                 File.AppendAllLines(Path.Combine(path, options.[n] + ".wordlist"), [entry.Item.ToString()])

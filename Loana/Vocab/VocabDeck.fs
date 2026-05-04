@@ -171,7 +171,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member inline this.LearningCards<^T when ^T : (member Key: string)>(cards: ^T seq) =
         cards
-        |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsNone)
+        |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsNone && not(this.Scheduler.IsBuried c.Key))
 
     member inline this.ReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq) =
         cards
