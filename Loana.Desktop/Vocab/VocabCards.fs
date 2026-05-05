@@ -166,7 +166,7 @@ type VocabCard =
             CardLine.Create GERMAN_BG []
         ]
 
-    static member Render(card: CardMeta) =
+    static member Render(card: Card) =
         match card.Type with
         | RecogniseDE v -> VocabCard.RecogniseDE v
         | RecallDE v -> VocabCard.RecallDE v

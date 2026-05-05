@@ -19,7 +19,7 @@
     <Compile Include="Language\Declension\English.fs" />
     <Compile Include="Language\VerbInflections.fs" />
     <Compile Include="Language\VerbDownloader.fs" />
-    <Compile Include="Language\CardMeta.fs" />
+    <Compile Include="Language\Card.fs" />
     <Compile Include="Data\ReviewSchedule.fs" />
     <Compile Include="Data\Words.fs" />
     <Compile Include="Data\Verbs.fs" />

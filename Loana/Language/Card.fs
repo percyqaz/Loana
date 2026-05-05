@@ -9,7 +9,7 @@ type CardType =
     | RecallArticleDE of n: Noun
     | Inflection of v: Verb * i: VerbInflection * inflected_text: string
 
-type CardMeta =
+type Card =
     {
         Key: string
         Type: CardType

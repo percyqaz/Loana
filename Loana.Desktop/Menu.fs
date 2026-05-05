@@ -192,7 +192,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
                 MenuRender.Write($" {MenuRender.FormatInterval(next_review - now)} ".PadLeft(16), Color.Yellow, Color.FromArgb(0xFF_202020))
             MenuRender.WriteLine()
 
-    member this.VocabReview (cards: CardMeta seq) =
+    member this.VocabReview (cards: Card seq) =
         let cards =
             vocab.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.ReferenceKey
@@ -212,7 +212,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             )
             Console.ReadKey(true) |> ignore
 
-    member this.VocabReviewAhead (cards: CardMeta seq) =
+    member this.VocabReviewAhead (cards: Card seq) =
         let cards =
             vocab.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.ReferenceKey
@@ -232,7 +232,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             )
             Console.ReadKey(true) |> ignore
 
-    member this.VocabLearn (cards: CardMeta seq) =
+    member this.VocabLearn (cards: Card seq) =
         let cards = vocab.LearningCards(cards) |> Seq.truncate vocab.LearnBatchSize |> Array.ofSeq
         if cards.Length > 0 then
             let result = LearnSession(cards, scheduler).Start()
@@ -261,7 +261,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
         Console.ReadKey(true) |> ignore
 
-    member this.VocabStats(all_cards: CardMeta seq) : unit =
+    member this.VocabStats(all_cards: Card seq) : unit =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
         let by_hour =

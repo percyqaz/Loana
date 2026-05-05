@@ -242,5 +242,5 @@ type ReviewSchedule(path: string) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         this.Schedule(key, f <| this.Get(key).Value <| now, now)
 
-    member this.Bump(meta: CardMeta) : ScheduleResult =
+    member this.Bump(meta: Card) : ScheduleResult =
         this.Reschedule(meta.BumpKey.Value, fun data now -> data.Bump(now, this.Get(meta.Key).Value.Interval))

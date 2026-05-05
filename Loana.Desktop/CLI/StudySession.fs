@@ -30,8 +30,8 @@ type StudySessionResult =
     member this.NotGood = this.Ok + this.Bad + this.Forgot
 
 [<AbstractClass>]
-type StudySession(title: string, cards: CardMeta array) =
-    let cards = ResizeArray<CardMeta>(cards |> Seq.randomShuffle)
+type StudySession(title: string, cards: Card array) =
+    let cards = ResizeArray<Card>(cards |> Seq.randomShuffle)
 
     let CARD_AREA = 20
     let LOG_SIZE = 16
@@ -135,10 +135,10 @@ type StudySession(title: string, cards: CardMeta array) =
 
         { EndEarly = end_early; Good = buttons.[0]; Ok = buttons.[1]; Bad = buttons.[2]; Forgot = buttons.[3] }
 
-    member this.ReplaceNear(card: CardMeta) =
+    member this.ReplaceNear(card: Card) =
         cards.Insert(min 4 cards.Count, card)
 
-    member this.ReplaceFar(card: CardMeta) =
+    member this.ReplaceFar(card: Card) =
         cards.Add(card)
 
     member this.Log(message: string) =
@@ -146,8 +146,8 @@ type StudySession(title: string, cards: CardMeta array) =
         log.Add(message)
         if log.Count > LOG_SIZE then log.RemoveAt(0)
 
-    abstract member Forget: CardMeta -> unit
-    abstract member Demote: CardMeta -> unit
-    abstract member Keep: CardMeta -> unit
-    abstract member Promote: CardMeta -> unit
-    abstract member Render: CardMeta -> CardSide * CardSide
+    abstract member Forget: Card -> unit
+    abstract member Demote: Card -> unit
+    abstract member Keep: Card -> unit
+    abstract member Promote: Card -> unit
+    abstract member Render: Card -> CardSide * CardSide

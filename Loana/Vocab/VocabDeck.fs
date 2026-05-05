@@ -20,7 +20,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         | ValueSome data -> data.Level
         | ValueNone -> 0
 
-    member private this.AvailableCards(v: Vocab) : CardMeta seq =
+    member private this.AvailableCards(v: Vocab) : Card seq =
         seq {
             let tier_1 = VocabCard.M_Tier1_RecogniseDE(v)
             yield tier_1
@@ -29,7 +29,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 yield VocabCard.M_Tier2_RecallDE(v)
         }
 
-    member private this.AvailableCards(v: Verb) : CardMeta seq =
+    member private this.AvailableCards(v: Verb) : Card seq =
         seq {
             let tier_1 = VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
             let tier_2 = VocabCard.M_Tier2_RecallDE(v.Infinitive)
@@ -49,7 +49,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | _ -> ()
         }
 
-    member private this.AvailableCards(n: Noun) : CardMeta seq =
+    member private this.AvailableCards(n: Noun) : Card seq =
         seq {
             let tier_1 = VocabCard.M_Tier1_RecogniseDE(n.Translation)
             let tier_2 = VocabCard.M_Tier2_RecallDE(n.Translation)
@@ -79,13 +79,13 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | None -> ()
         }
 
-    member private this.AvailableCards(word: WordlistItem): CardMeta seq =
+    member private this.AvailableCards(word: WordlistItem): Card seq =
         match word with
         | Vocab v -> this.AvailableCards v
         | Noun n -> this.AvailableCards n
         | Verb v -> this.AvailableCards v
 
-    member this.AvailableCards(sources: string list) : CardMeta seq =
+    member this.AvailableCards(sources: string list) : Card seq =
         seq {
             for word in words.Entries do
                 if sources.IsEmpty || List.contains word.Source.File sources then
@@ -95,13 +95,13 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.AvailableCards() = this.AvailableCards([])
 
-    member private this.PossibleCards(v: Vocab) : CardMeta seq =
+    member private this.PossibleCards(v: Vocab) : Card seq =
         seq {
             yield VocabCard.M_Tier1_RecogniseDE(v)
             yield VocabCard.M_Tier2_RecallDE(v)
         }
 
-    member private this.PossibleCards(v: Verb) : CardMeta seq =
+    member private this.PossibleCards(v: Verb) : Card seq =
         seq {
             yield VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
             yield VocabCard.M_Tier2_RecallDE(v.Infinitive)
@@ -112,7 +112,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | _ -> ()
         }
 
-    member private this.PossibleCards(n: Noun) : CardMeta seq =
+    member private this.PossibleCards(n: Noun) : Card seq =
         seq {
             yield VocabCard.M_Tier1_RecogniseDE(n.Translation)
             yield VocabCard.M_Tier2_RecallDE(n.Translation)
@@ -125,13 +125,13 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | None -> ()
         }
 
-    member private this.PossibleCards(word: WordlistItem) : CardMeta seq =
+    member private this.PossibleCards(word: WordlistItem) : Card seq =
         match word with
         | Vocab v -> this.PossibleCards v
         | Noun n -> this.PossibleCards n
         | Verb v -> this.PossibleCards v
 
-    member this.PossibleCards(sources: string list) : CardMeta seq =
+    member this.PossibleCards(sources: string list) : Card seq =
         seq {
             for word in words.Entries do
                 if sources.IsEmpty || List.contains word.Source.File sources then
@@ -141,11 +141,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.PossibleCards() = this.PossibleCards([])
 
-    member this.FilterByTier(cards: CardMeta seq, min_tier: int, max_tier: int) =
+    member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) =
         cards
         |> Seq.where (fun c -> c.Tier >= min_tier && c.Tier <= max_tier)
 
-    member this.FilterByLevel(cards: CardMeta seq, minlevel: int, maxlevel: int) =
+    member this.FilterByLevel(cards: Card seq, minlevel: int, maxlevel: int) =
         cards
         |> Seq.where (fun c ->
             match scheduler.Get c.Key with
