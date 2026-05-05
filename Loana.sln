@@ -5,6 +5,10 @@ VisualStudioVersion = 18.2.11415.280
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Loana", "Loana\Loana.fsproj", "{8A3CBDCD-40AD-4365-92EB-C0BF98417857}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loana.Mobile", "Loana.Mobile\Loana.Mobile.csproj", "{62046DEC-25B6-4D26-9DDC-539749FD2A51}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Loana.Desktop", "Loana.Desktop\Loana.Desktop.fsproj", "{63D43B7A-E490-46C1-AF79-CC97C1B4558F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,15 @@ Global
 		{8A3CBDCD-40AD-4365-92EB-C0BF98417857}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A3CBDCD-40AD-4365-92EB-C0BF98417857}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A3CBDCD-40AD-4365-92EB-C0BF98417857}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62046DEC-25B6-4D26-9DDC-539749FD2A51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62046DEC-25B6-4D26-9DDC-539749FD2A51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62046DEC-25B6-4D26-9DDC-539749FD2A51}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{62046DEC-25B6-4D26-9DDC-539749FD2A51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62046DEC-25B6-4D26-9DDC-539749FD2A51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

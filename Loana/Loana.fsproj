@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net10.0</TargetFramework>
 	<PublishTrimmed>True</PublishTrimmed>
 	<PublishAot>True</PublishAot>
@@ -36,8 +36,6 @@
     <Compile Include="Verbs\VerbSession.fs" />
     <Compile Include="Verbs\VerbCards.fs" />
     <Compile Include="Verbs\VerbCache.fs" />
-    <Compile Include="Menu.fs" />
-    <Compile Include="Program.fs" />
   </ItemGroup>
 
 </Project>

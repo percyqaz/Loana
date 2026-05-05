@@ -7,18 +7,18 @@ open Loana.Data
 open Loana
 
 type Loana =
-    static member GetFilePath([<System.Runtime.CompilerServices.CallerFilePath>] ?path: string) =
+    static member GetFilePath([<Runtime.CompilerServices.CallerFilePath>] ?path: string) =
         Path.GetDirectoryName(path.Value)
 
-if System.OperatingSystem.IsWindows() then
-    System.Console.CursorVisible <- false
-    System.Console.Title <- "Loana v0.1"
+if OperatingSystem.IsWindows() then
+    Console.CursorVisible <- false
+    Console.Title <- "Loana v0.1"
 
 let config = ResizeArray(try File.ReadAllLines("config") with :? FileNotFoundException -> [||])
 let data_path =
     while config.Count < 1 || not (Directory.Exists(config.[0])) do
         Console.Write("Enter a path to store data: ")
-        let user_input = System.Console.ReadLine()
+        let user_input = Console.ReadLine()
         if Directory.Exists(user_input) then
             config.Add(user_input)
             File.WriteAllLines("config", [|user_input|])
@@ -29,7 +29,7 @@ let data_path =
 let mutable waiting_acceptance = true
 while waiting_acceptance do
 
-    System.Console.Clear()
+    Console.Clear()
     Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0xFF_303030))
 
     let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
@@ -49,15 +49,15 @@ while waiting_acceptance do
                 if i / 80 < 24 then
                     MenuRender.Write(c[min 7 (int b.[i])].ToString(), color, Color.FromArgb(255, 16 + int color.G / 2, 16 + int color.G / 4, 16))
                     if i % 80 > 78 then MenuRender.Write(p + " \n" + (if i / 80 < 23 then p else ""), Color.White, bg)
-            MenuRender.WriteLine(MenuRender.Pad "[C] Categorise [R] Reload  [Enter] Launch", Color.LightGray, Color.FromArgb(0xFF_202020))
-            System.Console.SetCursorPosition(x, y); MenuRender.FlushInline()
+            MenuRender.WriteLine(MenuRender.Pad "[C] Categorise  [R] Reload  [Enter] Launch", Color.LightGray, Color.FromArgb(0xFF_202020))
+            Console.SetCursorPosition(x, y); MenuRender.FlushInline()
 
     let mutable loop = true
     while loop do
-        while not System.Console.KeyAvailable do
+        while not Console.KeyAvailable do
             System.Threading.Thread.Sleep(20)
             mysterious_flame()
-        
+
         match System.Console.ReadKey(true).Key with
         | ConsoleKey.Enter ->
             loop <- false
