@@ -13,11 +13,11 @@ type MenuSelection =
     | VerbMode
     | Quiz of Quiz
 
-type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
+type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
     let vocab: VocabDeck = VocabDeck(scheduler, words)
     let quizzes: QuizScheduler = QuizScheduler(scheduler)
-    let verb_deck: VerbDeck = VerbDeck(scheduler, words, verbs)
+    let verbs: VerbCache = VerbCache(scheduler, words)
 
     let SELECTION_OPTIONS =
         seq {
@@ -145,10 +145,10 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
             Color.FromArgb(0xFF_101010)
         )
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        let available = verb_deck.AvailableEntries()
-        let learning = verb_deck.LearningEntries(available)
-        let due = verb_deck.DueReviewEntries(available, now)
-        let ahead = verb_deck.AheadReviewEntries(available, now)
+        let available = verbs.AvailableEntries()
+        let learning = verbs.LearningEntries(available)
+        let due = verbs.DueReviewEntries(available, now)
+        let ahead = verbs.AheadReviewEntries(available, now)
 
         MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0xFF_101020))
         MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0xFF_102010))
@@ -209,11 +209,11 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.Escape -> loop <- false
                 | ConsoleKey.UpArrow -> previous_selection()
                 | ConsoleKey.DownArrow -> next_selection()
-                | ConsoleKey.Enter -> vocab.Stats(get_filtered(wordlists))
-                | ConsoleKey.L -> vocab.Learn(get_filtered(wordlists))
-                | ConsoleKey.R -> vocab.Review(get_filtered(wordlists))
-                | ConsoleKey.A -> vocab.ReviewAhead(get_filtered(wordlists))
-                | ConsoleKey.C -> vocab.ChoresList()
+                | ConsoleKey.Enter -> this.VocabStats(get_filtered(wordlists))
+                | ConsoleKey.L -> this.VocabLearn(get_filtered(wordlists))
+                | ConsoleKey.R -> this.VocabReview(get_filtered(wordlists))
+                | ConsoleKey.A -> this.VocabReviewAhead(get_filtered(wordlists))
+                | ConsoleKey.C -> this.VocabChoresList()
                 | ConsoleKey.F -> cycle_filter()
                 | ConsoleKey.OemMinus
                 | ConsoleKey.Subtract -> vocab.DecreaseBatchSize()
@@ -229,8 +229,8 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.Escape -> loop <- false
                 | ConsoleKey.UpArrow -> previous_selection()
                 | ConsoleKey.DownArrow -> next_selection()
-                | ConsoleKey.L -> verb_deck.Learn(verb_deck.LearningEntries(verb_deck.AvailableEntries()))
-                | ConsoleKey.R -> verb_deck.Review(verb_deck.DueReviewEntries(verb_deck.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
+                | ConsoleKey.L -> this.VerbsLearn(verbs.LearningEntries(verbs.AvailableEntries()))
+                | ConsoleKey.R -> this.VerbsReview(verbs.DueReviewEntries(verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
                 | _ -> ()
                 
             | Quiz quiz ->
@@ -244,3 +244,206 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.Enter -> quizzes.Study(quiz)
                 | ConsoleKey.A -> quizzes.Study(quizzes.Auto())
                 | _ -> ()
+                
+        member this.VocabReview (cards: Card seq) =
+        let cards =
+            vocab.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.distinctBy _.Meta.ReferenceKey
+            |> Seq.truncate vocab.ReviewBatchSize
+            |> Array.ofSeq
+        if cards.Length > 0 then
+            let result = ReviewSession(cards, scheduler, false).Start()
+            Console.WriteLine(
+                MenuRender.Pad (
+                    sprintf "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
+                        (if result.EndEarly then " early" else "")
+                        result.Good result.Ok result.Bad result.NotGood
+                        (100.0f * (float32 result.Good / ((float32 result.Good + float32 result.NotGood) |> max 1.0f)))
+                ),
+                Color.LightGreen,
+                Color.FromArgb(0xFF_303030)
+            )
+            Console.ReadKey(true) |> ignore
+
+    member this.VocabReviewAhead (cards: Card seq) =
+        let cards =
+            vocab.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.distinctBy _.Meta.ReferenceKey
+            |> Seq.truncate vocab.ReviewBatchSize
+            |> Array.ofSeq
+        if cards.Length > 0 then
+            let result = ReviewSession(cards, scheduler, true).Start()
+            Console.WriteLine(
+                MenuRender.Pad (
+                    sprintf "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
+                        (if result.EndEarly then " early" else "")
+                        result.Good result.Ok result.Bad result.NotGood
+                        (100.0f * (float32 result.Good / ((float32 result.Good + float32 result.NotGood) |> max 1.0f)))
+                ),
+                Color.LightGreen,
+                Color.FromArgb(0xFF_303030)
+            )
+            Console.ReadKey(true) |> ignore
+
+    member this.VocabLearn (cards: Card seq) =
+        let cards = vocab.LearningCards(cards) |> Seq.truncate vocab.LearnBatchSize |> Array.ofSeq
+        if cards.Length > 0 then
+            let result = LearnSession(cards, scheduler).Start()
+            Console.WriteLine(
+                MenuRender.Pad (
+                    sprintf "Session ended%s! [%i|%i] (%.1f)"
+                        (if result.EndEarly then " early" else "")
+                        result.Good result.NotGood
+                        (1.0f + float32 result.NotGood / (float32 result.Good |> max 1.0f))
+                    ),
+                Color.LightGreen,
+                Color.FromArgb(0xFF_303030)
+            )
+            Console.ReadKey(true) |> ignore
+
+    member this.VocabChoresList () =
+        Console.WriteLine(MenuRender.Pad " Chores list ", Color.White, Color.FromArgb(0xFF_303030))
+        let chores = vocab.Chores() |> Seq.cache
+        let urgent = chores |> Seq.filter _.Urgent |> Seq.truncate 20 |> Array.ofSeq
+        let non_urgent = chores |> Seq.filter (_.Urgent >> not) |> Seq.truncate 20 |> Array.ofSeq
+
+        Console.WriteLine(MenuRender.Pad (sprintf " - %i Urgent - " urgent.Length), Color.LightGray, Color.FromArgb(0xFF_202020))
+        for chore in urgent do Console.WriteLine(chore.Message, Color.DeepPink)
+        Console.WriteLine(MenuRender.Pad (sprintf " - %i Non-urgent - " non_urgent.Length), Color.LightGray, Color.FromArgb(0xFF_202020))
+        for chore in non_urgent do Console.WriteLine(chore.Message, Color.Yellow)
+
+        Console.ReadKey(true) |> ignore
+
+    member this.VocabStats(all_cards: Card seq) : unit =
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+
+        let by_hour =
+            vocab.AheadReviewCards(all_cards, now)
+            |> Seq.map (fun c -> (scheduler.Get c.Key).Value.NextReview - now)
+            |> Seq.takeWhile (fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
+            |> Seq.countBy (fun c -> c / TimeSpan.SecondsPerHour)
+            |> Map.ofSeq
+
+        let by_day =
+            vocab.AheadReviewCards(all_cards, now)
+            |> Seq.map (fun c -> (scheduler.Get c.Key).Value.NextReview - now)
+            |> Seq.takeWhile (fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
+            |> Seq.countBy (fun c -> c / TimeSpan.SecondsPerDay)
+            |> Map.ofSeq
+
+        let forgotten =
+            all_cards
+            |> Seq.choose (fun c -> match scheduler.Get c.Key with ValueSome v when (v.Reviews > v.Level && v.Level < 4) || v.Difficulty > 5 -> Some (v, c.Key) | _ -> None)
+            |> Seq.sortByDescending (fst >> _.LastReviewed)
+            |> Seq.truncate 20
+            |> Array.ofSeq
+
+        let upcoming_bar (data, threshold) =
+            for i = 0 to MenuRender.Width - 1 do
+                let hit = (Map.tryFind (int64 i) data |> Option.defaultValue 0) > threshold
+                MenuRender.Write(" ", Color.White, if hit then Color.Green else Color.FromArgb(0xFF_101010))
+            MenuRender.WriteLine()
+
+        MenuRender.WriteLine(MenuRender.Pad " Stats for selected deck(s) ", Color.LightGray, Color.FromArgb(0xFF_303030))
+        MenuRender.WriteLine(MenuRender.Pad " - Distribution - ", Color.LightGray, Color.FromArgb(0xFF_202020))
+        all_cards
+        |> vocab.LevelDistribution
+        |> Seq.iter (fun (level, count) ->
+            MenuRender.Write(sprintf "[%i]" level, ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
+            MenuRender.Write(String.replicate (count / 100) " ", Color.White, ReviewData.LevelColors.[level])
+            MenuRender.WriteLine((sprintf " %i cards" count).PadRight(MenuRender.Width - (count / 100) - 3), Color.LightGray, Color.FromArgb(0xFF_101010))
+        )
+
+        MenuRender.WriteLine(MenuRender.Pad " - Upcoming workload (axis in days) - ", Color.LightGray, Color.FromArgb(0xFF_303030))
+        upcoming_bar(by_hour, 250)
+        upcoming_bar(by_hour, 200)
+        upcoming_bar(by_hour, 150)
+        upcoming_bar(by_hour, 100)
+        upcoming_bar(by_hour, 50)
+
+        for i = 0 to MenuRender.Width / 24 - 1 do
+            MenuRender.Write("�".PadLeft(12), Color.LightGray, Color.FromArgb(0xFF_202020))
+            MenuRender.Write((i + 1).ToString().PadLeft(12), Color.LightGray, Color.FromArgb(0xFF_202020))
+        MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 24) * 24), Color.LightGray, Color.FromArgb(0xFF_202020))
+        MenuRender.WriteLine()
+
+        MenuRender.WriteLine(MenuRender.Pad " - Upcoming workload (axis in weeks) - ", Color.LightGray, Color.FromArgb(0xFF_303030))
+        upcoming_bar(by_day, 500)
+        upcoming_bar(by_day, 400)
+        upcoming_bar(by_day, 300)
+        upcoming_bar(by_day, 200)
+        upcoming_bar(by_day, 100)
+        for i = 0 to MenuRender.Width / 7 - 1 do
+            MenuRender.Write((i + 1).ToString().PadLeft(7), Color.LightGray, Color.FromArgb(0xFF_202020))
+        MenuRender.Write("".PadLeft(MenuRender.Width - (MenuRender.Width / 7) * 7), Color.LightGray, Color.FromArgb(0xFF_202020))
+        MenuRender.WriteLine()
+
+        if forgotten.Length > 0 then
+            MenuRender.WriteLine(MenuRender.Pad " - Forgotten cards - ", Color.Red, Color.FromArgb(0xFF_303030))
+            for data, key in forgotten do
+                MenuRender.Write((sprintf "[%i] %s" data.Level key).PadRight(MenuRender.Width - 44).Substring(0, MenuRender.Width - 44), ReviewData.LevelColors.[data.Level], Color.FromArgb(0xFF_202020))
+                MenuRender.Write($" {MenuRender.FormatInterval(now - data.LastReviewed)} ago ", Color.LightGray, Color.FromArgb(0xFF_202020))
+                MenuRender.Write($" Reviews: {data.Reviews.ToString().PadRight(3)} ", Color.Green, Color.FromArgb(0xFF_202020))
+                MenuRender.Write($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0xFF_202020))
+                MenuRender.WriteLine()
+
+        MenuRender.FlushInline()
+        Console.ReadKey(true) |> ignore
+        
+    member this.VerbsLearn (entries: VerbCacheEntry seq) =
+        let to_learn =
+            verbs.LearningEntries(entries)
+            |> Seq.tryHead
+            
+        match to_learn with
+        | None -> ()
+        | Some verb ->
+            let verb_cards =
+                verb_cache.Ensure(verb.Verb)
+                |> Map.toSeq
+                |> Seq.filter (fun (i, _) -> i.AsQuiz = verb.Quiz)
+                |> Seq.map (fun (i, text) -> VerbCard.C_Inflection(verb.Verb, i, text))
+                |> Array.ofSeq
+                
+            let session = VerbSession(verb_cards)
+            let result = session.Start()
+            if not result.EndEarly then
+                let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                scheduler.Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now) |> session.Log
+                    
+        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
+        Console.ReadKey(true) |> ignore
+
+    member this.VerbsReview (entries: VerbCacheEntry seq) =
+        let session_entries =
+            verbs.DueReviewEntries(entries, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.truncate 5
+            |> ResizeArray
+            
+        while session_entries.Count > 0 do
+            let verb = session_entries.[0]
+            session_entries.RemoveAt(0)
+            
+            let verb_cards =
+                verb_cache.Ensure(verb.Verb)
+                |> Map.toSeq
+                |> Seq.filter (fun (i, _) -> i.AsQuiz = verb.Quiz)
+                |> Seq.map (fun (i, text) -> VerbCard.C_Inflection(verb.Verb, i, text))
+                |> Array.ofSeq
+                
+            let session = VerbSession(verb_cards)
+            let result = session.Start()
+            if result.EndEarly then
+                session_entries.Clear()
+            else
+                if result.NotGood = 0 then
+                    scheduler.Reschedule(verb.Key, _.Promote) |> session.Log
+                elif result.NotGood = 1 then
+                    scheduler.Reschedule(verb.Key, _.Keep) |> session.Log
+                elif result.Forgot > 0 then
+                    scheduler.Reschedule(verb.Key, _.Forget) |> session.Log
+                else
+                    scheduler.Reschedule(verb.Key, _.Demote) |> session.Log
+                    
+        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
+        Console.ReadKey(true) |> ignore

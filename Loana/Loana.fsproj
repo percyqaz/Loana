@@ -34,7 +34,7 @@
     <Compile Include="Vocab\VocabDeck.fs" />
     <Compile Include="Verbs\VerbSession.fs" />
     <Compile Include="Verbs\VerbCards.fs" />
-    <Compile Include="Verbs\VerbDeck.fs" />
+    <Compile Include="Verbs\VerbCache.fs" />
 
     <Compile Include="Menu.fs" />
     <Compile Include="Program.fs" />
