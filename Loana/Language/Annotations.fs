@@ -121,8 +121,8 @@ module AnnotationTree =
                 highest_layer <- max highest_layer l
             highest_layer
 
-        walk (annotations) |> ignore
-        let lines = frags |> Seq.groupBy (fun x -> x.Layer) |> Seq.sortBy fst |> Seq.map (snd >> Seq.sortBy _.Start >> Array.ofSeq) |> Seq.toList
+        walk(annotations) |> ignore
+        let lines = frags |> Seq.groupBy _.Layer |> Seq.sortBy fst |> Seq.map (snd >> Seq.sortBy _.Start >> Array.ofSeq) |> Seq.toList
         let render_line (line: ConsoleAnnotationFragment array) : QuestionLine =
             seq {
                 let mutable p = 0

@@ -1,6 +1,7 @@
 ﻿namespace Loana.Data
 
 open System
+open System.Collections.Generic
 open System.Drawing
 open System.IO
 open Loana.CLI
@@ -122,8 +123,8 @@ type WordBank(path: string) =
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
 
-    let deduplicate_de = Collections.Generic.Dictionary<string, DuplicateEntry>()
-    let deduplicate_en = Collections.Generic.Dictionary<string, DuplicateEntry>()
+    let deduplicate_de = Dictionary<string, DuplicateEntry>()
+    let deduplicate_en = Dictionary<string, DuplicateEntry>()
 
     let check_duplicate (source: Source, line_n: int, vocab: Vocab, item: WordlistItem) : unit =
 
@@ -188,7 +189,7 @@ type WordBank(path: string) =
         try add_dynamic source line_n line; Ok()
         with err -> Error err.Message
 
-    member this.ReadFile(source: Source, file_path: string) =
+    member this.ReadFile(source: Source, file_path: string) : unit =
         File.ReadAllLines(file_path)
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iteri (fun i line ->
@@ -200,7 +201,7 @@ type WordBank(path: string) =
                 Console.WriteLine(" " + reason, Color.Red)
         )
 
-    member private this.Reload() =
+    member private this.Reload() : unit =
         groups.Clear()
         entries.Clear()
         deduplicate_de.Clear()
@@ -235,10 +236,11 @@ type WordBank(path: string) =
         words.Reload()
         words
 
-    member this.Entries = entries.AsReadOnly()
-    member this.Groups = groups.AsReadOnly()
+    member this.Entries : IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
+    member this.Groups : IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
     
-    member this.Categorise() =
+    // todo: this is a UI function, move it
+    member this.Categorise() : unit =
         let options = this.Groups |> Seq.collect _.Lists |> Seq.except ["uncategorised"] |> Seq.toArray
         for entry in this.Entries |> Seq.where(fun e -> e.Source.File = "uncategorised") do
             Console.Clear()

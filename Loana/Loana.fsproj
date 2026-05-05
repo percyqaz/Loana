@@ -25,6 +25,7 @@
     <Compile Include="Data\ReviewSchedule.fs" />
     <Compile Include="Data\Words.fs" />
     <Compile Include="Data\Verbs.fs" />
+    <Compile Include="Browser\WordBrowser.fs" />
     <Compile Include="Quizzes\Shared.fs" />
     <Compile Include="Quizzes\Articles.fs" />
     <Compile Include="Quizzes\Pronouns.fs" />
@@ -35,7 +36,6 @@
     <Compile Include="Verbs\VerbSession.fs" />
     <Compile Include="Verbs\VerbCards.fs" />
     <Compile Include="Verbs\VerbCache.fs" />
-
     <Compile Include="Menu.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

@@ -121,10 +121,10 @@ type Annotation =
     member this.HighlightString =
         match this.Note with
         | Some note ->
-            Console.ColorText(this.Text, Color.White, Color.Black) +
+            Console.ColorText(this.Text, Color.White, Color.Transparent) +
             " " +
-            Console.ColorText("[" + note + "]", Color.LightGray, Color.Black)
-        | None -> Console.ColorText(this.Text, Color.White, Color.Black)
+            Console.ColorText("[" + note + "]", Color.LightGray, Color.Transparent)
+        | None -> Console.ColorText(this.Text, Color.White, Color.Transparent)
 
     static member Parse(s: string) =
         let m = Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
@@ -148,8 +148,8 @@ type Vocab =
             elif this.DetectNoun then Color.FromArgb(0xFF_ddffdd)
             else Color.White
         
-        Console.ColorText(this.Deutsch, color, Color.Black) +
-        Console.ColorText(" = ", Color.LightGray, Color.Black) +
+        Console.ColorText(this.Deutsch, color, Color.Transparent) +
+        Console.ColorText(" = ", Color.LightGray, Color.Transparent) +
         String.concat ", " (this.English :: this.EnglishAlternatives |> Seq.map _.HighlightString)
 
     member this.Key = Key.of_german this.Deutsch
@@ -218,21 +218,21 @@ type Noun =
         match this.Guts with
         | Plural ->
             this.Translation.HighlightString +
-            Console.ColorText(" :p", Gender.Plural.Color, Color.Black)
+            Console.ColorText(" :p", Gender.Plural.Color, Color.Transparent)
         | Masculine p
         | Feminine p
         | Neuter p ->
-            let gender_highlight_string = Console.ColorText(" :" + this.Guts.Gender.ToString(), this.Guts.Gender.Color, Color.Black)
+            let gender_highlight_string = Console.ColorText(" :" + this.Guts.Gender.ToString(), this.Guts.Gender.Color, Color.Transparent)
             match p with
             | Something plural ->
                 this.Translation.HighlightString +
                 gender_highlight_string +
-                Console.ColorText(" plural ", Gender.Plural.Color, Color.Black) +
+                Console.ColorText(" plural ", Gender.Plural.Color, Color.Transparent) +
                 plural.HighlightString
             | Nothing -> 
                 this.Translation.HighlightString +
                 gender_highlight_string +
-                Console.ColorText(" no_plural", Gender.Plural.Color, Color.Black)
+                Console.ColorText(" no_plural", Gender.Plural.Color, Color.Transparent)
             | ToBeDetermined -> 
                 this.Translation.HighlightString +
                 gender_highlight_string
@@ -284,10 +284,10 @@ type Verb =
         | ToBeDetermined -> this.Infinitive.HighlightString
         | Nothing ->
             this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Black)
+            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map (fun x -> x.ToString()))), Color.FromArgb(0xFF_ffddff), Color.Transparent)
         | Something pp ->
             this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Black) +
-            Console.ColorText("pp ", Color.FromArgb(0xFF_ffdddd), Color.Black) +
+            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Transparent) +
+            Console.ColorText("pp ", Color.FromArgb(0xFF_ffdddd), Color.Transparent) +
             pp.HighlightString
    

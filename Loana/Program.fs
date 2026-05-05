@@ -1,6 +1,7 @@
 ﻿open System
 open System.IO
 open System.Drawing
+open Loana.Browser
 open Loana.CLI
 open Loana.Data
 open Loana
@@ -65,7 +66,7 @@ while waiting_acceptance do
         | ConsoleKey.R -> loop <- false
         | ConsoleKey.C ->
             loop <- false
-            words.Categorise()
+            WordBrowser(words).Run()
         | ConsoleKey.Escape ->
             loop <- false
             waiting_acceptance <- false

@@ -191,61 +191,8 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             else
                 MenuRender.Write($" {MenuRender.FormatInterval(next_review - now)} ".PadLeft(16), Color.Yellow, Color.FromArgb(0xFF_202020))
             MenuRender.WriteLine()
-
-    member this.Run() =
-        let mutable loop = true
-        while loop do
-            MenuRender.UpdateWidth()
-            this.RenderVocabDashboard()
-            this.RenderVerbModeDashboard()
-            this.RenderQuizDashboard()
-
-            match selection with
-            | VocabGroup wordlists ->
-                MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0xFF_303030))
-                MenuRender.Redraw()
-
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow -> previous_selection()
-                | ConsoleKey.DownArrow -> next_selection()
-                | ConsoleKey.Enter -> this.VocabStats(get_filtered(wordlists))
-                | ConsoleKey.L -> this.VocabLearn(get_filtered(wordlists))
-                | ConsoleKey.R -> this.VocabReview(get_filtered(wordlists))
-                | ConsoleKey.A -> this.VocabReviewAhead(get_filtered(wordlists))
-                | ConsoleKey.C -> this.VocabChoresList()
-                | ConsoleKey.F -> cycle_filter()
-                | ConsoleKey.OemMinus
-                | ConsoleKey.Subtract -> vocab.DecreaseBatchSize()
-                | ConsoleKey.OemPlus
-                | ConsoleKey.Add -> vocab.IncreaseBatchSize()
-                | _ -> ()
                 
-            | VerbMode ->
-                MenuRender.WriteLine(MenuRender.Pad " [L] Learn  [R] Review ", Color.LightGray, Color.FromArgb(0xFF_303030))
-                MenuRender.Redraw()
-
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow -> previous_selection()
-                | ConsoleKey.DownArrow -> next_selection()
-                | ConsoleKey.L -> this.VerbsLearn(verbs.LearningEntries(verbs.AvailableEntries()))
-                | ConsoleKey.R -> this.VerbsReview(verbs.DueReviewEntries(verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
-                | _ -> ()
-                
-            | Quiz quiz ->
-                MenuRender.WriteLine(MenuRender.Pad " [Enter] Quiz  [A] Auto ", Color.LightGray, Color.FromArgb(0xFF_303030))
-                MenuRender.Redraw()
-
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow -> previous_selection()
-                | ConsoleKey.DownArrow -> next_selection()
-                | ConsoleKey.Enter -> quizzes.Study(quiz)
-                | ConsoleKey.A -> quizzes.Study(quizzes.Auto())
-                | _ -> ()
-                
-        member this.VocabReview (cards: Card seq) =
+    member this.VocabReview (cards: Card seq) =
         let cards =
             vocab.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.Meta.ReferenceKey
@@ -447,3 +394,56 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
                     
         Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
         Console.ReadKey(true) |> ignore
+
+    member this.Run() : unit =
+        let mutable loop = true
+        while loop do
+            MenuRender.UpdateWidth()
+            this.RenderVocabDashboard()
+            this.RenderVerbModeDashboard()
+            this.RenderQuizDashboard()
+
+            match selection with
+            | VocabGroup wordlists ->
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0xFF_303030))
+                MenuRender.Redraw()
+
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.Escape -> loop <- false
+                | ConsoleKey.UpArrow -> previous_selection()
+                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.Enter -> this.VocabStats(get_filtered(wordlists))
+                | ConsoleKey.L -> this.VocabLearn(get_filtered(wordlists))
+                | ConsoleKey.R -> this.VocabReview(get_filtered(wordlists))
+                | ConsoleKey.A -> this.VocabReviewAhead(get_filtered(wordlists))
+                | ConsoleKey.C -> this.VocabChoresList()
+                | ConsoleKey.F -> cycle_filter()
+                | ConsoleKey.OemMinus
+                | ConsoleKey.Subtract -> vocab.DecreaseBatchSize()
+                | ConsoleKey.OemPlus
+                | ConsoleKey.Add -> vocab.IncreaseBatchSize()
+                | _ -> ()
+                
+            | VerbMode ->
+                MenuRender.WriteLine(MenuRender.Pad " [L] Learn  [R] Review ", Color.LightGray, Color.FromArgb(0xFF_303030))
+                MenuRender.Redraw()
+
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.Escape -> loop <- false
+                | ConsoleKey.UpArrow -> previous_selection()
+                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.L -> this.VerbsLearn(verbs.LearningEntries(verbs.AvailableEntries()))
+                | ConsoleKey.R -> this.VerbsReview(verbs.DueReviewEntries(verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
+                | _ -> ()
+                
+            | Quiz quiz ->
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Quiz  [A] Auto ", Color.LightGray, Color.FromArgb(0xFF_303030))
+                MenuRender.Redraw()
+
+                match Console.ReadKey(true).Key with
+                | ConsoleKey.Escape -> loop <- false
+                | ConsoleKey.UpArrow -> previous_selection()
+                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.Enter -> quizzes.Study(quiz)
+                | ConsoleKey.A -> quizzes.Study(quizzes.Auto())
+                | _ -> ()

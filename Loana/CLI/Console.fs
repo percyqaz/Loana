@@ -7,7 +7,7 @@ type Console =
         if bg.A > 0uy then
             sprintf "\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm%s\u001b[0m" fg.R fg.G fg.B bg.R bg.G bg.B text
         else
-            sprintf "\u001b[38;2;%d;%d;%dm%s\u001b[0m" fg.R fg.G fg.B text
+            sprintf "\u001b[38;2;%d;%d;%dm%s\u001b[39m" fg.R fg.G fg.B text
 
     static member Clear() = System.Console.Clear()
 
