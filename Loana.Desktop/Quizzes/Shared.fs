@@ -30,8 +30,8 @@ type GermanPracticeQuestion =
 
     static member Create(front: AnnotationTree, back: AnnotationTree) : Question =
         {
-            Front = AnnotationTree.to_question_side(front, GERMAN_BG)
-            Back = AnnotationTree.to_question_side(back, ANSWER_BG)
+            Front = AnnotationTreeRenderer.to_question_side(front, GERMAN_BG)
+            Back = AnnotationTreeRenderer.to_question_side(back, ANSWER_BG)
             Answer = AnnotationTree.flatten_tree back
         }
 

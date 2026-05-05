@@ -8,7 +8,7 @@ type VerbCacheEntry =
     member this.Key = sprintf "verb-%O-%s" this.Quiz this.Verb.Infinitive.Key
 
 type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
-    
+
     member this.Scheduler = scheduler
 
     member inline this.LevelOf(c: VerbCacheEntry) : int =

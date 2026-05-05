@@ -11,19 +11,19 @@ type WordBrowserState =
     | Item of item: int
 
 type WordBrowser(words: WordBank) =
-    
+
     let mutable query = ""
     let mutable results: IReadOnlyList<WordlistEntry> = words.Entries
     let mutable position = 0
-    
+
     let PAGE_SIZE = 20
-    
+
     let update_search_results() =
         let current_item = if position < results.Count then Some results.[position] else None
         results <-
             words.Entries
             |> Seq.where(fun x ->
-                let t = 
+                let t =
                     match x.Item with
                     | WordlistItem.Noun n -> n.Translation
                     | WordlistItem.Verb v -> v.Infinitive
@@ -36,7 +36,7 @@ type WordBrowser(words: WordBank) =
             match current_item with
             | Some i -> Seq.tryFindIndex((=) i) results |> Option.defaultValue 0
             | None -> 0
-    
+
     member this.Run() =
         let mutable loop = true
         while loop do
@@ -49,15 +49,15 @@ type WordBrowser(words: WordBank) =
             MenuRender.Write(" ", Color.White, Color.FromArgb(0xFF_101010))
             MenuRender.WriteLine()
             MenuRender.WriteLine("".PadRight(MenuRender.Width), Color.White, Color.FromArgb(0xFF_101010))
-            
+
             if results.Count = 0 then
                 MenuRender.WriteLine(" (No results) ".PadRight(MenuRender.Width), Color.LightGray, Color.FromArgb(0xFF_202020))
-            
+
             let start_index = min (results.Count - PAGE_SIZE) (position - PAGE_SIZE / 2) |> max 0
             let end_index = min results.Count (start_index + PAGE_SIZE) - 1
             for i = start_index to end_index do
                 let result = results.[i]
-                
+
                 let tag, tag_color =
                     match result.Item with
                     | Noun _ -> "noun", Color.FromArgb(0xFF_ffddff)
@@ -69,7 +69,7 @@ type WordBrowser(words: WordBank) =
 
                 let bg = Color.FromArgb(if position = i then 0xFF_404020 else 0xFF_202020)
                 MenuRender.Write(
-                    result.Item.HighlightString + String.replicate (MenuRender.Width - result.Item.ToString().Length - tags_width |> max 0) " ",
+                    result.Item.HighlightString() + String.replicate (MenuRender.Width - result.Item.ToString().Length - tags_width |> max 0) " ",
                     Color.White,
                     bg
                 )
@@ -78,7 +78,7 @@ type WordBrowser(words: WordBank) =
                 MenuRender.Write($" {tag} ", tag_color, Color.FromArgb(0xFF_303030))
                 MenuRender.WriteLine()
             MenuRender.Redraw()
-            
+
             let next_key = Console.ReadKey(true)
             match next_key.Key with
             | ConsoleKey.Escape -> loop <- false

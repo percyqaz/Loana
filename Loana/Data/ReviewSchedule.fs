@@ -7,6 +7,15 @@ open System.Drawing
 open System.Collections.Generic
 open Loana.CLI
 
+type ScheduleResult =
+    {
+        Key: string
+        OldLevel: int
+        NewLevel: int
+        Difficulty: int
+        Interval: int64
+    }
+
 [<RequireQualifiedAccess>]
 type ReviewEase =
     | Forgot
@@ -204,33 +213,34 @@ type ReviewSchedule(path: string) =
 
     let db = ReviewScheduleFile(path)
     let mem = db.Load()
-    
+
     let mutable buried: Set<string> = Set.empty
 
     member this.Get(key: string) : ReviewData voption =
         match mem.TryGetValue(key) with
         | true, data -> ValueSome data
         | false, _ -> ValueNone
-        
-    member this.IsBuried(key: string) : bool = buried.Contains(key)
-        
-    member this.Bury(key: string) : string =
-        buried <- buried.Add key
-        Console.ColorText((sprintf " [L] %s buried!" key).PadRight(MenuRender.Width), Color.LightBlue, Color.FromArgb(0xFF_202020))
 
-    member this.Schedule(key: string, data: ReviewData, now: int64) : string =
+    member this.IsBuried(key: string) : bool = buried.Contains(key)
+
+    member this.Bury(key: string) : unit =
+        buried <- buried.Add key
+
+    member this.Schedule(key: string, data: ReviewData, now: int64) : ScheduleResult =
         let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
         mem.[key] <- data
         db.Write(mem)
-        Console.ColorText((sprintf " [%i] %s" old_level key).PadRight(MenuRender.Width - 52).Substring(0, MenuRender.Width - 52), ReviewData.LevelColors.[old_level], Color.FromArgb(0xFF_202020))
-        + Console.ColorText(" -> ", Color.LightGray, Color.FromArgb(0xFF_202020))
-        + Console.ColorText(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0xFF_202020))
-        + Console.ColorText($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0xFF_202020))
-        + Console.ColorText($" Next review: {MenuRender.FormatInterval(data.NextReview - now)} " , Color.LightGreen, Color.FromArgb(0xFF_202020))
+        {
+            Key = key
+            OldLevel = old_level
+            NewLevel = data.Level
+            Difficulty = data.Difficulty
+            Interval = data.NextReview - now
+        }
 
-    member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : string =
+    member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : ScheduleResult =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         this.Schedule(key, f <| this.Get(key).Value <| now, now)
 
-    member this.Bump(meta: CardMeta) : string =
+    member this.Bump(meta: CardMeta) : ScheduleResult =
         this.Reschedule(meta.BumpKey.Value, fun data now -> data.Bump(now, this.Get(meta.Key).Value.Interval))

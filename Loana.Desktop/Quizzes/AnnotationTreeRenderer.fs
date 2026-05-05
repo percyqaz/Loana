@@ -1,43 +1,19 @@
-﻿namespace Loana.Language
+﻿namespace Loana.Quizzes
 
 open System.Drawing
 open Loana.CLI
+open Loana.Language
 
-type AnnotationFragment =
-    | Text of string
-    | Gender of Gender * AnnotationTree
-    | Case of Case * AnnotationTree
-    | StrongDeclension of AnnotationTree
-    | WeakDeclension of AnnotationTree
-    | ArticleDeclension of AnnotationTree
-    | Annotation of string * AnnotationTree
+type internal ConsoleAnnotationFragment =
+    {
+        Text: string
+        Start: int
+        Finish: int
+        Color: Color
+        Layer: int
+    }
 
-and AnnotationTree = AnnotationFragment list
-
-module AnnotationTree =
-
-    let rec flatten_fragment (fragment: AnnotationFragment) : string =
-        match fragment with
-        | Text str -> str
-        | Gender (_, children) -> flatten_tree children
-        | Case (_, children) -> flatten_tree children
-        | StrongDeclension children -> flatten_tree children
-        | WeakDeclension children -> flatten_tree children
-        | ArticleDeclension children -> flatten_tree children
-        | Annotation (_, children) -> flatten_tree children
-
-    and flatten_tree (tree: AnnotationTree) : string =
-        List.map flatten_fragment tree
-        |> String.concat ""
-
-    type internal ConsoleAnnotationFragment =
-        {
-            Text: string
-            Start: int
-            Finish: int
-            Color: Color
-            Layer: int
-        }
+module AnnotationTreeRenderer =
 
     let to_question_side (annotations: AnnotationTree, background: Color) : QuestionSide =
         let frags = ResizeArray<ConsoleAnnotationFragment>()

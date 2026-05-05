@@ -3,7 +3,6 @@
 open System
 open System.Drawing
 open System.Text.RegularExpressions
-open Loana.CLI
 
 module Key =
 
@@ -117,14 +116,6 @@ type Annotation =
         match this.Note with
         | Some note -> sprintf "%s [%s]" this.Text note
         | None -> this.Text
-        
-    member this.HighlightString =
-        match this.Note with
-        | Some note ->
-            Console.ColorText(this.Text, Color.White, Color.Transparent) +
-            " " +
-            Console.ColorText("[" + note + "]", Color.LightGray, Color.Transparent)
-        | None -> Console.ColorText(this.Text, Color.White, Color.Transparent)
 
     static member Parse(s: string) =
         let m = Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
@@ -141,16 +132,6 @@ type Vocab =
     }
     override this.ToString() =
         sprintf "%s = %s" this.Deutsch this.EnglishKey
-        
-    member this.HighlightString =
-        let color =
-            if this.DetectVerb then Color.FromArgb(0xFF_ffddff)
-            elif this.DetectNoun then Color.FromArgb(0xFF_ddffdd)
-            else Color.White
-        
-        Console.ColorText(this.Deutsch, color, Color.Transparent) +
-        Console.ColorText(" = ", Color.LightGray, Color.Transparent) +
-        String.concat ", " (this.English :: this.EnglishAlternatives |> Seq.map _.HighlightString)
 
     member this.Key = Key.of_german this.Deutsch
     member this.EnglishKey = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
@@ -213,30 +194,6 @@ type Noun =
             | Something plural -> sprintf "%O :%O plural %O" this.Translation this.Guts.Gender plural
             | Nothing -> sprintf "%O :%O no_plural" this.Translation this.Guts.Gender
             | ToBeDetermined -> sprintf "%O :%O" this.Translation this.Guts.Gender
-            
-    member this.HighlightString : string =
-        match this.Guts with
-        | Plural ->
-            this.Translation.HighlightString +
-            Console.ColorText(" :p", Gender.Plural.Color, Color.Transparent)
-        | Masculine p
-        | Feminine p
-        | Neuter p ->
-            let gender_highlight_string = Console.ColorText(" :" + this.Guts.Gender.ToString(), this.Guts.Gender.Color, Color.Transparent)
-            match p with
-            | Something plural ->
-                this.Translation.HighlightString +
-                gender_highlight_string +
-                Console.ColorText(" plural ", Gender.Plural.Color, Color.Transparent) +
-                plural.HighlightString
-            | Nothing -> 
-                this.Translation.HighlightString +
-                gender_highlight_string +
-                Console.ColorText(" no_plural", Gender.Plural.Color, Color.Transparent)
-            | ToBeDetermined -> 
-                this.Translation.HighlightString +
-                gender_highlight_string
-        
 
 type Adjective =
     {
@@ -248,7 +205,7 @@ type Adjective =
     member this.EnglishAlternatives = this.Translation.EnglishAlternatives
 
     member this.Key = Key.of_german this.Deutsch
-        
+
 [<RequireQualifiedAccess>]
 type VerbQuiz =
     | Present
@@ -278,16 +235,3 @@ type Verb =
         | ToBeDetermined -> this.Infinitive.ToString()
         | Nothing -> sprintf "%O :%s" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString()))
         | Something pp -> sprintf "%O :%spp %O" this.Infinitive (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))) pp
-        
-    member this.HighlightString =
-        match this.PastParticiple with
-        | ToBeDetermined -> this.Infinitive.HighlightString
-        | Nothing ->
-            this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map (fun x -> x.ToString()))), Color.FromArgb(0xFF_ffddff), Color.Transparent)
-        | Something pp ->
-            this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Transparent) +
-            Console.ColorText("pp ", Color.FromArgb(0xFF_ffdddd), Color.Transparent) +
-            pp.HighlightString
-   

@@ -19,15 +19,6 @@ type CardSide =
         { Lines = this.Lines @ [line] }
     static member Create = List.fold (+) CardSide.Empty
 
-type CardMeta = { Key: string; ReferenceKey: string; Tier: int; BumpKey: string option }
-type Card =
-    {
-        Meta: CardMeta
-        Front: unit -> CardSide
-        Back: unit -> CardSide
-    }
-    member this.Key = this.Meta.Key
-
 type StudySessionResult =
     {
         EndEarly: bool
@@ -39,8 +30,8 @@ type StudySessionResult =
     member this.NotGood = this.Ok + this.Bad + this.Forgot
 
 [<AbstractClass>]
-type StudySession(title: string, cards: Card array) =
-    let cards = ResizeArray<Card>(cards |> Seq.randomShuffle)
+type StudySession(title: string, cards: CardMeta array) =
+    let cards = ResizeArray<CardMeta>(cards |> Seq.randomShuffle)
 
     let CARD_AREA = 20
     let LOG_SIZE = 16
@@ -93,8 +84,7 @@ type StudySession(title: string, cards: Card array) =
             let current = cards.[0]
             cards.RemoveAt(0)
 
-            let front = current.Front()
-            let back = current.Back()
+            let front, back = this.Render(current)
 
             draw_title()
             draw_card front
@@ -142,13 +132,13 @@ type StudySession(title: string, cards: Card array) =
                         this.Promote current
                         loop <- false
                     | _ -> ()
-                    
+
         { EndEarly = end_early; Good = buttons.[0]; Ok = buttons.[1]; Bad = buttons.[2]; Forgot = buttons.[3] }
 
-    member this.ReplaceNear(card: Card) =
+    member this.ReplaceNear(card: CardMeta) =
         cards.Insert(min 4 cards.Count, card)
 
-    member this.ReplaceFar(card: Card) =
+    member this.ReplaceFar(card: CardMeta) =
         cards.Add(card)
 
     member this.Log(message: string) =
@@ -156,7 +146,8 @@ type StudySession(title: string, cards: Card array) =
         log.Add(message)
         if log.Count > LOG_SIZE then log.RemoveAt(0)
 
-    abstract member Forget: Card -> unit
-    abstract member Demote: Card -> unit
-    abstract member Keep: Card -> unit
-    abstract member Promote: Card -> unit
+    abstract member Forget: CardMeta -> unit
+    abstract member Demote: CardMeta -> unit
+    abstract member Keep: CardMeta -> unit
+    abstract member Promote: CardMeta -> unit
+    abstract member Render: CardMeta -> CardSide * CardSide

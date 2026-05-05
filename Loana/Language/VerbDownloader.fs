@@ -3,7 +3,6 @@
 open System
 open System.Text.RegularExpressions
 open System.Net.Http
-open Loana.CLI
 
 module VerbDownloader =
 
@@ -40,9 +39,9 @@ module VerbDownloader =
         Regex.Match(list, "<i class=\"particletxt\">(.*?)<\/i>").Groups.[1].Value +
         Regex.Match(list, "<i class=\"verbtxt\">(.*?)<\/i>").Groups.[1].Value +
         Regex.Match(list, "<i class=\"auxgraytxt\">(.*?)<\/i>").Groups.[1].Value
-        
+
     let fetch_verb_inflections (verb: Verb) : (VerbInflection * string) seq =
-        
+
         let verb_base = verb.Infinitive.Deutsch
         let sich, verb_base =
             if verb_base.StartsWith("sich ") then
@@ -57,7 +56,7 @@ module VerbDownloader =
             else
                 None, verb_base
         // todo?: prepositions after
-        
+
         Console.WriteLine("Downloading HTML ...")
         let de_html = download_de_verb_page(Key.of_german verb_base)
         Console.WriteLine("Parsing HTML ...")
@@ -65,7 +64,7 @@ module VerbDownloader =
         let de_past_tense = find_conjugation_list "Indikativ Präteritum" de_html
         let de_past_participle = find_participle "Partizip Perfekt" de_html
         let de_past_participle_aux = find_participle "Infinitiv Perfekt" de_html
-        
+
         let de (m: Map<string, string>) (person: Person) =
             let key =
                 match TensePerson.OfPerson person with
@@ -77,7 +76,7 @@ module VerbDownloader =
             m.[key]
             + (if sich then " " + AnnotationTree.flatten_tree(Deutsch.reflexive_pronoun person verb.Dative) else "")
             + (match separation with Some s -> " " + s | None -> "")
-        
+
         seq {
             for q in verb.Quizzes do
                 match q with
@@ -86,7 +85,7 @@ module VerbDownloader =
                 | VerbQuiz.SimplePast -> for person in Person.LIST do yield VerbInflection.SimplePast (TensePerson.OfPerson person), de de_past_tense person
                 | VerbQuiz.Imperative -> failwith "nyi"
         }
-        
+
     // let extend_verb_legacy(verb: Verb) : Verb =
     //     Console.WriteLine("Downloading HTML ...")
     //

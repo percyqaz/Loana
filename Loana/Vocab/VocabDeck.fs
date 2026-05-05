@@ -20,28 +20,28 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         | ValueSome data -> data.Level
         | ValueNone -> 0
 
-    member private this.AvailableCards(v: Vocab) : Card seq =
+    member private this.AvailableCards(v: Vocab) : CardMeta seq =
         seq {
-            let tier_1 = VocabCard.C_Tier1_RecogniseDE(v)
+            let tier_1 = VocabCard.M_Tier1_RecogniseDE(v)
             yield tier_1
 
             if this.LevelOf tier_1 >= 2 then
-                yield VocabCard.C_Tier2_RecallDE(v)
+                yield VocabCard.M_Tier2_RecallDE(v)
         }
 
-    member private this.AvailableCards(v: Verb) : Card seq =
+    member private this.AvailableCards(v: Verb) : CardMeta seq =
         seq {
-            let tier_1 = VocabCard.C_Tier1_RecogniseDE(v.Infinitive)
-            let tier_2 = VocabCard.C_Tier2_RecallDE(v.Infinitive)
+            let tier_1 = VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
+            let tier_2 = VocabCard.M_Tier2_RecallDE(v.Infinitive)
             yield tier_1
 
             if this.LevelOf tier_1 >= 2 then
                 yield tier_2
-                
+
             match v.PastParticiple with
             | Something pp ->
-                let tier_3 = VocabCard.C_Tier3_RecognisePastParticipleDE(pp)
-                let tier_4 = VocabCard.C_Tier4_RecallPastParticipleDE(pp)
+                let tier_3 = VocabCard.M_Tier3_RecognisePastParticipleDE(pp)
+                let tier_4 = VocabCard.M_Tier4_RecallPastParticipleDE(pp)
                 if this.LevelOf tier_2 >= 4 then
                     yield tier_3
                 if this.LevelOf tier_3 >= 2 then
@@ -49,12 +49,12 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | _ -> ()
         }
 
-    member private this.AvailableCards(n: Noun) : Card seq =
+    member private this.AvailableCards(n: Noun) : CardMeta seq =
         seq {
-            let tier_1 = VocabCard.C_Tier1_RecogniseDE(n.Translation)
-            let tier_2 = VocabCard.C_Tier2_RecallDE(n.Translation)
-            let tier_3 = VocabCard.C_Tier3_RecogniseArticleDE(n)
-            let tier_4 = VocabCard.C_Tier4_RecallArticleDE(n)
+            let tier_1 = VocabCard.M_Tier1_RecogniseDE(n.Translation)
+            let tier_2 = VocabCard.M_Tier2_RecallDE(n.Translation)
+            let tier_3 = VocabCard.M_Tier3_RecogniseArticleDE(n)
+            let tier_4 = VocabCard.M_Tier4_RecallArticleDE(n)
 
             if this.LevelOf tier_1 < 2 then
                 yield tier_1
@@ -70,8 +70,8 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
             match n.PluralForm with
             | Some p ->
-                let tier_5 = VocabCard.C_Tier5_RecognisePluralDE(p)
-                let tier_6 = VocabCard.C_Tier6_RecallPluralDE(p)
+                let tier_5 = VocabCard.M_Tier5_RecognisePluralDE(p)
+                let tier_6 = VocabCard.M_Tier6_RecallPluralDE(p)
                 if this.LevelOf tier_4 >= 2 then
                     yield tier_5
                 if this.LevelOf tier_5 >= 2 then
@@ -79,13 +79,13 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | None -> ()
         }
 
-    member private this.AvailableCards(word: WordlistItem): Card seq =
+    member private this.AvailableCards(word: WordlistItem): CardMeta seq =
         match word with
         | Vocab v -> this.AvailableCards v
         | Noun n -> this.AvailableCards n
         | Verb v -> this.AvailableCards v
 
-    member this.AvailableCards(sources: string list) : Card seq =
+    member this.AvailableCards(sources: string list) : CardMeta seq =
         seq {
             for word in words.Entries do
                 if sources.IsEmpty || List.contains word.Source.File sources then
@@ -141,11 +141,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.PossibleCards() = this.PossibleCards([])
 
-    member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) =
+    member this.FilterByTier(cards: CardMeta seq, min_tier: int, max_tier: int) =
         cards
-        |> Seq.where (fun c -> c.Meta.Tier >= min_tier && c.Meta.Tier <= max_tier)
+        |> Seq.where (fun c -> c.Tier >= min_tier && c.Tier <= max_tier)
 
-    member this.FilterByLevel(cards: Card seq, minlevel: int, maxlevel: int) =
+    member this.FilterByLevel(cards: CardMeta seq, minlevel: int, maxlevel: int) =
         cards
         |> Seq.where (fun c ->
             match scheduler.Get c.Key with

@@ -6,6 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="CLI\Console.fs" />
+    <Compile Include="CLI\QuizSession.fs" />
+    <Compile Include="CLI\StudySession.fs" />
+    <Compile Include="cli\ScheduleResultExtensions.fs" />
+    <Compile Include="cli\VocabExtensions.fs" />
+    <Compile Include="Browser\WordBrowser.fs" />
+    <Compile Include="Vocab\VocabCards.fs" />
+    <Compile Include="Vocab\ReviewSession.fs" />
+    <Compile Include="Verbs\VerbCards.fs" />
+    <Compile Include="Verbs\VerbSession.fs" />
+    <Compile Include="Quizzes\AnnotationTreeRenderer.fs" />
+    <Compile Include="Quizzes\Shared.fs" />
+    <Compile Include="Quizzes\Articles.fs" />
+    <Compile Include="Quizzes\Pronouns.fs" />
+    <Compile Include="Quizzes\Quizzes.fs" />
     <Compile Include="Menu.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

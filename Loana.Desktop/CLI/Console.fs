@@ -58,6 +58,5 @@ type MenuRender =
     static member Width = width
     static member UpdateWidth() =
         let old_width = width
-        // todo on linux: System.Environment.GetEnvironmentVariable("COLUMNS") |> printfn "%A"
         width <- System.Console.WindowWidth / 2 * 2 - 1
         if old_width <> width then Console.Clear()

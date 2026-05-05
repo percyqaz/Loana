@@ -58,9 +58,9 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         | Some v ->
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             match scheduler.Get quiz.Key with
-            | ValueNone -> scheduler.Schedule(quiz.Key, ReviewData.Level1(now, 1), now) |> Console.WriteLine
+            | ValueNone -> scheduler.Schedule(quiz.Key, ReviewData.Level1(now, 1), now).HighlightString() |> Console.WriteLine
             | ValueSome _ ->
-                if v < 0 then scheduler.Reschedule(quiz.Key, _.Demote) |> Console.WriteLine
-                elif v > 0 then scheduler.Reschedule(quiz.Key, _.Promote) |> Console.WriteLine
-                else scheduler.Reschedule(quiz.Key, _.Keep) |> Console.WriteLine
+                if v < 0 then scheduler.Reschedule(quiz.Key, _.Demote).HighlightString() |> Console.WriteLine
+                elif v > 0 then scheduler.Reschedule(quiz.Key, _.Promote).HighlightString() |> Console.WriteLine
+                else scheduler.Reschedule(quiz.Key, _.Keep).HighlightString() |> Console.WriteLine
             Console.ReadKey(true) |> ignore
