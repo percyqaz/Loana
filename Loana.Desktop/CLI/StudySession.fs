@@ -1,8 +1,9 @@
-namespace Loana.CLI
+namespace Loana.Desktop.CLI
 
 open System
 open System.Drawing
-open Loana.CLI
+open Loana.Language
+open Loana.Desktop.CLI
 
 type CardFragment = internal { Text: string; FG: Color; BG: Color }
 type CardLine =

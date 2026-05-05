@@ -1,4 +1,4 @@
-namespace Loana.CLI
+namespace Loana.Desktop.CLI
 
 open System.Drawing
 

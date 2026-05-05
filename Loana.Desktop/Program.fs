@@ -2,7 +2,7 @@
 open System.IO
 open System.Drawing
 open Loana.Browser
-open Loana.CLI
+open Loana.Desktop.CLI
 open Loana.Data
 open Loana
 
@@ -38,7 +38,7 @@ while waiting_acceptance do
 
     let mysterious_flame =
         let p = "           " in let s = 80 * 25 in let b = Array.zeroCreate (s + 81) in let c = " .:*sS#$"
-        let r = Random() in let bg = Color.FromArgb(0xFF101010) in let struct (x, y) = System.Console.GetCursorPosition()
+        let r = Random() in let bg = Color.FromArgb(0xFF101010) in let struct (x, y) = Console.GetCursorPosition()
         fun () ->
             MenuRender.WriteLine(MenuRender.Pad "Loana has loaded!", Color.LightGreen, Color.FromArgb(0xFF_303030))
             for i = 0 to 3 do b.[int(floor(r.NextDouble() * 60.0)) + 15 + 80 * 24] <- 80.0

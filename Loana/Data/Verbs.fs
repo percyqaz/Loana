@@ -4,7 +4,6 @@ open System
 open System.Drawing
 open System.IO
 open System.Collections.Generic
-open Loana.CLI
 open Loana.Language
 
 type VerbFile(path: string) =
@@ -32,13 +31,13 @@ type VerbFile(path: string) =
         match current_verb with
         | None -> if not current_inflections.IsEmpty then failwith "Inflections above first verb!"
         | Some v -> entries.Add(v, current_inflections)
-        
+
         entries
-        
+
     member this.Write(data: Dictionary<string, Map<VerbInflection, string>>) =
         let bak_path = path + ".bak"
         let temp_path = path + ".tmp"
-        
+
         let lines = seq {
             for key in data.Keys do
                 yield key
@@ -51,7 +50,7 @@ type VerbFile(path: string) =
         try File.Delete(bak_path) with _ -> ()
         try File.Move(path, bak_path) with :? FileNotFoundException -> ()
         File.Move(temp_path, path)
-        
+
 type VerbBank(path: string) =
 
     let db = VerbFile(path)
@@ -65,7 +64,7 @@ type VerbBank(path: string) =
     member this.Update(verb: Verb, inflections: Map<VerbInflection, string>) : unit =
         mem.[verb.Infinitive.Deutsch] <- inflections
         db.Write(mem)
-    
+
     member this.Ensure(verb: Verb) : Map<VerbInflection, string> =
         let mutable inflections = this.Get(verb) |> ValueOption.defaultValue Map.empty
         let mutable missing = false
@@ -91,7 +90,7 @@ type VerbBank(path: string) =
                 then
                     Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
                     missing <- true
-                    
+
         if missing then
             for key, value in VerbDownloader.fetch_verb_inflections(verb) do
                 inflections <- inflections.Add(key, value)

@@ -3,7 +3,7 @@
 open System
 open System.Collections.Generic
 open System.Drawing
-open Loana.CLI
+open Loana.Desktop.CLI
 open Loana.Data
 
 type WordBrowserState =

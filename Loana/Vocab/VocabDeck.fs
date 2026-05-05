@@ -1,6 +1,5 @@
 namespace Loana.Vocab
 
-open Loana.CLI
 open Loana.Language
 open Loana.Data
 

@@ -1,9 +1,8 @@
-namespace Loana.CLI
+namespace Loana.Desktop.CLI
 
-open System
 open System.Drawing
 open System.Runtime.CompilerServices
-open Loana.CLI
+open Loana.Desktop.CLI
 open Loana.Data
 
 type OutputResultExtensions =

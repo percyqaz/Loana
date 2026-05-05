@@ -1,6 +1,4 @@
-namespace Loana.CLI
-
-open Loana.Language
+namespace Loana.Language
 
 type CardType =
     | RecogniseDE of v: Vocab

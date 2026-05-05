@@ -1,8 +1,8 @@
-namespace Loana.CLI
+namespace Loana.Desktop.CLI
 
 open System
 open System.Drawing
-open Loana.CLI
+open Loana.Desktop.CLI
 
 type QuestionFragment = internal { Text: string; FG: Color }
 type QuestionLine =

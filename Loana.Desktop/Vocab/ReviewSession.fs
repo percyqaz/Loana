@@ -2,8 +2,9 @@ namespace Loana.Vocab
 
 open System
 open System.Drawing
-open Loana.CLI
+open Loana.Language
 open Loana.Data
+open Loana.Desktop.CLI
 
 type LearnSession(cards: Card array, scheduler: ReviewSchedule) =
     inherit StudySession("Learning session", cards)

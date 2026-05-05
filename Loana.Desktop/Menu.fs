@@ -2,11 +2,12 @@ namespace Loana
 
 open System
 open System.Drawing
-open Loana.CLI
+open Loana.Language
 open Loana.Data
 open Loana.Vocab
 open Loana.Quizzes
 open Loana.Verbs
+open Loana.Desktop.CLI
 
 type MenuSelection =
     | VocabGroup of string list

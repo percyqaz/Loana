@@ -1,6 +1,5 @@
 namespace Loana.Verbs
 
-open Loana.CLI
 open Loana.Language
 
 type VerbCard =

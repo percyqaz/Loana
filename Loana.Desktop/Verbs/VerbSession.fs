@@ -1,6 +1,7 @@
 namespace Loana.Verbs
 
-open Loana.CLI
+open Loana.Language
+open Loana.Desktop.CLI
 
 type VerbSession(cards: Card array) =
     inherit StudySession("Verb practice", cards)

@@ -4,7 +4,6 @@ open System
 open System.Collections.Generic
 open System.Drawing
 open System.IO
-open Loana.CLI
 open Loana.Language
 
 module Wordlist =

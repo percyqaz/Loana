@@ -1,9 +1,8 @@
 ﻿namespace Loana.Quizzes
 
 open System
-open System.Drawing
-open Loana.CLI
 open Loana.Data
+open Loana.Desktop.CLI
 
 type QuizScheduler(scheduler: ReviewSchedule) =
 
