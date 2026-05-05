@@ -1,4 +1,4 @@
-﻿namespace Loana.Quizzes
+﻿namespace Loana.Desktop.Quizzes
 
 open System.Drawing
 open Loana.Language

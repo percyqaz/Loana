@@ -1,4 +1,4 @@
-namespace Loana.Verbs
+namespace Loana.Desktop.Verbs
 
 open System.Drawing
 open Loana.Language

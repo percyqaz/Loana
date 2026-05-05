@@ -1,10 +1,10 @@
 ﻿open System
 open System.IO
 open System.Drawing
-open Loana.Browser
-open Loana.Desktop.CLI
 open Loana.Data
-open Loana
+open Loana.Desktop
+open Loana.Desktop.CLI
+open Loana.Desktop.Browser
 
 type Loana =
     static member GetFilePath([<Runtime.CompilerServices.CallerFilePath>] ?path: string) =

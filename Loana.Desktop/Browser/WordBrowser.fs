@@ -1,10 +1,10 @@
-﻿namespace Loana.Browser
+﻿namespace Loana.Desktop.Browser
 
 open System
 open System.Collections.Generic
 open System.Drawing
-open Loana.Desktop.CLI
 open Loana.Data
+open Loana.Desktop.CLI
 
 type WordBrowserState =
     | SearchBox

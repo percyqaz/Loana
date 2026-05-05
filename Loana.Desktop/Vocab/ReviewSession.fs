@@ -1,4 +1,4 @@
-namespace Loana.Vocab
+namespace Loana.Desktop.Vocab
 
 open System
 open System.Drawing

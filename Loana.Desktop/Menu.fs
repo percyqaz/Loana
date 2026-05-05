@@ -1,12 +1,14 @@
-namespace Loana
+namespace Loana.Desktop
 
 open System
 open System.Drawing
 open Loana.Language
 open Loana.Data
 open Loana.Vocab
-open Loana.Quizzes
 open Loana.Verbs
+open Loana.Desktop.Vocab
+open Loana.Desktop.Verbs
+open Loana.Desktop.Quizzes
 open Loana.Desktop.CLI
 
 type MenuSelection =
