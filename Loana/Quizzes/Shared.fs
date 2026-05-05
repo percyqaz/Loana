@@ -25,8 +25,8 @@ module internal ArticleConstants =
 
 type GermanPracticeQuestion =
 
-    static let GERMAN_BG = Color.FromArgb(0x200000)
-    static let ANSWER_BG = Color.FromArgb(0x050505)
+    static let GERMAN_BG = Color.FromArgb(0xFF_200000)
+    static let ANSWER_BG = Color.FromArgb(0xFF_050505)
 
     static member Create(front: AnnotationTree, back: AnnotationTree) : Question =
         {

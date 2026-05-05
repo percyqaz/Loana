@@ -6,9 +6,9 @@ open Loana.CLI
 
 type VocabCard =
 
-    static let GERMAN_BG = Color.FromArgb(0x400000)
-    static let ENGLISH_NOTE = Color.FromArgb(0x808080)
-    static let GERMAN_NOTE = Color.FromArgb(0xC0C0C0)
+    static let GERMAN_BG = Color.FromArgb(0xFF_400000)
+    static let ENGLISH_NOTE = Color.FromArgb(0xFF_808080)
+    static let GERMAN_NOTE = Color.FromArgb(0xFF_C0C0C0)
 
     static member M_Tier1_RecogniseDE(v: Vocab) =
         {

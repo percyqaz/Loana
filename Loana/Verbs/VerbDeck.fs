@@ -83,7 +83,7 @@ type VerbDeck(scheduler: ReviewSchedule, words: WordBank, verbs: VerbBank) =
                 let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                 scheduler.Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now) |> session.Log
                     
-        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0x303030))
+        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
         Console.ReadKey(true) |> ignore
 
     member this.Review (entries: VerbDeckEntry seq) =
@@ -117,5 +117,5 @@ type VerbDeck(scheduler: ReviewSchedule, words: WordBank, verbs: VerbBank) =
                 else
                     scheduler.Reschedule(verb.Key, _.Demote) |> session.Log
                     
-        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0x303030))
+        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
         Console.ReadKey(true) |> ignore

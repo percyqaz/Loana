@@ -68,10 +68,10 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
 
             let m = if is_group then 2 else 1
 
-            MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0x101020 * m))
-            MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0x102010 * m))
-            MenuRender.Write( $" %5i{Seq.length ahead} ", Color.Yellow, Color.FromArgb(0x202010 * m))
-            MenuRender.Write( $" %5i{Seq.length available} ", Color.White, Color.FromArgb(0x202020 * m))
+            MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0x01_101020 * m))
+            MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0x01_102010 * m))
+            MenuRender.Write( $" %5i{Seq.length ahead} ", Color.Yellow, Color.FromArgb(0x01_202010 * m))
+            MenuRender.Write( $" %5i{Seq.length available} ", Color.White, Color.FromArgb(0x01_202020 * m))
 
         let progress_bar(word_lists: string list, is_group: bool) =
             let all_cards_ever = vocab.PossibleCards(word_lists)
@@ -87,24 +87,24 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
 
             let m = if is_group then 2 else 1
 
-            MenuRender.Write("[", Color.FromArgb(0x606060 * m), Color.FromArgb(0x303030 * m))
+            MenuRender.Write("[", Color.FromArgb(0x01_606060 * m), Color.FromArgb(0x01_303030 * m))
             MenuRender.Write(String.replicate m_c " ", Color.White, Color.Green)
-            MenuRender.Write(String.replicate (s_c - m_c) " ", Color.White, Color.FromArgb(0x30D070))
-            MenuRender.Write(String.replicate l_c " ", Color.White, Color.FromArgb(0x80AAFF))
+            MenuRender.Write(String.replicate (s_c - m_c) " ", Color.White, Color.FromArgb(0xFF_30D070))
+            MenuRender.Write(String.replicate l_c " ", Color.White, Color.FromArgb(0xFF_80AAFF))
             MenuRender.Write("]", Color.FromArgb(0x606060 * m), Color.FromArgb(0x303030 * m))
-            MenuRender.Write((sprintf " %.1f%% " mature_percent).PadRight(8), Color.Green, Color.FromArgb(0x102010 * m))
-            MenuRender.Write(sprintf "| %5i " total_cards, Color.White, Color.FromArgb(0x202020 * m))
+            MenuRender.Write((sprintf " %.1f%% " mature_percent).PadRight(8), Color.Green, Color.FromArgb(0x01_102010 * m))
+            MenuRender.Write(sprintf "| %5i " total_cards, Color.White, Color.FromArgb(0x01_202020 * m))
 
-        MenuRender.Write(" Loana Dashboard :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0x202020))
+        MenuRender.Write(" Loana Dashboard :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0xFF_202020))
         MenuRender.Write(
             $"  Filter: {snd current_filter} ".PadRight(28),
             (if snd current_filter = "None" then Color.LightGray else Color.DeepPink),
-            Color.FromArgb(0x101010)
+            Color.FromArgb(0xFF_101010)
         )
-        MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0x202020))
-        MenuRender.Write( $" %3i{vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0x202040))
-        MenuRender.Write( $" %3i{vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0x204020))
-        MenuRender.Write( $" %i{Seq.length (vocab.Chores() |> Seq.filter _.Urgent)} chores ".PadLeft(16), Color.Pink, Color.FromArgb(0x202020))
+        MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0xFF_202020))
+        MenuRender.Write( $" %3i{vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0xFF_202040))
+        MenuRender.Write( $" %3i{vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
+        MenuRender.Write( $" %i{Seq.length (vocab.Chores() |> Seq.filter _.Urgent)} chores ".PadLeft(16), Color.Pink, Color.FromArgb(0xFF_202020))
         MenuRender.WriteLine()
         for group in words.Groups do
 
@@ -112,7 +112,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
             MenuRender.Write(
                 $"@ {group.Name.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
                 (if selection = VocabGroup word_lists then Color.Yellow else Color.White),
-                Color.FromArgb(0x303030)
+                Color.FromArgb(0xFF_303030)
             )
             card_actions(word_lists, true)
             progress_bar(word_lists, true)
@@ -122,7 +122,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
                 MenuRender.Write(
                     $"| {wl.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
                     (if selection = VocabGroup [wl] then Color.Yellow else Color.LightGreen),
-                    Color.FromArgb(0x202020)
+                    Color.FromArgb(0xFF_202020)
                 )
                 card_actions([wl], false)
                 progress_bar([wl], false)
@@ -131,7 +131,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
         MenuRender.Write(
             "** ALL CARDS ** ".PadRight(BAR_SIZE + 3),
             (if selection = VocabGroup [] then Color.Yellow else Color.White),
-            Color.FromArgb(0x303030)
+            Color.FromArgb(0xFF_303030)
         )
         card_actions([], true)
         progress_bar([], true)
@@ -142,7 +142,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
         MenuRender.Write(
             "** VERB MODE ** ".PadRight(BAR_SIZE + 3),
             (if selection = VerbMode then Color.Yellow else Color.White),
-            Color.FromArgb(0x101010)
+            Color.FromArgb(0xFF_101010)
         )
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         let available = verb_deck.AvailableEntries()
@@ -150,14 +150,14 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
         let due = verb_deck.DueReviewEntries(available, now)
         let ahead = verb_deck.AheadReviewEntries(available, now)
 
-        MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0x101020))
-        MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0x102010))
-        MenuRender.Write( $" %5i{Seq.length ahead} ", Color.Yellow, Color.FromArgb(0x202010))
-        MenuRender.Write( $" %5i{Seq.length available} ", Color.White, Color.FromArgb(0x202020))
+        MenuRender.Write( $" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0xFF_101020))
+        MenuRender.Write( $" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0xFF_102010))
+        MenuRender.Write( $" %5i{Seq.length ahead} ", Color.Yellow, Color.FromArgb(0xFF_202010))
+        MenuRender.Write( $" %5i{Seq.length available} ", Color.White, Color.FromArgb(0xFF_202020))
 
-        MenuRender.Write(String.replicate (BAR_SIZE + 2) " ", Color.White, Color.FromArgb(0x101010))
-        MenuRender.Write(" ----- ".PadRight(8), Color.Green, Color.FromArgb(0x102010))
-        MenuRender.Write("| ----- ", Color.White, Color.FromArgb(0x202020))
+        MenuRender.Write(String.replicate (BAR_SIZE + 2) " ", Color.White, Color.FromArgb(0xFF_101010))
+        MenuRender.Write(" ----- ".PadRight(8), Color.Green, Color.FromArgb(0xFF_102010))
+        MenuRender.Write("| ----- ", Color.White, Color.FromArgb(0xFF_202020))
         MenuRender.WriteLine()
 
     member this.RenderQuizDashboard() =
@@ -167,29 +167,29 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
         let progress_bar(data: ReviewData voption) =
             match data with
             | ValueNone ->
-                MenuRender.Write("[", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
-                MenuRender.Write(" N/A ".PadRight(BAR_SIZE), Color.LightGray, Color.FromArgb(0x606060))
-                MenuRender.Write("]", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+                MenuRender.Write("[", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
+                MenuRender.Write(" N/A ".PadRight(BAR_SIZE), Color.LightGray, Color.FromArgb(0xFF_606060))
+                MenuRender.Write("]", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
             | ValueSome data ->
                 let progress = if now > data.NextReview then 1.0f else float32 (now - data.LastReviewed) / float32 data.Interval
                 let f_c = progress * float32 BAR_SIZE |> floor |> int
                 let e_c = BAR_SIZE - f_c
-                MenuRender.Write("[", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+                MenuRender.Write("[", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
                 MenuRender.Write(String.replicate f_c " ", Color.White, Color.Green)
-                MenuRender.Write(String.replicate e_c " ", Color.White, Color.FromArgb(0x303030))
-                MenuRender.Write("]", Color.FromArgb(0x606060), Color.FromArgb(0x303030))
+                MenuRender.Write(String.replicate e_c " ", Color.White, Color.FromArgb(0xFF_303030))
+                MenuRender.Write("]", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
 
         for quiz in quizzes.Quizzes do
             let schedule = scheduler.Get quiz.Key
             let level = schedule |> ValueOption.map _.Level |> ValueOption.defaultValue 0
             let next_review = schedule |> ValueOption.map _.NextReview |> ValueOption.defaultValue now
-            MenuRender.Write($"| {quiz.Name} ".PadRight(MenuRender.Width - 72), (if selection = Quiz quiz then Color.Yellow else Color.LightGreen), Color.FromArgb(0x202020))
+            MenuRender.Write($"| {quiz.Name} ".PadRight(MenuRender.Width - 72), (if selection = Quiz quiz then Color.Yellow else Color.LightGreen), Color.FromArgb(0xFF_202020))
             MenuRender.Write($" Level %i{level} ", ReviewData.LevelColors.[level], Color.FromArgb(ReviewData.LevelColors.[level].ToArgb() / 2))
             progress_bar schedule
             if next_review <= now then
-                MenuRender.Write(" DUE ".PadLeft(16), Color.Green, Color.FromArgb(0x202020))
+                MenuRender.Write(" DUE ".PadLeft(16), Color.Green, Color.FromArgb(0xFF_202020))
             else
-                MenuRender.Write($" {MenuRender.FormatInterval(next_review - now)} ".PadLeft(16), Color.Yellow, Color.FromArgb(0x202020))
+                MenuRender.Write($" {MenuRender.FormatInterval(next_review - now)} ".PadLeft(16), Color.Yellow, Color.FromArgb(0xFF_202020))
             MenuRender.WriteLine()
 
     member this.Run() =
@@ -202,7 +202,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
 
             match selection with
             | VocabGroup wordlists ->
-                MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ", Color.LightGray, Color.FromArgb(0xFF_303030))
                 MenuRender.Redraw()
 
                 match Console.ReadKey(true).Key with
@@ -222,7 +222,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
                 | _ -> ()
                 
             | VerbMode ->
-                MenuRender.WriteLine(MenuRender.Pad " [L] Learn  [R] Review ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.WriteLine(MenuRender.Pad " [L] Learn  [R] Review ", Color.LightGray, Color.FromArgb(0xFF_303030))
                 MenuRender.Redraw()
 
                 match Console.ReadKey(true).Key with
@@ -234,7 +234,7 @@ type Menu(words: WordBank, verbs: VerbBank, scheduler: ReviewSchedule) =
                 | _ -> ()
                 
             | Quiz quiz ->
-                MenuRender.WriteLine(MenuRender.Pad " [Enter] Quiz  [A] Auto ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Quiz  [A] Auto ", Color.LightGray, Color.FromArgb(0xFF_303030))
                 MenuRender.Redraw()
 
                 match Console.ReadKey(true).Key with

@@ -32,25 +32,25 @@ type QuizSession(title: string, questions: Question array) =
     let inner_width = edges_width - 4
     let mutable mistakes = 0
 
-    let empty() = MenuRender.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0x101010))
+    let empty() = MenuRender.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0xFF_101010))
 
     let horizontal_edge() =
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
-        MenuRender.Write("".PadRight(edges_width), Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
+        MenuRender.Write("".PadRight(edges_width), Color.White, Color.FromArgb(0xFF_303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.WriteLine()
 
     let line (bg: Color) (line: QuestionLine) =
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
-        MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
+        MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
 
         MenuRender.Write(" ", Color.White, bg)
         for p in line.Content do
             MenuRender.Write(p.Text, p.FG, bg)
         MenuRender.Write("".PadLeft(inner_width - 1 - line.Length |> max 0), Color.White, bg)
 
-        MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+        MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.WriteLine()
 
     let draw_front(front: QuestionSide, back: QuestionSide) : int * int =
@@ -59,13 +59,13 @@ type QuizSession(title: string, questions: Question array) =
         horizontal_edge()
         front.Lines |> List.iter (line front.BG)
         line back.BG (QuestionLine.Create [])
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
-        MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
+        MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
         MenuRender.Write(" ", Color.White, back.BG)
         MenuRender.Write("".PadLeft(inner_width - 2), Color.White, Color.Black)
         MenuRender.Write(" ", Color.White, back.BG)
-        MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+        MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.WriteLine()
         back.Lines |> List.iter (fun _ -> line back.BG (QuestionLine.Create []))
         horizontal_edge()
@@ -80,14 +80,14 @@ type QuizSession(title: string, questions: Question array) =
         horizontal_edge()
         front.Lines |> List.iter (line front.BG)
         line back.BG (QuestionLine.Create [])
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
-        MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
+        MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
         MenuRender.Write(" ", Color.White, back.BG)
         MenuRender.Write(input, Color.White, Color.Black)
         MenuRender.Write("".PadLeft(inner_width - 2 - input.Length), Color.White, Color.Black)
         MenuRender.Write(" ", Color.White, back.BG)
-        MenuRender.Write("  ", Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write("      ", Color.White, Color.FromArgb(0x101010))
+        MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
+        MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.WriteLine()
         back.Lines |> List.iter (line back.BG)
         horizontal_edge()
@@ -100,8 +100,8 @@ type QuizSession(title: string, questions: Question array) =
             MenuRender.WriteLine(l)
 
     let draw_title() =
-        MenuRender.Write($" Loana: {title} ".PadRight(MenuRender.Width - 16), Color.White, Color.FromArgb(0x303030))
-        MenuRender.Write((sprintf " % 2i cards left " (questions.Count + 1)), Color.LightGreen, Color.FromArgb(0x303030))
+        MenuRender.Write($" Loana: {title} ".PadRight(MenuRender.Width - 16), Color.White, Color.FromArgb(0xFF_303030))
+        MenuRender.Write((sprintf " % 2i cards left " (questions.Count + 1)), Color.LightGreen, Color.FromArgb(0xFF_303030))
         MenuRender.WriteLine()
 
     member this.Start() : int option =
@@ -113,7 +113,7 @@ type QuizSession(title: string, questions: Question array) =
 
             draw_title()
             let x, y = draw_front(current.Front, current.Back)
-            MenuRender.WriteLine(MenuRender.Pad "[Enter] Submit", Color.LightGray, Color.FromArgb(0x303030))
+            MenuRender.WriteLine(MenuRender.Pad "[Enter] Submit", Color.LightGray, Color.FromArgb(0xFF_303030))
             draw_log()
             MenuRender.Redraw()
             let struct (x2, y2) = Console.GetCursorPosition()
@@ -125,7 +125,7 @@ type QuizSession(title: string, questions: Question array) =
 
                 draw_title()
                 draw_back(current.Front, current.Back, input)
-                MenuRender.WriteLine(MenuRender.Pad " [Enter] Continue ", Color.LightGray, Color.FromArgb(0x303030))
+                MenuRender.WriteLine(MenuRender.Pad " [Enter] Continue ", Color.LightGray, Color.FromArgb(0xFF_303030))
                 draw_log()
                 MenuRender.Redraw()
 
@@ -136,13 +136,13 @@ type QuizSession(title: string, questions: Question array) =
                     | ConsoleKey.Enter -> this.ReplaceNear current; loop <- false
                     | _ -> ()
 
-        Console.WriteLine(MenuRender.Pad $" Session ended. {mistakes} mistakes! ", Color.LightGreen, Color.FromArgb(0x202020))
+        Console.WriteLine(MenuRender.Pad $" Session ended. {mistakes} mistakes! ", Color.LightGreen, Color.FromArgb(0xFF_202020))
 
         let mutable result = None
         if quit_early then
             Console.ReadKey(true) |> ignore
         else
-            Console.WriteLine(" [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width), Color.LightGray, Color.FromArgb(0x303030))
+            Console.WriteLine(" [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width), Color.LightGray, Color.FromArgb(0xFF_303030))
             while result.IsNone do
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.OemComma -> result <- Some -1

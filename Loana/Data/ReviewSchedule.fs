@@ -24,19 +24,19 @@ type ReviewData =
     }
 
     static let level_colors = [|
-            Color.FromArgb(0x709090)
-            Color.FromArgb(0x709070)
-            Color.FromArgb(0x509050)
-            Color.FromArgb(0x309030)
-            Color.FromArgb(0x109010)
-            Color.FromArgb(0x008000)
-            Color.FromArgb(0x006000)
-            Color.FromArgb(0x004000)
-            Color.FromArgb(0x002000)
+            Color.FromArgb(0xF0_709090)
+            Color.FromArgb(0xF0_709070)
+            Color.FromArgb(0xF0_509050)
+            Color.FromArgb(0xF0_309030)
+            Color.FromArgb(0xF0_109010)
+            Color.FromArgb(0xF0_008000)
+            Color.FromArgb(0xF0_006000)
+            Color.FromArgb(0xF0_004000)
+            Color.FromArgb(0xF0_002000)
         |]
     static member LevelColors = level_colors
 
-    static member private GetNextInterval(level: int, difficulty: int, current_interval: int64, overdue_by: int64) =
+    static member private GetNextInterval(level: int, difficulty: int, current_interval: int64, overdue_by: int64) : int64 =
 
         if level = 8 then
             let scale = 16 - difficulty
@@ -78,13 +78,13 @@ type ReviewData =
             Interval = interval
         }
 
-    member this.NextReview = this.LastReviewed + this.Interval
+    member this.NextReview : int64 = this.LastReviewed + this.Interval
 
-    member this.DueLevel(now: int64) =
+    member this.DueLevel(now: int64) : int =
         let amount_overdue = now - this.NextReview
         if amount_overdue < 0L then -1 else float32 amount_overdue / float32 (max 1L this.Interval) * 10000f |> floor |> int
 
-    member this.Forget(now: int64) =
+    member this.Forget(now: int64) : ReviewData =
         let difficulty = this.Difficulty + 5 |> min 10
         {
             Reviews = this.Reviews + 1
@@ -94,7 +94,7 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(1, difficulty, this.Interval, 0L)
         }
 
-    member this.Demote(now: int64) =
+    member this.Demote(now: int64) : ReviewData =
         let level = this.Level - 1 |> max 1 |> min 5
         let difficulty = this.Difficulty + 3 |> min 10
         {
@@ -105,7 +105,7 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(level, difficulty, this.Interval, 0L)
         }
 
-    member this.Keep(now: int64) =
+    member this.Keep(now: int64) : ReviewData =
         let difficulty = this.Difficulty + 1 |> min 10
         {
             Reviews = this.Reviews + 1
@@ -115,7 +115,7 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(this.Level, difficulty, this.Interval, 0L)
         }
 
-    member this.Promote(now: int64) =
+    member this.Promote(now: int64) : ReviewData =
         let level = this.Level + 1 |> min 8
         let difficulty = this.Difficulty - 1 |> max 1
         {
@@ -126,7 +126,7 @@ type ReviewData =
             Interval = ReviewData.GetNextInterval(level, difficulty, this.Interval, now - this.NextReview)
         }
 
-    member this.Bump(now: int64, parent_interval: int64) =
+    member this.Bump(now: int64, parent_interval: int64) : ReviewData =
         let new_next_review = this.NextReview + TimeSpan.SecondsPerDay + parent_interval / 2L
         let now_plus_day = now + TimeSpan.SecondsPerDay
         let new_interval = max now_plus_day new_next_review - this.LastReviewed
@@ -153,7 +153,7 @@ type ReviewScheduleFile(path: string) =
             }
         id, data
 
-    member private this.WriteCardEntry(id: string, data: ReviewData, bw: BinaryWriter) =
+    member private this.WriteCardEntry(id: string, data: ReviewData, bw: BinaryWriter) : unit =
         bw.Write id
         bw.Write data.Reviews
         bw.Write (byte data.Level)
@@ -182,7 +182,7 @@ type ReviewScheduleFile(path: string) =
         with
         | :? EndOfStreamException -> reraise()
 
-    member this.Write(data: Dictionary<string, ReviewData>) =
+    member this.Write(data: Dictionary<string, ReviewData>) : unit =
         let bak_path = path + ".bak"
         let temp_path = path + ".tmp"
         let stream = File.Open(temp_path, FileMode.Create)
@@ -197,7 +197,8 @@ type ReviewScheduleFile(path: string) =
             File.Delete(bak_path)
             File.Move(path, bak_path)
             File.Move(temp_path, path)
-        with err -> Console.WriteLine(err.Message)
+        with err ->
+            Console.WriteLine(err.Message)
 
 type ReviewSchedule(path: string) =
 
@@ -211,21 +212,21 @@ type ReviewSchedule(path: string) =
         | true, data -> ValueSome data
         | false, _ -> ValueNone
         
-    member this.IsBuried(key: string) = buried.Contains(key)
+    member this.IsBuried(key: string) : bool = buried.Contains(key)
         
     member this.Bury(key: string) : string =
         buried <- buried.Add key
-        Console.ColorText((sprintf " [L] %s buried!" key).PadRight(MenuRender.Width), Color.LightBlue, Color.FromArgb(0x202020))
+        Console.ColorText((sprintf " [L] %s buried!" key).PadRight(MenuRender.Width), Color.LightBlue, Color.FromArgb(0xFF_202020))
 
     member this.Schedule(key: string, data: ReviewData, now: int64) : string =
         let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
         mem.[key] <- data
         db.Write(mem)
-        Console.ColorText((sprintf " [%i] %s" old_level key).PadRight(MenuRender.Width - 52).Substring(0, MenuRender.Width - 52), ReviewData.LevelColors.[old_level], Color.FromArgb(0x202020))
-        + Console.ColorText(" -> ", Color.LightGray, Color.FromArgb(0x202020))
-        + Console.ColorText(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0x202020))
-        + Console.ColorText($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0x202020))
-        + Console.ColorText($" Next review: {MenuRender.FormatInterval(data.NextReview - now)} " , Color.LightGreen, Color.FromArgb(0x202020))
+        Console.ColorText((sprintf " [%i] %s" old_level key).PadRight(MenuRender.Width - 52).Substring(0, MenuRender.Width - 52), ReviewData.LevelColors.[old_level], Color.FromArgb(0xFF_202020))
+        + Console.ColorText(" -> ", Color.LightGray, Color.FromArgb(0xFF_202020))
+        + Console.ColorText(sprintf " Level %i " data.Level, ReviewData.LevelColors.[data.Level], Color.FromArgb(0xFF_202020))
+        + Console.ColorText($" Difficulty {data.Difficulty.ToString().PadRight(2)} ", (if data.Difficulty >= 5 then Color.Red else Color.LightGray), Color.FromArgb(0xFF_202020))
+        + Console.ColorText($" Next review: {MenuRender.FormatInterval(data.NextReview - now)} " , Color.LightGreen, Color.FromArgb(0xFF_202020))
 
     member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : string =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()

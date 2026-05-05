@@ -37,10 +37,10 @@ type Gender =
 
     member this.Color : Color =
         match this with
-        | Masculine -> Color.FromArgb(0x90A0E0)
+        | Masculine -> Color.FromArgb(0xFF_90A0E0)
         | Neuter -> Color.LightGreen
-        | Feminine -> Color.FromArgb(0xE090C0)
-        | Plural -> Color.FromArgb(0xE0E090)
+        | Feminine -> Color.FromArgb(0xFF_E090C0)
+        | Plural -> Color.FromArgb(0xFF_E0E090)
 
     static member Parse(string: string) : Gender =
         match string with
@@ -144,8 +144,8 @@ type Vocab =
         
     member this.HighlightString =
         let color =
-            if this.DetectVerb then Color.FromArgb(0xffddff)
-            elif this.DetectNoun then Color.FromArgb(0xddffdd)
+            if this.DetectVerb then Color.FromArgb(0xFF_ffddff)
+            elif this.DetectNoun then Color.FromArgb(0xFF_ddffdd)
             else Color.White
         
         Console.ColorText(this.Deutsch, color, Color.Black) +
@@ -284,10 +284,10 @@ type Verb =
         | ToBeDetermined -> this.Infinitive.HighlightString
         | Nothing ->
             this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xffddff), Color.Black)
+            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Black)
         | Something pp ->
             this.Infinitive.HighlightString +
-            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xffddff), Color.Black) +
-            Console.ColorText("pp ", Color.FromArgb(0xffdddd), Color.Black) +
+            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Black) +
+            Console.ColorText("pp ", Color.FromArgb(0xFF_ffdddd), Color.Black) +
             pp.HighlightString
    

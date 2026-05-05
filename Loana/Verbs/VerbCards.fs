@@ -6,12 +6,12 @@ open Loana.Language
 
 type VerbCard =
 
-    static let QUESTION_BG = Color.FromArgb(0x403030)
-    static let PRESENT_BG = Color.FromArgb(0xAAFFAA)
-    static let SIMPLE_PAST_BG = Color.FromArgb(0xAAAAFF)
-    static let IMPERATIVE_BG = Color.FromArgb(0xFFFFAA)
-    static let QUESTION_NOTE = Color.FromArgb(0xC0C0C0)
-    static let ANSWER_NOTE = Color.FromArgb(0x404040)
+    static let QUESTION_BG = Color.FromArgb(0xFF_403030)
+    static let PRESENT_BG = Color.FromArgb(0xFF_AAFFAA)
+    static let SIMPLE_PAST_BG = Color.FromArgb(0xFF_AAAAFF)
+    static let IMPERATIVE_BG = Color.FromArgb(0xFF_FFFFAA)
+    static let QUESTION_NOTE = Color.FromArgb(0xFF_C0C0C0)
+    static let ANSWER_NOTE = Color.FromArgb(0xFF_404040)
 
     static member M_Inflection(v: Verb, i: VerbInflection) : CardMeta =
         {
