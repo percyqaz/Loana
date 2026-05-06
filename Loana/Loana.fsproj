@@ -20,9 +20,10 @@
     <Compile Include="Language\VerbInflections.fs" />
     <Compile Include="Language\VerbDownloader.fs" />
     <Compile Include="Language\Card.fs" />
-    <Compile Include="Data\ReviewSchedule.fs" />
     <Compile Include="Data\Words.fs" />
     <Compile Include="Data\Verbs.fs" />
+    <Compile Include="Data\ReviewSchedule.fs" />
+    <Compile Include="data\Sync.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\VocabDeck.fs" />
     <Compile Include="Verbs\VerbCards.fs" />

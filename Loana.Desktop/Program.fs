@@ -49,7 +49,7 @@ while waiting_acceptance do
                 if i / 80 < 24 then
                     MenuRender.Write(c[min 7 (int b.[i])].ToString(), color, Color.FromArgb(255, 16 + int color.G / 2, 16 + int color.G / 4, 16))
                     if i % 80 > 78 then MenuRender.Write(p + " \n" + (if i / 80 < 23 then p else ""), Color.White, bg)
-            MenuRender.WriteLine(MenuRender.Pad "[C] Categorise  [R] Reload  [Enter] Launch", Color.LightGray, Color.FromArgb(0xFF_202020))
+            MenuRender.WriteLine(MenuRender.Pad "[S] Sync  [C] Categorise  [R] Reload  [Enter] Launch", Color.LightGray, Color.FromArgb(0xFF_202020))
             Console.SetCursorPosition(x, y); MenuRender.FlushInline()
 
     let mutable loop = true
@@ -67,6 +67,14 @@ while waiting_acceptance do
         | ConsoleKey.C ->
             loop <- false
             WordBrowser(words).Run()
+        | ConsoleKey.S ->
+            loop <- false
+            Console.Clear()
+            Console.Write("Enter address (blank to host): ")
+            let address = Console.ReadLine()
+            if address <> "" then Sync.connect(scheduler, address)
+            else Sync.host(scheduler)
+            Console.ReadLine() |> ignore
         | ConsoleKey.Escape ->
             loop <- false
             waiting_acceptance <- false

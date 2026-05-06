@@ -147,9 +147,9 @@ type ReviewData =
 
 type ReviewScheduleFile(path: string) =
 
-    let VERSION = 2
+    static let VERSION = 2
 
-    member private this.ReadCardEntry(version: int, br: BinaryReader) : string * ReviewData =
+    static member private ReadCardEntry(version: int, br: BinaryReader) : string * ReviewData =
         if version <> VERSION then failwithf "Unsupported version '%i'" version
         let id = br.ReadString()
         let data : ReviewData =
@@ -162,7 +162,7 @@ type ReviewScheduleFile(path: string) =
             }
         id, data
 
-    member private this.WriteCardEntry(id: string, data: ReviewData, bw: BinaryWriter) : unit =
+    static member private WriteCardEntry(id: string, data: ReviewData, bw: BinaryWriter) : unit =
         bw.Write id
         bw.Write data.Reviews
         bw.Write (byte data.Level)
@@ -170,37 +170,44 @@ type ReviewScheduleFile(path: string) =
         bw.Write data.LastReviewed
         bw.Write data.Interval
 
-    member this.Load() : Dictionary<string, ReviewData> =
-        let stream = File.Open(path, FileMode.OpenOrCreate)
+    static member FromStream(stream: Stream) : Dictionary<string, ReviewData> =
         use br = new BinaryReader(stream, Encoding.UTF8, leaveOpen = false)
-
-        if stream.Position = stream.Length then
-            printfn "Schedule file '%s' is empty" path
-            Dictionary()
-        else
 
         let version = br.ReadInt32()
         let count = br.ReadInt32()
         try
             seq {
                 for _ = 1 to count do
-                    yield this.ReadCardEntry(version, br)
+                    yield ReviewScheduleFile.ReadCardEntry(version, br)
             }
             |> Seq.map KeyValuePair
             |> Dictionary
         with
         | :? EndOfStreamException -> reraise()
 
-    member this.Write(data: Dictionary<string, ReviewData>) : unit =
-        let bak_path = path + ".bak"
-        let temp_path = path + ".tmp"
-        let stream = File.Open(temp_path, FileMode.Create)
-        let bw = new BinaryWriter(stream, Encoding.UTF8, leaveOpen = false)
+    member this.Load() : Dictionary<string, ReviewData> =
+        let stream = File.Open(path, FileMode.OpenOrCreate)
+
+        if stream.Position = stream.Length then
+            printfn "Schedule file '%s' is empty" path
+            Dictionary()
+        else
+            ReviewScheduleFile.FromStream(stream)
+
+    static member WriteStream(data: IReadOnlyDictionary<string, ReviewData>, stream: Stream) : unit =
+        let bw = new BinaryWriter(stream, Encoding.UTF8, leaveOpen = true)
         bw.Write(VERSION)
         bw.Write(data.Count)
         for kvp in data do
-            this.WriteCardEntry(kvp.Key, kvp.Value, bw)
+            ReviewScheduleFile.WriteCardEntry(kvp.Key, kvp.Value, bw)
         bw.Dispose()
+
+    member this.Write(data: IReadOnlyDictionary<string, ReviewData>) : unit =
+        let bak_path = path + ".bak"
+        let temp_path = path + ".tmp"
+        let stream = File.Open(temp_path, FileMode.Create)
+        ReviewScheduleFile.WriteStream(data, stream)
+        stream.Dispose()
 
         try
             File.Delete(bak_path)
@@ -244,3 +251,20 @@ type ReviewSchedule(path: string) =
 
     member this.Bump(meta: Card) : ScheduleResult =
         this.Reschedule(meta.BumpKey.Value, fun data now -> data.Bump(now, this.Get(meta.Key).Value.Interval))
+
+    member this.Data = mem.AsReadOnly()
+
+    member this.SyncWith(other_data: IReadOnlyDictionary<string, ReviewData>) : int =
+        let mutable updates = 0
+        for key in other_data.Keys do
+            if mem.ContainsKey(key) then
+                let existing = mem.[key]
+                let incoming = other_data.[key]
+                if incoming.LastReviewed > existing.LastReviewed then
+                    mem.[key] <- incoming
+                    updates <- updates + 1
+            else
+                mem.[key] <- other_data.[key]
+                updates <- updates + 1
+        db.Write(mem)
+        updates
