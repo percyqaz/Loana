@@ -223,6 +223,14 @@ type ReviewSchedule(path: string) =
 
     let mutable buried: Set<string> = Set.empty
 
+    member this.Save() =
+        db.Write(mem)
+
+    member this.SaveDebounced() =
+        // todo: can save or not depending on how recently it was saved
+        // errors can be ignored
+        this.Save()
+
     member this.Get(key: string) : ReviewData voption =
         match mem.TryGetValue(key) with
         | true, data -> ValueSome data
@@ -236,7 +244,7 @@ type ReviewSchedule(path: string) =
     member this.Schedule(key: string, data: ReviewData, now: int64) : ScheduleResult =
         let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
         mem.[key] <- data
-        db.Write(mem)
+        this.SaveDebounced()
         {
             Key = key
             OldLevel = old_level
@@ -266,5 +274,5 @@ type ReviewSchedule(path: string) =
             else
                 mem.[key] <- other_data.[key]
                 updates <- updates + 1
-        db.Write(mem)
+        this.Save()
         updates

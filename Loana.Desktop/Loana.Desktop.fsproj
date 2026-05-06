@@ -9,8 +9,8 @@
     <Compile Include="CLI\Console.fs" />
     <Compile Include="CLI\QuizSession.fs" />
     <Compile Include="CLI\StudySession.fs" />
-    <Compile Include="cli\ScheduleResultExtensions.fs" />
-    <Compile Include="cli\VocabExtensions.fs" />
+    <Compile Include="CLI\ScheduleResultExtensions.fs" />
+    <Compile Include="CLI\VocabExtensions.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />

@@ -126,9 +126,6 @@ type WordBank(path: string) =
             let existing_conflict = deduplicate_de.[ded_de]
             let identical = item = existing_conflict.Item
 
-            if source.File = "uncategorised" && identical then
-                failwith ""
-
             if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
                 failwithf "%s German definition! \n %s (%s:%i)\n %s (%s:%i)"
                     (if identical then "Duplicate" else "Conflict with")
@@ -230,6 +227,61 @@ type WordBank(path: string) =
 
     member this.Entries : IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
     member this.Groups : IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
+
+    member this.ToDirectory() =
+        Directory.CreateDirectory(path) |> ignore
+        Directory.EnumerateFiles(path)
+        |> Seq.where(fun f -> Path.GetExtension(f).ToLower() = ".wordlist")
+        |> Seq.iter(fun f -> File.Delete(f))
+
+        let wordlist_meta = seq {
+            for group in this.Groups do
+                yield $"# {group.Name}"
+                for list in group.Lists do
+                    yield list
+        }
+        File.WriteAllLines(Path.Combine(path, "wordlists.meta"), wordlist_meta)
+        this.Entries
+        |> Seq.groupBy _.Source.File
+        |> Seq.iter (fun (file, entries) ->
+            File.WriteAllLines(Path.Combine(path, file + ".wordlist"), entries |> Seq.map _.Item.ToString())
+        )
+
+    member this.WritePayload(stream: Stream) : unit =
+        let grouped = this.Entries |> Seq.groupBy _.Source.File |> Seq.map (fun (file, items) -> (file, Array.ofSeq items)) |> Map.ofSeq
+        use bw = new BinaryWriter(stream, Text.Encoding.UTF8, true)
+        bw.Write(groups.Count)
+        for group in this.Groups do
+            bw.Write(group.Name)
+            bw.Write(group.Lists.Count)
+            for list in group.Lists do
+                bw.Write(list)
+                let entries = grouped.[list]
+                bw.Write(entries.Length)
+                for entry in entries do
+                    bw.Write(entry.Item.ToString())
+
+    member this.ReadPayload(stream: Stream) : unit =
+        if entries.Count > 0 then failwith "This will OVERWRITE your current entries! Guard rail for now"
+        groups.Clear()
+        entries.Clear()
+        deduplicate_de.Clear()
+        deduplicate_en.Clear()
+        use br = new BinaryReader(stream, Text.Encoding.UTF8)
+        let group_count = br.ReadInt32()
+        for _ = 0 to group_count - 1 do
+            let group_name = br.ReadString()
+            let group_list_count = br.ReadInt32()
+            let group_lists = ResizeArray<string>()
+            for _ = 0 to group_list_count - 1 do
+                let list_name = br.ReadString()
+                let entry_count = br.ReadInt32()
+                for i = 0 to entry_count - 1 do
+                    match this.TryAdd({ Group = group_name; File = list_name }, i, br.ReadString()) with
+                    | Ok () -> ()
+                    | Error reason -> Console.WriteLine(reason)
+                group_lists.Add(list_name)
+            groups.Add({ Name = group_name; Lists = group_lists })
 
     // todo: this is a UI function, move it
     //member this.Categorise() : unit =

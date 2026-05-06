@@ -26,12 +26,13 @@ module Sync =
             sent <- sent + outgoing
 
     let PORT = 1992
-    let HEADER = System.Text.Encoding.UTF8.GetBytes("loana-sync")
+    let SCHEDULE_HEADER = System.Text.Encoding.UTF8.GetBytes("loana-sched-sync")
+    let WORDLIST_HEADER = System.Text.Encoding.UTF8.GetBytes("loana-words-sync")
     let MAX_PAYLOAD_BYTES = 4_000_000
 
-    let private receive_payload(socket: Socket) : byte array =
-        let header = receive_exact(socket, HEADER.Length)
-        if not(header.SequenceEqual(HEADER)) then failwith "Incorrect header"
+    let private receive_payload(socket: Socket, header: byte array) : byte array =
+        let header = receive_exact(socket, header.Length)
+        if not(header.SequenceEqual(header)) then failwith "Incorrect header"
 
         let length_bytes = BitConverter.ToInt32(receive_exact(socket, 4))
         if length_bytes < 0 || length_bytes > MAX_PAYLOAD_BYTES then
@@ -39,13 +40,13 @@ module Sync =
 
         receive_exact(socket, length_bytes)
 
-    let private send_payload(socket: Socket, data: Byte array) : unit =
-        send(socket, HEADER)
+    let private send_payload(socket: Socket, header: byte array, data: Byte array) : unit =
+        send(socket, header)
         send(socket, BitConverter.GetBytes(data.Length))
         send(socket, data)
 
     let private downstream_schedule_sync(socket: Socket, schedule: ReviewSchedule) =
-        let schedule_bytes = receive_payload(socket)
+        let schedule_bytes = receive_payload(socket, SCHEDULE_HEADER)
         let schedule_data = ReviewScheduleFile.FromStream(new MemoryStream(schedule_bytes))
         let updates = schedule.SyncWith(schedule_data)
         Console.WriteLine(sprintf "Updated %i entries during sync" updates)
@@ -55,9 +56,22 @@ module Sync =
         ReviewScheduleFile.WriteStream(schedule.Data, our_schedule_stream)
         let our_schedule_bytes = our_schedule_stream.ToArray()
         our_schedule_stream.Dispose()
-        send_payload(socket, our_schedule_bytes)
+        send_payload(socket, SCHEDULE_HEADER, our_schedule_bytes)
 
-    let host(schedule: ReviewSchedule) : unit =
+    let private downstream_wordlist_sync(socket: Socket, words: WordBank) =
+        let words_bytes = receive_payload(socket, WORDLIST_HEADER)
+        words.ReadPayload(new MemoryStream(words_bytes))
+        words.ToDirectory()
+        Console.WriteLine(sprintf "Downloaded %i wordlist entries during sync" words.Entries.Count)
+
+    let private upstream_wordlist_sync(socket: Socket, words: WordBank) =
+        let our_words_stream = new MemoryStream()
+        words.WritePayload(our_words_stream)
+        let our_words_bytes = our_words_stream.ToArray()
+        our_words_stream.Dispose()
+        send_payload(socket, WORDLIST_HEADER, our_words_bytes)
+
+    let host(schedule: ReviewSchedule, words: WordBank) : unit =
         try
             let listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             listener.Bind(new IPEndPoint(IPAddress.Any, PORT))
@@ -73,9 +87,13 @@ module Sync =
                     client.SendTimeout <- 1000
                     client.ReceiveTimeout <- 1000
 
+                    Console.WriteLine("Syncing schedule..")
                     downstream_schedule_sync(client, schedule)
                     upstream_schedule_sync(client, schedule)
+                    Console.WriteLine("Sending wordlists..")
+                    upstream_wordlist_sync(client, words)
                     Console.WriteLine("Sync complete!")
+                    client.Close(1000)
                 with _ ->
                     client.Close(1000)
                     reraise()
@@ -84,7 +102,7 @@ module Sync =
             Console.WriteLine(err.Message)
             Console.WriteLine(err.StackTrace)
 
-    let connect(schedule: ReviewSchedule, address: string) : unit =
+    let connect(schedule: ReviewSchedule, words: WordBank, address: string) : unit =
         try
             use socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             Console.WriteLine("Connecting..")
@@ -94,9 +112,13 @@ module Sync =
                 socket.SendTimeout <- 1000
                 socket.ReceiveTimeout <- 1000
 
+                Console.WriteLine("Syncing schedule..")
                 upstream_schedule_sync(socket, schedule)
                 downstream_schedule_sync(socket, schedule)
+                Console.WriteLine("Downloading wordlists..")
+                downstream_wordlist_sync(socket, words)
                 Console.WriteLine("Sync complete!")
+                socket.Close()
             with _ ->
                 socket.Close()
                 reraise()
