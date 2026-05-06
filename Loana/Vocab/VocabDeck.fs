@@ -10,11 +10,12 @@ type Chore =
 
 type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
+    // todo: should not be here
     static let mutable study_size_multiplier = 5
 
     member this.Scheduler = scheduler
 
-    member inline this.LevelOf<^T when ^T : (member Key: string)>(c: ^T) : int =
+    member inline this.LevelOf(c: Card) : int =
         match this.Scheduler.Get c.Key with
         | ValueSome data -> data.Level
         | ValueNone -> 0
@@ -84,10 +85,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         | Noun n -> this.AvailableCards n
         | Verb v -> this.AvailableCards v
 
-    member this.AvailableCards(sources: string list) : Card seq =
+    member this.AvailableCards(sources: string seq) : Card seq =
+        let s = Set.ofSeq sources
         seq {
             for word in words.Entries do
-                if sources.IsEmpty || List.contains word.Source.File sources then
+                if s.IsEmpty || s.Contains word.Source.File then
                     yield! this.AvailableCards(word.Item)
         }
         |> Seq.cache
@@ -130,10 +132,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         | Noun n -> this.PossibleCards n
         | Verb v -> this.PossibleCards v
 
-    member this.PossibleCards(sources: string list) : Card seq =
+    member this.PossibleCards(sources: string seq) : Card seq =
+        let s = Set.ofSeq sources
         seq {
             for word in words.Entries do
-                if sources.IsEmpty || List.contains word.Source.File sources then
+                if s.IsEmpty || s.Contains word.Source.File then
                     yield! this.PossibleCards(word.Item)
         }
         |> Seq.cache
@@ -166,15 +169,15 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 | _ -> ()
         }
 
-    member inline this.LearningCards<^T when ^T : (member Key: string)>(cards: ^T seq) =
+    member inline this.LearningCards(cards: Card seq) =
         cards
         |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsNone && not(this.Scheduler.IsBuried c.Key))
 
-    member inline this.ReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq) =
+    member inline this.ReviewCards(cards: Card seq) =
         cards
         |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsSome)
 
-    member inline this.DueReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq, now: int64) =
+    member inline this.DueReviewCards(cards: Card seq, now: int64) =
         cards
         |> Seq.choose (fun c ->
             match this.Scheduler.Get c.Key with
@@ -186,7 +189,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.sortByDescending snd
         |> Seq.map fst
 
-    member inline this.AheadReviewCards<^T when ^T : (member Key: string)>(cards: ^T seq, now: int64) =
+    member inline this.AheadReviewCards(cards: Card seq, now: int64) =
         cards
         |> Seq.choose (fun c ->
             match this.Scheduler.Get c.Key with
@@ -198,7 +201,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.sortBy snd
         |> Seq.map fst
 
-    member inline this.LevelDistribution<^T when ^T : (member Key: string)>(cards: ^T seq) : (int * int) seq =
+    member inline this.LevelDistribution(cards: Card seq) : (int * int) seq =
         cards
         |> Seq.map this.LevelOf
         |> Seq.countBy id
