@@ -10,7 +10,6 @@ open System.Security.Cryptography
 module Sync =
 
     let private receive_exact(socket: Socket, length: int) : byte array =
-        socket.ReceiveBufferSize <- 1_000_000
         let buffer : byte array = Array.zeroCreate length
         let mutable read = 0
 
@@ -18,13 +17,11 @@ module Sync =
             let incoming = socket.Receive(buffer, read, length - read, SocketFlags.None)
             if incoming = 0 then failwith "Socket closed during receive"
             read <- read + incoming
-            printfn "Received %i bytes, (%i/%i)" incoming read (length - read)
         let hash = Convert.ToHexString(SHA256.HashData(buffer))
         printfn "Finished receiving %i bytes (%s)" length hash
         buffer
 
     let private send(socket: Socket, data: byte array) : unit =
-        socket.SendBufferSize <- 1_000_000
         let mutable sent = 0
         let hash = Convert.ToHexString(SHA256.HashData(data))
         printfn "Sending %i bytes (%s)" data.Length hash
@@ -32,7 +29,6 @@ module Sync =
             let outgoing = socket.Send(data, sent, data.Length - sent, SocketFlags.None)
             if outgoing = 0 then failwith "Socket closed during send"
             sent <- sent + outgoing
-            printfn "Sent %i bytes, (%i/%i)" outgoing sent (data.Length - sent)
 
     let PORT = 1992
     let SCHEDULE_HEADER = System.Text.Encoding.UTF8.GetBytes("loana-sched-sync")
@@ -81,36 +77,42 @@ module Sync =
         send_payload(socket, WORDLIST_HEADER, our_words_bytes)
 
     let host(schedule: ReviewSchedule, words: WordBank) : unit =
+        let listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
         try
-            let listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
-            listener.Bind(new IPEndPoint(IPAddress.Any, PORT))
-            Console.WriteLine("Listening for a connection..")
-            listener.Listen()
+            try
+                listener.Bind(new IPEndPoint(IPAddress.Any, PORT))
+                Console.WriteLine("Listening for a connection..")
+                listener.Listen()
 
-            if not (listener.Poll(TimeSpan.FromSeconds(30.0), SelectMode.SelectRead)) then
-                Console.WriteLine("Connection timed out. Sync cancelled!")
-            else
-                let client = listener.Accept()
-                Console.WriteLine("Got a connection!")
-                try
-                    client.SendTimeout <- 1000
-                    client.ReceiveTimeout <- 1000
+                if not (listener.Poll(TimeSpan.FromSeconds(30.0), SelectMode.SelectRead)) then
+                    Console.WriteLine("Connection timed out. Sync cancelled!")
+                else
+                    let client = listener.Accept()
+                    Console.WriteLine("Got a connection!")
+                    try
+                        client.SendTimeout <- 5000
+                        client.SendBufferSize <- 1_000_000
+                        client.ReceiveTimeout <- 5000
+                        client.ReceiveBufferSize <- 1_000_000
 
-                    Console.WriteLine("Syncing schedule..")
-                    downstream_schedule_sync(client, schedule)
-                    upstream_schedule_sync(client, schedule)
-                    Console.WriteLine("Sending wordlists..")
-                    upstream_wordlist_sync(client, words)
-                    Console.WriteLine("Sync complete!")
-                    client.Shutdown(SocketShutdown.Send)
-                    client.Close(1000)
-                with _ ->
-                    client.Close(1000)
-                    reraise()
+                        Console.WriteLine("Syncing schedule..")
+                        downstream_schedule_sync(client, schedule)
+                        upstream_schedule_sync(client, schedule)
+                        Console.WriteLine("Sending wordlists..")
+                        upstream_wordlist_sync(client, words)
+                        Console.WriteLine("Sync complete!")
+                        client.Shutdown(SocketShutdown.Both)
+                        client.Close()
+                    with _ ->
+                        client.Close(1000)
+                        reraise()
 
-        with err ->
-            Console.WriteLine(err.Message)
-            Console.WriteLine(err.StackTrace)
+            with err ->
+                Console.WriteLine(err.Message)
+                Console.WriteLine(err.StackTrace)
+        finally
+            listener.Close()
+            listener.Dispose()
 
     let connect(schedule: ReviewSchedule, words: WordBank, address: string) : unit =
         try
@@ -119,8 +121,10 @@ module Sync =
             socket.Connect(address, PORT)
             Console.WriteLine("Connected!")
             try
-                socket.SendTimeout <- 1000
-                socket.ReceiveTimeout <- 1000
+                socket.SendTimeout <- 5000
+                socket.SendBufferSize <- 1_000_000
+                socket.ReceiveTimeout <- 5000
+                socket.ReceiveBufferSize <- 1_000_000
 
                 Console.WriteLine("Syncing schedule..")
                 upstream_schedule_sync(socket, schedule)
