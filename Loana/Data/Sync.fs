@@ -5,10 +5,12 @@ open System.IO
 open System.Net
 open System.Net.Sockets
 open System.Linq
+open System.Security.Cryptography
 
 module Sync =
 
     let private receive_exact(socket: Socket, length: int) : byte array =
+        socket.ReceiveBufferSize <- 1_000_000
         let buffer : byte array = Array.zeroCreate length
         let mutable read = 0
 
@@ -16,14 +18,21 @@ module Sync =
             let incoming = socket.Receive(buffer, read, length - read, SocketFlags.None)
             if incoming = 0 then failwith "Socket closed during receive"
             read <- read + incoming
+            printfn "Received %i bytes, (%i/%i)" incoming read (length - read)
+        let hash = Convert.ToHexString(SHA256.HashData(buffer))
+        printfn "Finished receiving %i bytes (%s)" length hash
         buffer
 
     let private send(socket: Socket, data: byte array) : unit =
+        socket.SendBufferSize <- 1_000_000
         let mutable sent = 0
+        let hash = Convert.ToHexString(SHA256.HashData(data))
+        printfn "Sending %i bytes (%s)" data.Length hash
         while sent < data.Length do
             let outgoing = socket.Send(data, sent, data.Length - sent, SocketFlags.None)
             if outgoing = 0 then failwith "Socket closed during send"
             sent <- sent + outgoing
+            printfn "Sent %i bytes, (%i/%i)" outgoing sent (data.Length - sent)
 
     let PORT = 1992
     let SCHEDULE_HEADER = System.Text.Encoding.UTF8.GetBytes("loana-sched-sync")
@@ -31,10 +40,10 @@ module Sync =
     let MAX_PAYLOAD_BYTES = 4_000_000
 
     let private receive_payload(socket: Socket, header: byte array) : byte array =
-        let header = receive_exact(socket, header.Length)
-        if not(header.SequenceEqual(header)) then failwith "Incorrect header"
+        let received_header = receive_exact(socket, header.Length)
+        if not(received_header.SequenceEqual(header)) then failwith "Incorrect header"
 
-        let length_bytes = BitConverter.ToInt32(receive_exact(socket, 4))
+        let length_bytes = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(receive_exact(socket, 4), 0))
         if length_bytes < 0 || length_bytes > MAX_PAYLOAD_BYTES then
             failwith "Invalid payload size"
 
@@ -42,7 +51,7 @@ module Sync =
 
     let private send_payload(socket: Socket, header: byte array, data: Byte array) : unit =
         send(socket, header)
-        send(socket, BitConverter.GetBytes(data.Length))
+        send(socket, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(data.Length)))
         send(socket, data)
 
     let private downstream_schedule_sync(socket: Socket, schedule: ReviewSchedule) =
@@ -93,6 +102,7 @@ module Sync =
                     Console.WriteLine("Sending wordlists..")
                     upstream_wordlist_sync(client, words)
                     Console.WriteLine("Sync complete!")
+                    client.Shutdown(SocketShutdown.Send)
                     client.Close(1000)
                 with _ ->
                     client.Close(1000)
@@ -118,6 +128,7 @@ module Sync =
                 Console.WriteLine("Downloading wordlists..")
                 downstream_wordlist_sync(socket, words)
                 Console.WriteLine("Sync complete!")
+                socket.Shutdown(SocketShutdown.Both)
                 socket.Close()
             with _ ->
                 socket.Close()

@@ -176,12 +176,11 @@ type ReviewScheduleFile(path: string) =
         let version = br.ReadInt32()
         let count = br.ReadInt32()
         try
-            seq {
-                for _ = 1 to count do
-                    yield ReviewScheduleFile.ReadCardEntry(version, br)
-            }
-            |> Seq.map KeyValuePair
-            |> Dictionary
+            let output = Dictionary<string, ReviewData>()
+            for _ = 1 to count do
+                let key, value = ReviewScheduleFile.ReadCardEntry(version, br)
+                output.Add(key, value)
+            output
         with
         | :? EndOfStreamException -> reraise()
 
