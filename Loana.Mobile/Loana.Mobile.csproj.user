@@ -32,9 +32,6 @@
     <None Update="Pages\ManageMetaPage.xaml">
       <SubType>Designer</SubType>
     </None>
-    <None Update="Pages\TaskDetailPage.xaml">
-      <SubType>Designer</SubType>
-    </None>
     <None Update="Resources\Styles\AppStyles.xaml">
       <SubType>Designer</SubType>
     </None>
