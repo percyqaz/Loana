@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pageModels="clr-namespace:Loana.Mobile.PageModels"
+             xmlns:models="clr-namespace:Loana.Mobile.Models"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:pullToRefresh="clr-namespace:Syncfusion.Maui.Toolkit.PullToRefresh;assembly=Syncfusion.Maui.Toolkit"
+             x:DataType="pageModels:ManageMetaPageModel"
+             x:Class="Loana.Mobile.Pages.ManageMetaPage"
+             x:Name="MetaPage"
+             Title="Dashboard"
+             BackgroundColor="#202020">
+
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+                BindingContext="{Binding Path=BindingContext, Source={x:Reference MetaPage}, x:DataType=ContentPage}"
+                EventName="Appearing"
+                Command="{Binding AppearingCommand}" />
+    </ContentPage.Behaviors>
+    <ContentPage.Resources>
+        <Style TargetType="Label">
+            <Setter Property="TextColor" Value="White" />
+            <Setter Property="BackgroundColor" Value="#202020" />
+            <Setter Property="FontSize" Value="{OnIdiom 16}" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Sync" Command="{Binding ResetCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="*,Auto">
+        <pullToRefresh:SfPullToRefresh Grid.Row="0" IsRefreshing="{Binding IsRefreshing}" RefreshCommand="{Binding RefreshCommand}">
+            <pullToRefresh:SfPullToRefresh.PullableContent>
+                <ScrollView>
+                    <VerticalStackLayout>
+                        <Grid ColumnDefinitions="4*,4*">
+                            <Label Text="Loana Dashboard :)" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#202020" Grid.Column="0" />
+                            <Label Text="Filter: None" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="LightGray" BackgroundColor="#101010" Grid.Column="1" />
+                        </Grid>
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Groups}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:VocabListGroup">
+                                    <VerticalStackLayout>
+                                        <Grid ColumnDefinitions="4*,1*,1*,1*,1*">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#404040" Grid.Column="0" />
+                                            <Label Text="{Binding Learning}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="LightBlue" BackgroundColor="#202040" HorizontalTextAlignment="End" Grid.Column="1" />
+                                            <Label Text="{Binding Due}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="Green" BackgroundColor="#204020" HorizontalTextAlignment="End" Grid.Column="2" />
+                                            <Label Text="{Binding Ahead}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="Yellow" BackgroundColor="#404020" HorizontalTextAlignment="End" Grid.Column="3" />
+                                            <Label Text="{Binding Available}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#404040" HorizontalTextAlignment="End" Grid.Column="4" />
+                                        </Grid>
+                                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Lists}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="models:VocabList">
+                                                    <Grid ColumnDefinitions="4*,1*,1*,1*,1*">
+                                                        <Label Text="{Binding Name}" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#202020" Grid.Column="0" />
+                                                        <Label Text="{Binding Learning}" Padding="{StaticResource VocabPadding}" TextColor="LightBlue" BackgroundColor="#101020" HorizontalTextAlignment="End" Grid.Column="1" />
+                                                        <Label Text="{Binding Due}" Padding="{StaticResource VocabPadding}" TextColor="Green" BackgroundColor="#102010" HorizontalTextAlignment="End" Grid.Column="2" />
+                                                        <Label Text="{Binding Ahead}" Padding="{StaticResource VocabPadding}" TextColor="Yellow" BackgroundColor="#202010" HorizontalTextAlignment="End" Grid.Column="3" />
+                                                        <Label Text="{Binding Available}" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#202020" HorizontalTextAlignment="End" Grid.Column="4" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </VerticalStackLayout>
+                                    </VerticalStackLayout>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                        <Grid ColumnDefinitions="4*,1*,1*,1*,1*">
+                            <Label Text="** ALL CARDS **" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#404040" Grid.Column="0" />
+                            <Label Text="{Binding AllCards.Learning}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="LightBlue" BackgroundColor="#202040" HorizontalTextAlignment="End" Grid.Column="1" />
+                            <Label Text="{Binding AllCards.Due}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="Green" BackgroundColor="#204020" HorizontalTextAlignment="End" Grid.Column="2" />
+                            <Label Text="{Binding AllCards.Ahead}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="Yellow" BackgroundColor="#404020" HorizontalTextAlignment="End" Grid.Column="3" />
+                            <Label Text="{Binding AllCards.Available}" FontAttributes="Bold" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#404040" HorizontalTextAlignment="End" Grid.Column="4" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </pullToRefresh:SfPullToRefresh.PullableContent>
+        </pullToRefresh:SfPullToRefresh>
+        <Grid Grid.Row="1" ColumnDefinitions="1*,1*">
+            <Button Text="Learn" Command="{Binding LearnCommand}" TextColor="LightBlue" BackgroundColor="#202040" Grid.Column="0" />
+            <Button Text="Review" Command="{Binding ReviewCommand}" TextColor="Green" BackgroundColor="#204020" Grid.Column="1" />
+        </Grid>
+    </Grid>
+</ContentPage>

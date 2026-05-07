@@ -1,6 +1,6 @@
 ﻿**/bin
 **/obj
 **/.vs
-/Loana.CLI
+**/.idea
 Loana/config
-.idea
+/Loana.Mobile
