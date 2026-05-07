@@ -10,12 +10,11 @@ namespace Loana.Mobile
         {
             InitializeComponent();
             Application.Current!.UserAppTheme = AppTheme.Dark;
-            var currentTheme = Application.Current!.RequestedTheme;
         }
 
         public static async Task DisplaySnackbarAsync(string message)
         {
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationTokenSource cancellationTokenSource = new();
 
             var snackbarOptions = new SnackbarOptions
             {

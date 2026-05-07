@@ -42,15 +42,9 @@ namespace Loana.Mobile.PageModels
         }
 
         [RelayCommand]
-        private async Task Learn()
-        {
-            await Shell.Current.GoToAsync("review"); // todo: learn
-        }
+        private async Task Learn() => await Shell.Current.GoToAsync("review"); // todo: learn
 
         [RelayCommand]
-        private async Task Review()
-        {
-            await Shell.Current.GoToAsync("review");
-        }
+        private async Task Review() => await Shell.Current.GoToAsync("review");
     }
 }

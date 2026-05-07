@@ -41,8 +41,8 @@ namespace Loana.Mobile.PageModels
         private bool _isBusy;
 
         [ObservableProperty]
-        private List<IconData> _icons = new List<IconData>
-        {
+        private List<IconData> _icons =
+        [
             new IconData { Icon = FluentUI.ribbon_24_regular, Description = "Ribbon Icon" },
             new IconData { Icon = FluentUI.ribbon_star_24_regular, Description = "Ribbon Star Icon" },
             new IconData { Icon = FluentUI.trophy_24_regular, Description = "Trophy Icon" },
@@ -50,7 +50,7 @@ namespace Loana.Mobile.PageModels
             new IconData { Icon = FluentUI.book_24_regular, Description = "Book Icon" },
             new IconData { Icon = FluentUI.people_24_regular, Description = "People Icon" },
             new IconData { Icon = FluentUI.bot_24_regular, Description = "Bot Icon" }
-        };
+        ];
 
         private bool _canDelete;
 
@@ -80,9 +80,9 @@ namespace Loana.Mobile.PageModels
 
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (query.ContainsKey("id"))
+            if (query.TryGetValue("id", out object? value))
             {
-                int id = Convert.ToInt32(query["id"]);
+                int id = Convert.ToInt32(value);
                 LoadData(id).FireAndForgetSafeAsync(_errorHandler);
             }
             else if (query.ContainsKey("refresh"))
@@ -92,9 +92,11 @@ namespace Loana.Mobile.PageModels
             else
             {
                 Task.WhenAll(LoadCategories(), LoadTags()).FireAndForgetSafeAsync(_errorHandler);
-                _project = new();
-                _project.Tags = [];
-                _project.Tasks = [];
+                _project = new()
+                {
+                    Tags = [],
+                    Tasks = []
+                };
                 Tasks = _project.Tasks;
             }
         }

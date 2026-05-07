@@ -4,14 +4,14 @@ using Loana.Mobile.Models;
 
 namespace Loana.Mobile.PageModels
 {
-    public partial class TaskDetailPageModel : ObservableObject, IQueryAttributable
+    public partial class TaskDetailPageModel(ProjectRepository projectRepository, TaskRepository taskRepository, ModalErrorHandler errorHandler) : ObservableObject, IQueryAttributable
     {
         public const string ProjectQueryKey = "project";
         private ProjectTask? _task;
         private bool _canDelete;
-        private readonly ProjectRepository _projectRepository;
-        private readonly TaskRepository _taskRepository;
-        private readonly ModalErrorHandler _errorHandler;
+        private readonly ProjectRepository _projectRepository = projectRepository;
+        private readonly TaskRepository _taskRepository = taskRepository;
+        private readonly ModalErrorHandler _errorHandler = errorHandler;
 
         [ObservableProperty]
         private string _title = string.Empty;
@@ -32,13 +32,6 @@ namespace Loana.Mobile.PageModels
         [ObservableProperty]
         private bool _isExistingProject;
 
-        public TaskDetailPageModel(ProjectRepository projectRepository, TaskRepository taskRepository, ModalErrorHandler errorHandler)
-        {
-            _projectRepository = projectRepository;
-            _taskRepository = taskRepository;
-            _errorHandler = errorHandler;
-        }
-
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
             LoadTaskAsync(query).FireAndForgetSafeAsync(_errorHandler);
@@ -51,9 +44,9 @@ namespace Loana.Mobile.PageModels
 
             int taskId = 0;
 
-            if (query.ContainsKey("id"))
+            if (query.TryGetValue("id", out object? value))
             {
-                taskId = Convert.ToInt32(query["id"]);
+                taskId = Convert.ToInt32(value);
                 _task = await _taskRepository.GetAsync(taskId);
 
                 if (_task is null)
@@ -159,8 +152,7 @@ namespace Loana.Mobile.PageModels
                 return;
             }
 
-            if (Project.Tasks.Contains(_task))
-                Project.Tasks.Remove(_task);
+            Project.Tasks.Remove(_task);
 
             if (_task.ID > 0)
                 await _taskRepository.DeleteItemAsync(_task);
