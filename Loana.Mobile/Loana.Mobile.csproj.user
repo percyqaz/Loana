@@ -23,13 +23,7 @@
     <None Update="Pages\Controls\CategoryChart.xaml">
       <SubType>Designer</SubType>
     </None>
-    <None Update="Pages\Controls\ProjectCardView.xaml">
-      <SubType>Designer</SubType>
-    </None>
     <None Update="Pages\Controls\TagView.xaml">
-      <SubType>Designer</SubType>
-    </None>
-    <None Update="Pages\Controls\TaskView.xaml">
       <SubType>Designer</SubType>
     </None>
     <None Update="Pages\MainPage.xaml">
