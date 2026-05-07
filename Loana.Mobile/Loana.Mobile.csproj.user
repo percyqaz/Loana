@@ -38,12 +38,6 @@
     <None Update="Pages\ManageMetaPage.xaml">
       <SubType>Designer</SubType>
     </None>
-    <None Update="Pages\ProjectDetailPage.xaml">
-      <SubType>Designer</SubType>
-    </None>
-    <None Update="Pages\ProjectListPage.xaml">
-      <SubType>Designer</SubType>
-    </None>
     <None Update="Pages\TaskDetailPage.xaml">
       <SubType>Designer</SubType>
     </None>
