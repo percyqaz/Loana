@@ -7,13 +7,6 @@ public partial class ReviewPageModel : ObservableObject
     private readonly LoanaRepository _loanaRepository;
     private readonly List<Card> _cards;
 
-    public enum ReviewPageState
-    {
-        FrontSide = 0,
-        BackSide = 1,
-        Complete = 2
-    }
-
     [ObservableProperty]
     private int _remainingCards = 0;
 
@@ -23,9 +16,6 @@ public partial class ReviewPageModel : ObservableObject
     [ObservableProperty]
     private bool _showBack;
 
-    [ObservableProperty]
-    private ReviewPageState _state = ReviewPageState.Complete;
-
     public ReviewPageModel(LoanaRepository loanaRepository)
     {
         _loanaRepository = loanaRepository;
@@ -33,7 +23,6 @@ public partial class ReviewPageModel : ObservableObject
         _remainingCards = _cards.Count;
         if (_remainingCards > 0)
         {
-            _state = ReviewPageState.FrontSide;
             _showBack = false;
             _currentCard = _cards[0];
             _cards.RemoveAt(0);
@@ -45,14 +34,12 @@ public partial class ReviewPageModel : ObservableObject
         RemainingCards = _cards.Count;
         if (RemainingCards > 0)
         {
-            State = ReviewPageState.FrontSide;
             ShowBack = false;
             CurrentCard = _cards[0];
             _cards.RemoveAt(0);
         }
         else
         {
-            State = ReviewPageState.Complete;
             ShowBack = false;
         }
     }
@@ -60,15 +47,14 @@ public partial class ReviewPageModel : ObservableObject
     [RelayCommand]
     public async Task Tapped()
     {
-        if (CurrentCard is null || State != ReviewPageState.FrontSide) return;
-        State = ReviewPageState.BackSide;
+        if (CurrentCard is null || ShowBack) return;
         ShowBack = true;
     }
 
     [RelayCommand]
     public async Task SwipedLeft()
     {
-        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        if (CurrentCard is null || !ShowBack) return;
         _loanaRepository.Scheduler.Promote(CurrentCard);
         NextCard();
     }
@@ -76,7 +62,7 @@ public partial class ReviewPageModel : ObservableObject
     [RelayCommand]
     public async Task SwipedDown()
     {
-        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        if (CurrentCard is null || !ShowBack) return;
         _loanaRepository.Scheduler.Keep(CurrentCard);
         NextCard();
     }
@@ -84,7 +70,7 @@ public partial class ReviewPageModel : ObservableObject
     [RelayCommand]
     public async Task SwipedUp()
     {
-        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        if (CurrentCard is null || !ShowBack) return;
         _loanaRepository.Scheduler.Forget(CurrentCard);
         NextCard();
     }
@@ -92,7 +78,7 @@ public partial class ReviewPageModel : ObservableObject
     [RelayCommand]
     public async Task SwipedRight()
     {
-        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        if (CurrentCard is null || !ShowBack) return;
         _loanaRepository.Scheduler.Demote(CurrentCard);
         NextCard();
     }
