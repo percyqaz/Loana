@@ -35,7 +35,7 @@ public partial class DashboardPageModel(LoanaRepository loanaRepository) : Obser
     }
 
     [RelayCommand]
-    private async Task Learn() => await Shell.Current.GoToAsync("review"); // todo: learn
+    private async Task Learn() => await Shell.Current.GoToAsync("learn");
 
     [RelayCommand]
     private async Task Review() => await Shell.Current.GoToAsync("review");

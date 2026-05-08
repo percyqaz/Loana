@@ -27,13 +27,12 @@ namespace Loana.Mobile
 #endif
 
             builder.Services.AddSingleton<LoanaRepository>();
-            builder.Services.AddSingleton<CategoryRepository>();
-            builder.Services.AddSingleton<TagRepository>();
             builder.Services.AddSingleton<ModalErrorHandler>();
             builder.Services.AddSingleton<SyncPageModel>();
             builder.Services.AddSingleton<DashboardPageModel>();
 
             builder.Services.AddTransientWithShellRoute<ReviewPage, ReviewPageModel>("review");
+            builder.Services.AddTransientWithShellRoute<LearnPage, LearnPageModel>("learn");
             return builder.Build();
         }
     }

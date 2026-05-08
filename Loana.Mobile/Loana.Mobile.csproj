@@ -72,6 +72,9 @@
 	  <Compile Update="Pages\DashboardPage.xaml.cs">
 	    <DependentUpon>DashboardPage.xaml</DependentUpon>
 	  </Compile>
+	  <Compile Update="Pages\LearnPage.xaml.cs">
+	    <DependentUpon>LearnPage.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Pages\SyncPage.xaml.cs">
 	    <DependentUpon>SyncPage.xaml</DependentUpon>
 	  </Compile>
@@ -81,6 +84,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiXaml Update="Pages\LearnPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Pages\ReviewPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

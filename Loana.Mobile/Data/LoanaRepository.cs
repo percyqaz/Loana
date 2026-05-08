@@ -16,7 +16,7 @@ public class LoanaRepository
     private readonly WordBank _words;
     private readonly VocabDeck _vocab;
 
-    public LoanaRepository(ILogger<TagRepository> logger)
+    public LoanaRepository(ILogger<LoanaRepository> logger)
     {
         _logger = logger;
         _scheduler = new ReviewSchedule(Path.Combine(FileSystem.AppDataDirectory, "cards.dat"));
@@ -75,6 +75,14 @@ public class LoanaRepository
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         return _vocab.DueReviewCards(_vocab.AvailableCards([]), now)
             .Take(50)
+            .Shuffle()
+            .ToList();
+    }
+
+    public List<Card> Learn()
+    {
+        return _vocab.LearningCards(_vocab.AvailableCards([]))
+            .Take(20)
             .Shuffle()
             .ToList();
     }

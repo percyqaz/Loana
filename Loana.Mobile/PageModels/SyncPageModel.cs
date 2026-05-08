@@ -8,6 +8,8 @@ public partial class SyncPageModel(LoanaRepository _loanaRepository) : Observabl
     [RelayCommand]
     private async Task Sync()
     {
+        if (Address == "") return;
         _loanaRepository.Resync(Address);
+        Address = "";
     }
 }

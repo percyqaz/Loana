@@ -1,41 +1,41 @@
 namespace Loana.Mobile.PageModels;
 
-public partial class ReviewPageModel : IStudyPageModel
+public class LearnPageModel : IStudyPageModel
 {
     private readonly LoanaRepository _loanaRepository;
 
-    public ReviewPageModel(LoanaRepository loanaRepository)
+    public LearnPageModel(LoanaRepository loanaRepository)
     {
         _loanaRepository = loanaRepository;
-        Cards.AddRange(_loanaRepository.Review());
+        Cards.AddRange(_loanaRepository.Learn());
         NextCard();
     }
 
     public override async Task SwipedLeft()
     {
         if (CurrentCard is null || !ShowBack) return;
-        _loanaRepository.Scheduler.Promote(CurrentCard);
+        _loanaRepository.Scheduler.Learn(CurrentCard);
         NextCard();
     }
 
     public override async Task SwipedDown()
     {
         if (CurrentCard is null || !ShowBack) return;
-        _loanaRepository.Scheduler.Keep(CurrentCard);
+        Cards.Add(CurrentCard);
         NextCard();
     }
 
     public override async Task SwipedUp()
     {
         if (CurrentCard is null || !ShowBack) return;
-        _loanaRepository.Scheduler.Forget(CurrentCard);
+        _loanaRepository.Scheduler.Bury(CurrentCard.Key);
         NextCard();
     }
 
     public override async Task SwipedRight()
     {
         if (CurrentCard is null || !ShowBack) return;
-        _loanaRepository.Scheduler.Demote(CurrentCard);
+        Cards.Insert(Math.Min(Cards.Count, 4), CurrentCard);
         NextCard();
     }
 }
