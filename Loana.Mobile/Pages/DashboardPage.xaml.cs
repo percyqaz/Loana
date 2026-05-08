@@ -1,8 +1,8 @@
 namespace Loana.Mobile.Pages
 {
-    public partial class ManageMetaPage : ContentPage
+    public partial class DashboardPage : ContentPage
     {
-        public ManageMetaPage(ManageMetaPageModel model)
+        public DashboardPage(DashboardPageModel model)
         {
             InitializeComponent();
             BindingContext = model;

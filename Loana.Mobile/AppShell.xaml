@@ -11,7 +11,7 @@
     <ShellContent
         Title="Dashboard"
         Icon="{StaticResource IconDashboard}"
-        ContentTemplate="{DataTemplate pages:ManageMetaPage}"
+        ContentTemplate="{DataTemplate pages:DashboardPage}"
         Route="main" />
 
     <ShellContent

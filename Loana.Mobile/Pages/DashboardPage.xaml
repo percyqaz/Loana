@@ -5,8 +5,8 @@
              xmlns:models="clr-namespace:Loana.Mobile.Models"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:pullToRefresh="clr-namespace:Syncfusion.Maui.Toolkit.PullToRefresh;assembly=Syncfusion.Maui.Toolkit"
-             x:DataType="pageModels:ManageMetaPageModel"
-             x:Class="Loana.Mobile.Pages.ManageMetaPage"
+             x:DataType="pageModels:DashboardPageModel"
+             x:Class="Loana.Mobile.Pages.DashboardPage"
              x:Name="MetaPage"
              Title="Dashboard"
              BackgroundColor="#202020">

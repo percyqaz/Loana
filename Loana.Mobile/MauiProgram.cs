@@ -31,7 +31,7 @@ namespace Loana.Mobile
             builder.Services.AddSingleton<TagRepository>();
             builder.Services.AddSingleton<ModalErrorHandler>();
             builder.Services.AddSingleton<MainPageModel>();
-            builder.Services.AddSingleton<ManageMetaPageModel>();
+            builder.Services.AddSingleton<DashboardPageModel>();
 
             builder.Services.AddTransientWithShellRoute<ReviewPage, ReviewPageModel>("review");
             return builder.Build();

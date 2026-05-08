@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 
 namespace Loana.Mobile.PageModels;
 
-public partial class ManageMetaPageModel(LoanaRepository loanaRepository) : ObservableObject
+public partial class DashboardPageModel(LoanaRepository loanaRepository) : ObservableObject
 {
     private readonly LoanaRepository _loanaRepository = loanaRepository;
 
