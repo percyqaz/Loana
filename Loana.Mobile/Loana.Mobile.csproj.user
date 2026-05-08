@@ -17,9 +17,6 @@
     <None Update="AppShell.xaml">
       <SubType>Designer</SubType>
     </None>
-    <None Update="Pages\Controls\TagView.xaml">
-      <SubType>Designer</SubType>
-    </None>
     <None Update="Pages\MainPage.xaml">
       <SubType>Designer</SubType>
     </None>

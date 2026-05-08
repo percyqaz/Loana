@@ -69,12 +69,18 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Pages\Controls\FlashcardView.xaml.cs">
+	    <DependentUpon>FlashcardView.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Pages\ReviewPage.xaml.cs">
 	    <DependentUpon>ReviewPage.xaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiXaml Update="Pages\Controls\FlashcardView.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Pages\ReviewPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

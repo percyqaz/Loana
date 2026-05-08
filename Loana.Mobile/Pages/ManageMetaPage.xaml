@@ -53,7 +53,7 @@
                                             <BindableLayout.ItemTemplate>
                                                 <DataTemplate x:DataType="models:VocabList">
                                                     <Grid ColumnDefinitions="4*,1*,1*,1*,1*">
-                                                        <Label Text="{Binding Name}" Padding="{StaticResource VocabPadding}" TextColor="White" BackgroundColor="#202020" Grid.Column="0" />
+                                                        <Label Text="{Binding Name}" Padding="{StaticResource VocabPadding}" TextColor="LightGreen" BackgroundColor="#202020" Grid.Column="0" />
                                                         <Label Text="{Binding Learning}" Padding="{StaticResource VocabPadding}" TextColor="LightBlue" BackgroundColor="#101020" HorizontalTextAlignment="End" Grid.Column="1" />
                                                         <Label Text="{Binding Due}" Padding="{StaticResource VocabPadding}" TextColor="Green" BackgroundColor="#102010" HorizontalTextAlignment="End" Grid.Column="2" />
                                                         <Label Text="{Binding Ahead}" Padding="{StaticResource VocabPadding}" TextColor="Yellow" BackgroundColor="#202010" HorizontalTextAlignment="End" Grid.Column="3" />

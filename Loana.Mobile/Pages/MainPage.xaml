@@ -10,7 +10,6 @@
              x:DataType="pageModels:MainPageModel"
              x:Name="OverviewPage"
              Title="Sync">
-
     <ContentPage.Behaviors>
         <toolkit:EventToCommandBehavior
                 BindingContext="{Binding Path=BindingContext, Source={x:Reference OverviewPage}, x:DataType=ContentPage}"
@@ -25,13 +24,6 @@
                 EventName="Appearing"
                 Command="{Binding AppearingCommand}" />
     </ContentPage.Behaviors>
-
-    <ContentPage.Resources>
-        <ResourceDictionary>
-            <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
-        </ResourceDictionary>
-    </ContentPage.Resources>
-
     <Grid>
         <Label Text="Old dashboard thing was here" />
     </Grid>

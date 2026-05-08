@@ -21,6 +21,9 @@ public partial class ReviewPageModel : ObservableObject
     private Card? _currentCard;
 
     [ObservableProperty]
+    private bool _showBack;
+
+    [ObservableProperty]
     private ReviewPageState _state = ReviewPageState.Complete;
 
     public ReviewPageModel(LoanaRepository loanaRepository)
@@ -31,12 +34,61 @@ public partial class ReviewPageModel : ObservableObject
         if (_remainingCards > 0)
         {
             _state = ReviewPageState.FrontSide;
+            _showBack = false;
             _currentCard = _cards[0];
+            _cards.RemoveAt(0);
         }
     }
 
-    public async Task OnSwipedLeft(object sender, SwipedEventArgs e)
+    public void NextCard()
     {
-        await Shell.Current.GoToAsync("main");
+        RemainingCards = _cards.Count;
+        if (RemainingCards > 0)
+        {
+            State = ReviewPageState.FrontSide;
+            ShowBack = false;
+            CurrentCard = _cards[0];
+            _cards.RemoveAt(0);
+        }
+        else
+        {
+            State = ReviewPageState.Complete;
+            ShowBack = false;
+        }
+    }
+
+    public async Task OnTapped()
+    {
+        if (CurrentCard is null || State != ReviewPageState.FrontSide) return;
+        State = ReviewPageState.BackSide;
+        ShowBack = true;
+    }
+
+    public async Task OnSwipedLeft()
+    {
+        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        _loanaRepository.Scheduler.Promote(CurrentCard);
+        NextCard();
+    }
+
+    public async Task OnSwipedDown()
+    {
+        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        _loanaRepository.Scheduler.Keep(CurrentCard);
+        NextCard();
+    }
+
+    public async Task OnSwipedUp()
+    {
+        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        _loanaRepository.Scheduler.Forget(CurrentCard);
+        NextCard();
+    }
+
+    public async Task OnSwipedRight()
+    {
+        if (CurrentCard is null || State != ReviewPageState.BackSide) return;
+        _loanaRepository.Scheduler.Demote(CurrentCard);
+        NextCard();
     }
 }

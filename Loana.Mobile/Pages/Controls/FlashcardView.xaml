@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Border xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+        x:Class="Loana.Mobile.Pages.Controls.FlashcardView"
+        xmlns:models="clr-namespace:Loana.Mobile.Models"
+        xmlns:controls="clr-namespace:Loana.Mobile.Pages.Controls"
+        xmlns:language="clr-namespace:Loana.Language;assembly=Loana"
+        StrokeThickness="0"
+        Padding="12,0"
+        x:Name="Flashcard"
+        x:DataType="language:Card">
+
+    <Border.Resources>
+        <controls:DeutschConverter x:Key="deutsch" />
+        <controls:EnglishConverter x:Key="english" />
+        <controls:DeutschRowConverter x:Key="deutschRow" />
+        <controls:EnglishRowConverter x:Key="englishRow" />
+        <controls:MasculineConverter x:Key="masculine" />
+        <controls:FeminineConverter x:Key="feminine" />
+        <controls:NeuterConverter x:Key="neuter" />
+        <controls:PluralConverter x:Key="plural" />
+        <controls:GenderConverter x:Key="gender" />
+    </Border.Resources>
+
+    <Grid RowDefinitions="Auto, Auto">
+        <Label Text="{Binding Type, Converter={StaticResource deutsch}}"
+               Grid.Row="{Binding Type, Converter={StaticResource deutschRow}}"
+               TextColor="White"
+               FontSize="14" />
+        <HorizontalStackLayout Grid.Row="{Binding Type, Converter={StaticResource englishRow}}" BindableLayout.ItemsSource="{Binding Type, Converter={StaticResource english}}">
+            <BindableLayout.ItemTemplate>
+                <DataTemplate x:DataType="language:Annotation">
+                    <HorizontalStackLayout>
+                        <Label Text="{Binding Text}"
+                           TextColor="White"
+                           Padding="5,2"
+                           FontSize="14" />
+                        <Label Text="{Binding Note}"
+                           TextColor="LightGray"
+                           Padding="5,2"
+                           FontSize="14" />
+                    </HorizontalStackLayout>
+                </DataTemplate>
+            </BindableLayout.ItemTemplate>
+        </HorizontalStackLayout>
+    </Grid>
+</Border>

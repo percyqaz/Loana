@@ -75,6 +75,9 @@ public class LoanaRepository
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         return _vocab.DueReviewCards(_vocab.AvailableCards([]), now)
             .Take(50)
+            .Shuffle()
             .ToList();
     }
+
+    public ReviewSchedule Scheduler => _scheduler;
 }

@@ -4,14 +4,15 @@
              xmlns:sf="clr-namespace:Syncfusion.Maui.Toolkit.TextInputLayout;assembly=Syncfusion.Maui.Toolkit"
              xmlns:pageModel="clr-namespace:Loana.Mobile.PageModels"
              xmlns:models="clr-namespace:Loana.Mobile.Models"
+             xmlns:controls="clr-namespace:Loana.Mobile.Pages.Controls"
              x:DataType="pageModel:ReviewPageModel"
              x:Class="Loana.Mobile.Pages.ReviewPage"
-             Title="Review">
-
+             Title="{Binding RemainingCards, StringFormat='Review ({0} remaining)'}">
     <ScrollView>
         <ScrollView.GestureRecognizers>
-            <SwipeGestureRecognizer Direction="Left" />
+            <SwipeGestureRecognizer Direction="Left,Down,Up,Right" Swiped="OnSwiped" />
+            <TapGestureRecognizer NumberOfTapsRequired="1" Tapped="OnTapped" />
         </ScrollView.GestureRecognizers>
-        <Label Text="{Binding CurrentCard.Key}" />
+        <controls:FlashcardViewNew BindingContext="{Binding CurrentCard}" Revealed="{Binding ShowBack}" />
     </ScrollView>
 </ContentPage>
