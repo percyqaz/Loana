@@ -257,7 +257,7 @@ type ReviewSchedule(path: string) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         this.Schedule(key, f <| this.Get(key).Value <| now, now)
 
-    member this.Bump(meta: Card) : ScheduleResult =
+    member private this.Bump(meta: Card) : ScheduleResult =
         this.Reschedule(meta.BumpKey.Value, fun data now -> data.Bump(now, this.Get(meta.Key).Value.Interval))
 
     member this.Data = mem.AsReadOnly()
@@ -276,3 +276,27 @@ type ReviewSchedule(path: string) =
                 updates <- updates + 1
         this.Save()
         updates
+
+    member this.Learn (card: Card) : ScheduleResult =
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        this.Schedule(card.Key, ReviewData.Level1(now, 1), now)
+
+    member this.Forget (card: Card) : ScheduleResult =
+        this.Reschedule(card.Key, _.Forget)
+
+    member this.Demote (card: Card) : ScheduleResult =
+        this.Reschedule(card.Key, _.Demote)
+
+    member this.Keep (card: Card) : ScheduleResult seq =
+        seq {
+            yield this.Reschedule(card.Key, _.Keep)
+            if card.BumpKey.IsSome then
+                yield this.Bump(card)
+        }
+
+    member this.Promote (card: Card) : ScheduleResult seq =
+        seq {
+            yield this.Reschedule(card.Key, _.Promote)
+            if card.BumpKey.IsSome then
+                yield this.Bump(card)
+        }
