@@ -421,6 +421,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.Subtract -> vocab.DecreaseBatchSize()
                 | ConsoleKey.OemPlus
                 | ConsoleKey.Add -> vocab.IncreaseBatchSize()
+                | ConsoleKey.S -> Sync.host(scheduler, words); Console.ReadKey(true) |> ignore
                 | _ -> ()
 
             | VerbMode ->

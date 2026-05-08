@@ -3,7 +3,7 @@ namespace Loana.Mobile.PageModels;
 public partial class SyncPageModel(LoanaRepository _loanaRepository) : ObservableObject
 {
     [ObservableProperty]
-    private string _address = "10.0.2.2";
+    private string _address = "192.168.0.69";
 
     [ObservableProperty]
     private string _status = "";

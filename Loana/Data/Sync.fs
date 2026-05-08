@@ -84,8 +84,8 @@ module Sync =
                 Console.WriteLine("Listening for a connection..")
                 listener.Listen()
 
-                if not (listener.Poll(TimeSpan.FromSeconds(30.0), SelectMode.SelectRead)) then
-                    Console.WriteLine("Connection timed out. Sync cancelled!")
+                if not (listener.Poll(TimeSpan.FromSeconds(10.0), SelectMode.SelectRead)) then
+                    Console.WriteLine("Sync cancelled!")
                 else
                     let client = listener.Accept()
                     Console.WriteLine("Got a connection!")
@@ -110,7 +110,6 @@ module Sync =
                     with _ ->
                         client.Dispose()
                         reraise()
-
             with err ->
                 Console.WriteLine(err.Message)
                 Console.WriteLine(err.StackTrace)

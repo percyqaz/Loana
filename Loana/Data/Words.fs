@@ -262,7 +262,7 @@ type WordBank(path: string) =
                     bw.Write(entry.Item.ToString())
 
     member this.ReadPayload(stream: Stream) : unit =
-        if entries.Count > 0 then failwith "This will OVERWRITE your current entries! Guard rail for now"
+        if entries.Count > 0 && OperatingSystem.IsWindows() then failwith "This will OVERWRITE your current entries! Guard rail for now"
         groups.Clear()
         entries.Clear()
         deduplicate_de.Clear()
