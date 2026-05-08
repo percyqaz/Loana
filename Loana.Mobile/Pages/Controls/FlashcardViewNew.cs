@@ -25,6 +25,7 @@ public class FlashcardViewNew : ContentView
     private static void OnRevealedChanged(BindableObject bindable, object oldValue, object newValue)
     {
         ((FlashcardViewNew)bindable).RedrawContent();
+        Console.WriteLine("Hello");
     }
 
     public void RedrawContent()
@@ -109,7 +110,7 @@ public class FlashcardViewNew : ContentView
     private static readonly Color GERMAN_BG = Color.FromArgb("#400000");
     private static readonly int SPACE_SPACING = 3;
 
-    private IEnumerable<IView> EnglishSide(Card card)
+    private static IEnumerable<IView> EnglishSide(Card card)
     {
         var definiteArticle = card.Type switch
         {
@@ -155,7 +156,7 @@ public class FlashcardViewNew : ContentView
         }
     }
 
-    private IEnumerable<IView> Annotation(Annotation a, bool last)
+    private static IEnumerable<IView> Annotation(Annotation a, bool last)
     {
         if (Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(a.Note))
         {
@@ -198,7 +199,7 @@ public class FlashcardViewNew : ContentView
         }
     }
 
-    private IEnumerable<View> DeutschSide(Card card, bool revealed)
+    private static IEnumerable<View> DeutschSide(Card card, bool revealed)
     {
         var deutsch = card.Type switch
         {

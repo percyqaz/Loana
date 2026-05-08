@@ -1,7 +1,4 @@
-﻿using Loana.Mobile.Models;
-using Loana.Mobile.PageModels;
-
-namespace Loana.Mobile.Pages
+﻿namespace Loana.Mobile.Pages
 {
     public partial class MainPage : ContentPage
     {
