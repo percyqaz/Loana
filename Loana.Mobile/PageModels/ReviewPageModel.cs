@@ -57,35 +57,40 @@ public partial class ReviewPageModel : ObservableObject
         }
     }
 
-    public async Task OnTapped()
+    [RelayCommand]
+    public async Task Tapped()
     {
         if (CurrentCard is null || State != ReviewPageState.FrontSide) return;
         State = ReviewPageState.BackSide;
         ShowBack = true;
     }
 
-    public async Task OnSwipedLeft()
+    [RelayCommand]
+    public async Task SwipedLeft()
     {
         if (CurrentCard is null || State != ReviewPageState.BackSide) return;
         _loanaRepository.Scheduler.Promote(CurrentCard);
         NextCard();
     }
 
-    public async Task OnSwipedDown()
+    [RelayCommand]
+    public async Task SwipedDown()
     {
         if (CurrentCard is null || State != ReviewPageState.BackSide) return;
         _loanaRepository.Scheduler.Keep(CurrentCard);
         NextCard();
     }
 
-    public async Task OnSwipedUp()
+    [RelayCommand]
+    public async Task SwipedUp()
     {
         if (CurrentCard is null || State != ReviewPageState.BackSide) return;
         _loanaRepository.Scheduler.Forget(CurrentCard);
         NextCard();
     }
 
-    public async Task OnSwipedRight()
+    [RelayCommand]
+    public async Task SwipedRight()
     {
         if (CurrentCard is null || State != ReviewPageState.BackSide) return;
         _loanaRepository.Scheduler.Demote(CurrentCard);

@@ -11,8 +11,11 @@
              Title="{Binding RemainingCards, StringFormat='Review ({0} remaining)'}">
     <ScrollView>
         <ScrollView.GestureRecognizers>
-            <SwipeGestureRecognizer Direction="Left,Down,Up,Right" Swiped="OnSwiped" />
-            <TapGestureRecognizer NumberOfTapsRequired="1" Tapped="OnTapped" />
+            <SwipeGestureRecognizer Direction="Left" Command="{Binding SwipedLeftCommand}" />
+            <SwipeGestureRecognizer Direction="Down" Command="{Binding SwipedDownCommand}" />
+            <SwipeGestureRecognizer Direction="Up" Command="{Binding SwipedUpCommand}" />
+            <SwipeGestureRecognizer Direction="Right" Command="{Binding SwipedRightCommand}" />
+            <TapGestureRecognizer NumberOfTapsRequired="1" Command="{Binding TappedCommand}" />
         </ScrollView.GestureRecognizers>
         <controls:FlashcardView BindingContext="{Binding CurrentCard}"
                                    Revealed="{Binding BindingContext.ShowBack, Source={x:Reference ReviewPageRoot}}" />

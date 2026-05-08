@@ -12,8 +12,8 @@
              Title="Sync">
     <VerticalStackLayout>
         <Grid RowDefinitions="*,*">
-        <Entry Text="{Binding Address}" Grid.Row="0" HeightRequest="20" />
-        <Button Text="Sync" Command="{Binding SyncCommand}" Grid.Row="1" />
+            <Entry Text="{Binding Address}" Grid.Row="0" HeightRequest="20" />
+            <Button Text="Sync" Command="{Binding SyncCommand}" Grid.Row="1" />
         </Grid>
     </VerticalStackLayout>
 </ContentPage>
