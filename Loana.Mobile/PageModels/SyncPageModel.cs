@@ -5,11 +5,24 @@ public partial class SyncPageModel(LoanaRepository _loanaRepository) : Observabl
     [ObservableProperty]
     private string _address = "10.0.2.2";
 
+    [ObservableProperty]
+    private string _status = "";
+
     [RelayCommand]
-    private async Task Sync()
+    private async Task SyncProgress()
     {
         if (Address == "") return;
-        _loanaRepository.Resync(Address);
-        Address = "";
+        Status = "";
+        _loanaRepository.SyncProgress(Address);
+        Status = "Synced progress!";
+    }
+
+    [RelayCommand]
+    private async Task DownloadWords()
+    {
+        if (Address == "") return;
+        Status = "";
+        _loanaRepository.DownloadWords(Address);
+        Status = "Downloaded wordlists!";
     }
 }

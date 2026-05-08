@@ -293,6 +293,8 @@ type ReviewSchedule(path: string) =
             if card.BumpKey.IsSome then
                 yield this.Bump(card)
         }
+        |> Seq.toArray
+        |> Array.toSeq
 
     member this.Promote (card: Card) : ScheduleResult seq =
         seq {
@@ -300,3 +302,5 @@ type ReviewSchedule(path: string) =
             if card.BumpKey.IsSome then
                 yield this.Bump(card)
         }
+        |> Seq.toArray
+        |> Array.toSeq

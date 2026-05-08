@@ -15,7 +15,7 @@ module Sync =
 
         while read < length do
             let incoming = socket.Receive(buffer, read, length - read, SocketFlags.None)
-            if incoming = 0 then failwith "Socket closed during receive"
+            if incoming = 0 then failwithf "Socket closed during receive (%i/%i bytes)" read length
             read <- read + incoming
         let hash = Convert.ToHexString(SHA256.HashData(buffer))
         printfn "Finished receiving %i bytes (%s)" length hash
@@ -27,7 +27,7 @@ module Sync =
         printfn "Sending %i bytes (%s)" data.Length hash
         while sent < data.Length do
             let outgoing = socket.Send(data, sent, data.Length - sent, SocketFlags.None)
-            if outgoing = 0 then failwith "Socket closed during send"
+            if outgoing = 0 then failwithf "Socket closed during send (%i/%i bytes)" sent data.Length
             sent <- sent + outgoing
 
     let PORT = 1992
@@ -95,16 +95,20 @@ module Sync =
                         client.ReceiveTimeout <- 5000
                         client.ReceiveBufferSize <- 1_000_000
 
-                        Console.WriteLine("Syncing schedule..")
-                        downstream_schedule_sync(client, schedule)
-                        upstream_schedule_sync(client, schedule)
-                        Console.WriteLine("Sending wordlists..")
-                        upstream_wordlist_sync(client, words)
+                        let request = receive_exact(client, 1)
+                        if request.[0] = 127uy then
+                            Console.WriteLine("Syncing schedule..")
+                            downstream_schedule_sync(client, schedule)
+                            upstream_schedule_sync(client, schedule)
+                        elif request.[0] = 128uy then
+                            Console.WriteLine("Sending wordlists..")
+                            upstream_wordlist_sync(client, words)
+                        else Console.WriteLine("Unknown sync request");
                         Console.WriteLine("Sync complete!")
-                        client.Shutdown(SocketShutdown.Both)
-                        client.Close()
+                        Threading.Thread.Sleep(1000)
+                        client.Disconnect(false)
                     with _ ->
-                        client.Close(1000)
+                        client.Dispose()
                         reraise()
 
             with err ->
@@ -114,7 +118,7 @@ module Sync =
             listener.Close()
             listener.Dispose()
 
-    let connect(schedule: ReviewSchedule, words: WordBank, address: string) : unit =
+    let connect_schedule(schedule: ReviewSchedule, address: string) : unit =
         try
             use socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             Console.WriteLine("Connecting..")
@@ -127,15 +131,39 @@ module Sync =
                 socket.ReceiveBufferSize <- 1_000_000
 
                 Console.WriteLine("Syncing schedule..")
+                send(socket, [|127uy|])
                 upstream_schedule_sync(socket, schedule)
                 downstream_schedule_sync(socket, schedule)
-                Console.WriteLine("Downloading wordlists..")
+                Console.WriteLine("Sync complete!")
+                Threading.Thread.Sleep(1000)
+                socket.Disconnect(false)
+            with _ ->
+                socket.Dispose()
+                reraise()
+        with err ->
+            Console.WriteLine(err.Message)
+            Console.WriteLine(err.StackTrace)
+
+    let connect_wordlists(words: WordBank, address: string) : unit =
+        try
+            use socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+            Console.WriteLine("Connecting..")
+            socket.Connect(address, PORT)
+            Console.WriteLine("Connected!")
+            try
+                socket.SendTimeout <- 5000
+                socket.SendBufferSize <- 1_000_000
+                socket.ReceiveTimeout <- 5000
+                socket.ReceiveBufferSize <- 1_000_000
+
+                Console.WriteLine("Requesting wordlists..")
+                send(socket, [|128uy|])
                 downstream_wordlist_sync(socket, words)
                 Console.WriteLine("Sync complete!")
-                socket.Shutdown(SocketShutdown.Both)
-                socket.Close()
+                Threading.Thread.Sleep(1000)
+                socket.Disconnect(false)
             with _ ->
-                socket.Close()
+                socket.Dispose()
                 reraise()
         with err ->
             Console.WriteLine(err.Message)

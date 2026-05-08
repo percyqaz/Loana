@@ -27,6 +27,7 @@ public abstract partial class IStudyPageModel : ObservableObject
         else
         {
             ShowBack = false;
+            CurrentCard = null;
         }
     }
 

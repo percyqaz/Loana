@@ -72,7 +72,7 @@ while waiting_acceptance do
             Console.Clear()
             Console.Write("Enter address (blank to host): ")
             let address = Console.ReadLine()
-            if address <> "" then Sync.connect(scheduler, words, address)
+            if address <> "" then Sync.connect_schedule(scheduler, address)
             else Sync.host(scheduler, words)
             Console.ReadLine() |> ignore
         | ConsoleKey.Escape ->

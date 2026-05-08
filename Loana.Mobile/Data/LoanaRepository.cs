@@ -25,10 +25,15 @@ public class LoanaRepository
         _vocab = new VocabDeck(_scheduler, _words);
     }
 
-    public void Resync(string address)
+    public void DownloadWords(string address)
     {
-        Sync.connect(_scheduler, _words, address);
+        Sync.connect_wordlists(_words, address);
         _logger.LogInformation("Loaded {WordCount} word entries", _words.Entries.Count);
+    }
+
+    public void SyncProgress(string address)
+    {
+        Sync.connect_schedule(_scheduler, address);
     }
 
     public async Task<List<VocabListGroup>> ListAsync()

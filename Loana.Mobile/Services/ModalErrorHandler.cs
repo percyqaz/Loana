@@ -5,7 +5,7 @@ namespace Loana.Mobile.Services
     /// </summary>
     public class ModalErrorHandler : IErrorHandler
     {
-        SemaphoreSlim _semaphore = new(1, 1);
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
 
         /// <summary>
         /// Handle error in UI.
@@ -16,7 +16,7 @@ namespace Loana.Mobile.Services
             DisplayAlertAsync(ex).FireAndForgetSafeAsync();
         }
 
-        async Task DisplayAlertAsync(Exception ex)
+        private async Task DisplayAlertAsync(Exception ex)
         {
             try
             {

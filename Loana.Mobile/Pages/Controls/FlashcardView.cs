@@ -211,8 +211,8 @@ public class FlashcardView : ContentView
         };
         var gender = card.Type switch
         {
-            CardType.RecogniseDE x => null,
-            CardType.RecallDE x => null,
+            CardType.RecogniseDE => null,
+            CardType.RecallDE => null,
             CardType.RecogniseArticleDE x => x.n.Guts.Gender,
             CardType.RecallArticleDE x => x.n.Guts.Gender,
             _ => throw new InvalidOperationException()
