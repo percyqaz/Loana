@@ -1,8 +1,8 @@
 ﻿namespace Loana.Mobile.Pages
 {
-    public partial class MainPage : ContentPage
+    public partial class SyncPage : ContentPage
     {
-        public MainPage(MainPageModel model)
+        public SyncPage(SyncPageModel model)
         {
             InitializeComponent();
             BindingContext = model;

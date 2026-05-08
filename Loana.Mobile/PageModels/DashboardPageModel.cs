@@ -23,13 +23,6 @@ public partial class DashboardPageModel(LoanaRepository loanaRepository) : Obser
     private Task Appearing()
         => LoadData();
 
-    [RelayCommand]
-    private async Task Reset()
-    {
-        _loanaRepository.Resync();
-        await LoadData();
-    }
-
     [ObservableProperty]
     private bool _isRefreshing;
 

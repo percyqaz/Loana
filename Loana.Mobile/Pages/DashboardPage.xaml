@@ -25,10 +25,6 @@
         </Style>
     </ContentPage.Resources>
 
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Sync" Command="{Binding ResetCommand}" />
-    </ContentPage.ToolbarItems>
-
     <Grid RowDefinitions="*,Auto">
         <pullToRefresh:SfPullToRefresh Grid.Row="0" IsRefreshing="{Binding IsRefreshing}" RefreshCommand="{Binding RefreshCommand}">
             <pullToRefresh:SfPullToRefresh.PullableContent>

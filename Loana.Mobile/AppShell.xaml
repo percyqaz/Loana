@@ -17,6 +17,6 @@
     <ShellContent
         Title="Sync"
         Icon="{StaticResource IconMeta}"
-        ContentTemplate="{DataTemplate pages:MainPage}"
+        ContentTemplate="{DataTemplate pages:SyncPage}"
         Route="manage" />
 </Shell>
