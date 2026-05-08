@@ -21,7 +21,7 @@
         <Style TargetType="Label">
             <Setter Property="TextColor" Value="White" />
             <Setter Property="BackgroundColor" Value="#202020" />
-            <Setter Property="FontSize" Value="{OnIdiom 16}" />
+            <Setter Property="FontSize" Value="{OnIdiom 14}" />
         </Style>
     </ContentPage.Resources>
 
