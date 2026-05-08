@@ -2,9 +2,9 @@ using Loana.Language;
 
 namespace Loana.Mobile.Pages.Controls;
 
-public class FlashcardViewNew : ContentView
+public class FlashcardView : ContentView
 {
-    public FlashcardViewNew()
+    public FlashcardView()
     { }
 
     public bool Revealed
@@ -17,14 +17,14 @@ public class FlashcardViewNew : ContentView
         BindableProperty.Create(
             propertyName: nameof(Revealed),
             returnType: typeof(bool),
-            declaringType: typeof(FlashcardViewNew),
+            declaringType: typeof(FlashcardView),
             defaultValue: false,
             defaultBindingMode: BindingMode.OneWay,
             propertyChanged: OnRevealedChanged);
 
     private static void OnRevealedChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        ((FlashcardViewNew)bindable).RedrawContent();
+        ((FlashcardView)bindable).RedrawContent();
         Console.WriteLine("Hello");
     }
 
