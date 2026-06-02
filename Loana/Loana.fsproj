@@ -23,7 +23,7 @@
     <Compile Include="Data\Words.fs" />
     <Compile Include="Data\Verbs.fs" />
     <Compile Include="Data\ReviewSchedule.fs" />
-    <Compile Include="data\Sync.fs" />
+    <Compile Include="Data\Sync.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\VocabDeck.fs" />
     <Compile Include="Verbs\VerbCards.fs" />
