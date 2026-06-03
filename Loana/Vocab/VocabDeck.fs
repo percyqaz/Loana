@@ -11,7 +11,7 @@ type Chore =
 type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     // todo: should not be here
-    static let mutable study_size_multiplier = 5
+    static let mutable study_size_multiplier = 3
 
     member this.Scheduler = scheduler
 
@@ -182,12 +182,16 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.choose (fun c ->
             match this.Scheduler.Get c.Key with
             | ValueSome data ->
-                let dl = data.DueLevel now
-                if dl >= 0 then Some (c, dl) else None
+                let due_level = data.DueLevel now
+                if due_level >= 0 then Some (c, due_level) else None
             | ValueNone -> None
         )
         |> Seq.sortByDescending snd
         |> Seq.map fst
+        |> Seq.toArray
+        |> fun x ->
+            let hidden = Set.ofSeq (Array.choose _.BumpKey x)
+            x |> Array.filter (fun c -> not (hidden.Contains c.Key))
 
     member inline this.AheadReviewCards(cards: Card seq, now: int64) =
         cards

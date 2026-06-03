@@ -35,11 +35,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
         |> Array.ofSeq
 
     let FILTERS = [|
-        id, "None";
-        (fun cards ->
-            let easier_cards = cards |> Seq.choose(_.BumpKey) |> Set.ofSeq
-            cards |> Seq.filter(fun x -> not (easier_cards.Contains(x.Key)))
-        ), "Bump-first"
+        id, "None"
         (fun cards -> vocab.FilterByTier(cards, 1, 1)), "New words only"
         (fun cards -> vocab.FilterByTier(cards, 2, 999)), "Unlocks only"
     |]
