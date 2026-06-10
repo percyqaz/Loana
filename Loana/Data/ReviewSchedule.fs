@@ -44,6 +44,17 @@ type ReviewData =
             Color.FromArgb(0xF0_002000)
         |]
     static member LevelColors = level_colors
+    
+    static member BaseInterval(level: int) =
+        match level with
+        | 1 -> TimeSpan.SecondsPerHour * 6L
+        | 2 -> TimeSpan.SecondsPerDay * 2L
+        | 3 -> TimeSpan.SecondsPerDay * 7L
+        | 4 -> TimeSpan.SecondsPerDay * 15L
+        | 5 -> TimeSpan.SecondsPerDay * 30L
+        | 6 -> TimeSpan.SecondsPerDay * 50L
+        | 7 -> TimeSpan.SecondsPerDay * 90L
+        | _ -> failwithf "level %i out of range" level
 
     static member private GetNextInterval(level: int, difficulty: int, current_interval: int64, overdue_by: int64) : int64 =
 
@@ -54,17 +65,7 @@ type ReviewData =
 
         let tenths = 11 - difficulty
         let fuzz = int64 <| Random().Next(int TimeSpan.SecondsPerMinute * 30)
-        let base_interval =
-            match level with
-            | 1 -> TimeSpan.SecondsPerHour * 6L
-            | 2 -> TimeSpan.SecondsPerHour * 20L
-            | 3 -> TimeSpan.SecondsPerDay * 3L
-            | 4 -> TimeSpan.SecondsPerDay * 7L
-            | 5 -> TimeSpan.SecondsPerDay * 14L
-            | 6 -> TimeSpan.SecondsPerDay * 28L
-            | 7 -> TimeSpan.SecondsPerDay * 90L
-            | _ -> failwithf "level %i out of range" level
-        base_interval * int64 tenths / 10L - fuzz + max 0L overdue_by
+        ReviewData.BaseInterval level * int64 tenths / 10L - fuzz + max 0L overdue_by
 
     static member Level1(now: int64, difficulty: int) : ReviewData =
         let difficulty = difficulty |> max 1 |> min 10
@@ -104,7 +105,7 @@ type ReviewData =
         }
 
     member this.Demote(now: int64) : ReviewData =
-        let level = this.Level - 1 |> max 1 |> min 5
+        let level = this.Level - 1 |> max 1 |> min 4
         let difficulty = this.Difficulty + 3 |> min 10
         {
             Reviews = this.Reviews + 1
