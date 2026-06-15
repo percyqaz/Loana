@@ -25,17 +25,17 @@ public partial class ReviewPageModel : IStudyPageModel
         NextCard();
     }
 
-    public override async Task SwipedUp()
-    {
-        if (CurrentCard is null || !ShowBack) return;
-        _loanaRepository.Scheduler.Forget(CurrentCard);
-        NextCard();
-    }
-
     public override async Task SwipedRight()
     {
         if (CurrentCard is null || !ShowBack) return;
         _loanaRepository.Scheduler.Demote(CurrentCard);
+        NextCard();
+    }
+
+    public override async Task SwipedUp()
+    {
+        if (CurrentCard is null || !ShowBack) return;
+        _loanaRepository.Scheduler.Forget(CurrentCard);
         NextCard();
     }
 }

@@ -25,17 +25,17 @@ public class LearnPageModel : IStudyPageModel
         NextCard();
     }
 
-    public override async Task SwipedUp()
-    {
-        if (CurrentCard is null || !ShowBack) return;
-        _loanaRepository.Scheduler.Bury(CurrentCard.Key);
-        NextCard();
-    }
-
     public override async Task SwipedRight()
     {
         if (CurrentCard is null || !ShowBack) return;
         Cards.Insert(Math.Min(Cards.Count, 4), CurrentCard);
+        NextCard();
+    }
+
+    public override async Task SwipedUp()
+    {
+        if (CurrentCard is null || !ShowBack) return;
+        _loanaRepository.Scheduler.Bury(CurrentCard.Key);
         NextCard();
     }
 }
