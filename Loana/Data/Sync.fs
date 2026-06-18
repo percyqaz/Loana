@@ -52,13 +52,13 @@ module Sync =
 
     let private downstream_schedule_sync(socket: Socket, schedule: ReviewSchedule) =
         let schedule_bytes = receive_payload(socket, SCHEDULE_HEADER)
-        let schedule_data = ReviewScheduleFile.FromStream(new MemoryStream(schedule_bytes))
+        let schedule_data = ReviewScheduleFile.ReadFromStream(new MemoryStream(schedule_bytes))
         let updates = schedule.SyncWith(schedule_data)
         Console.WriteLine(sprintf "Updated %i entries during sync" updates)
 
     let private upstream_schedule_sync(socket: Socket, schedule: ReviewSchedule) =
         let our_schedule_stream = new MemoryStream()
-        ReviewScheduleFile.WriteStream(schedule.Data, our_schedule_stream)
+        ReviewScheduleFile.WriteToStream(schedule.Data, our_schedule_stream)
         let our_schedule_bytes = our_schedule_stream.ToArray()
         our_schedule_stream.Dispose()
         send_payload(socket, SCHEDULE_HEADER, our_schedule_bytes)
@@ -78,38 +78,52 @@ module Sync =
 
     let host(schedule: ReviewSchedule, words: WordBank) : unit =
         let listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+
+        let start_listening() : unit =
+            listener.Bind(new IPEndPoint(IPAddress.Any, PORT))
+            Console.WriteLine("Listening for a connection..")
+            listener.Listen()
+
+        let wait_connection_or_timeout(seconds: float) : Socket option =
+            if not (listener.Poll(TimeSpan.FromSeconds(seconds), SelectMode.SelectRead)) then
+                Console.WriteLine("Sync cancelled!")
+                None
+            else
+                let client = listener.Accept()
+                client.SendTimeout <- 5000
+                client.SendBufferSize <- 1_000_000
+                client.ReceiveTimeout <- 5000
+                client.ReceiveBufferSize <- 1_000_000
+                Console.WriteLine("Got a connection!")
+                Some client
+
+        let perform_sync(client: Socket) : unit =
+            try
+                let request = receive_exact(client, 1)
+                if request.[0] = 127uy then
+                    Console.WriteLine("Syncing schedule..")
+                    downstream_schedule_sync(client, schedule)
+                    upstream_schedule_sync(client, schedule)
+
+                elif request.[0] = 128uy then
+                    Console.WriteLine("Sending wordlists..")
+                    upstream_wordlist_sync(client, words)
+
+                else Console.WriteLine("Unknown sync request")
+
+                Console.WriteLine("Sync complete!")
+                Threading.Thread.Sleep(1000)
+                client.Disconnect(false)
+            with _ ->
+                client.Dispose()
+                reraise()
+
         try
             try
-                listener.Bind(new IPEndPoint(IPAddress.Any, PORT))
-                Console.WriteLine("Listening for a connection..")
-                listener.Listen()
-
-                if not (listener.Poll(TimeSpan.FromSeconds(10.0), SelectMode.SelectRead)) then
-                    Console.WriteLine("Sync cancelled!")
-                else
-                    let client = listener.Accept()
-                    Console.WriteLine("Got a connection!")
-                    try
-                        client.SendTimeout <- 5000
-                        client.SendBufferSize <- 1_000_000
-                        client.ReceiveTimeout <- 5000
-                        client.ReceiveBufferSize <- 1_000_000
-
-                        let request = receive_exact(client, 1)
-                        if request.[0] = 127uy then
-                            Console.WriteLine("Syncing schedule..")
-                            downstream_schedule_sync(client, schedule)
-                            upstream_schedule_sync(client, schedule)
-                        elif request.[0] = 128uy then
-                            Console.WriteLine("Sending wordlists..")
-                            upstream_wordlist_sync(client, words)
-                        else Console.WriteLine("Unknown sync request");
-                        Console.WriteLine("Sync complete!")
-                        Threading.Thread.Sleep(1000)
-                        client.Disconnect(false)
-                    with _ ->
-                        client.Dispose()
-                        reraise()
+                start_listening()
+                match wait_connection_or_timeout(10.0) with
+                | None -> ()
+                | Some client -> perform_sync(client)
             with err ->
                 Console.WriteLine(err.Message)
                 Console.WriteLine(err.StackTrace)
@@ -117,22 +131,27 @@ module Sync =
             listener.Close()
             listener.Dispose()
 
+    let private connect(address: string) : Socket =
+        let socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+        Console.WriteLine("Connecting..")
+        socket.Connect(address, PORT)
+        Console.WriteLine("Connected!")
+
+        socket.SendTimeout <- 5000
+        socket.SendBufferSize <- 1_000_000
+        socket.ReceiveTimeout <- 5000
+        socket.ReceiveBufferSize <- 1_000_000
+        socket
+
     let connect_schedule(schedule: ReviewSchedule, address: string) : unit =
         try
-            use socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
-            Console.WriteLine("Connecting..")
-            socket.Connect(address, PORT)
-            Console.WriteLine("Connected!")
+            use socket = connect(address)
             try
-                socket.SendTimeout <- 5000
-                socket.SendBufferSize <- 1_000_000
-                socket.ReceiveTimeout <- 5000
-                socket.ReceiveBufferSize <- 1_000_000
-
                 Console.WriteLine("Syncing schedule..")
                 send(socket, [|127uy|])
                 upstream_schedule_sync(socket, schedule)
                 downstream_schedule_sync(socket, schedule)
+
                 Console.WriteLine("Sync complete!")
                 Threading.Thread.Sleep(1000)
                 socket.Disconnect(false)
@@ -145,19 +164,12 @@ module Sync =
 
     let connect_wordlists(words: WordBank, address: string) : unit =
         try
-            use socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
-            Console.WriteLine("Connecting..")
-            socket.Connect(address, PORT)
-            Console.WriteLine("Connected!")
+            use socket = connect(address)
             try
-                socket.SendTimeout <- 5000
-                socket.SendBufferSize <- 1_000_000
-                socket.ReceiveTimeout <- 5000
-                socket.ReceiveBufferSize <- 1_000_000
-
                 Console.WriteLine("Requesting wordlists..")
                 send(socket, [|128uy|])
                 downstream_wordlist_sync(socket, words)
+
                 Console.WriteLine("Sync complete!")
                 Threading.Thread.Sleep(1000)
                 socket.Disconnect(false)

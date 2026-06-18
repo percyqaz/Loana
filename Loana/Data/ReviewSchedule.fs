@@ -44,7 +44,7 @@ type ReviewData =
             Color.FromArgb(0xF0_002000)
         |]
     static member LevelColors = level_colors
-    
+
     static member BaseInterval(level: int) =
         match level with
         | 1 -> TimeSpan.SecondsPerHour * 6L
@@ -150,63 +150,64 @@ type ReviewScheduleFile(path: string) =
 
     static let VERSION = 2
 
-    static member private ReadCardEntry(version: int, br: BinaryReader) : string * ReviewData =
-        if version <> VERSION then failwithf "Unsupported version '%i'" version
-        let id = br.ReadString()
-        let data : ReviewData =
-            {
-                Reviews = br.ReadInt32()
-                Level = br.ReadByte() |> int
-                Difficulty = br.ReadByte() |> int
-                LastReviewed = br.ReadInt64()
-                Interval = br.ReadInt64()
-            }
-        id, data
-
-    static member private WriteCardEntry(id: string, data: ReviewData, bw: BinaryWriter) : unit =
-        bw.Write id
-        bw.Write data.Reviews
-        bw.Write (byte data.Level)
-        bw.Write (byte data.Difficulty)
-        bw.Write data.LastReviewed
-        bw.Write data.Interval
-
-    static member FromStream(stream: Stream) : Dictionary<string, ReviewData> =
+    static member ReadFromStream(stream: Stream) : Dictionary<string, ReviewData> =
         use br = new BinaryReader(stream, Encoding.UTF8, leaveOpen = false)
 
         let version = br.ReadInt32()
-        let count = br.ReadInt32()
-        try
-            let output = Dictionary<string, ReviewData>()
-            for _ = 1 to count do
-                let key, value = ReviewScheduleFile.ReadCardEntry(version, br)
-                output.Add(key, value)
-            output
-        with
-        | :? EndOfStreamException -> reraise()
+        if version <> VERSION then failwithf "Unsupported version '%i'" version
 
-    member this.Load() : Dictionary<string, ReviewData> =
+        let entry_count = br.ReadInt32()
+        let output = Dictionary<string, ReviewData>(entry_count)
+
+        let read_entry() : unit =
+            let id = br.ReadString()
+            let data : ReviewData =
+                {
+                    Reviews = br.ReadInt32()
+                    Level = br.ReadByte() |> int
+                    Difficulty = br.ReadByte() |> int
+                    LastReviewed = br.ReadInt64()
+                    Interval = br.ReadInt64()
+                }
+            output.Add(id, data)
+
+        for _ = 1 to entry_count do
+            read_entry()
+
+        output
+
+    member this.ReadFromFile() : Dictionary<string, ReviewData> =
         let stream = File.Open(path, FileMode.OpenOrCreate)
 
         if stream.Position = stream.Length then
             printfn "Schedule file '%s' is empty" path
             Dictionary()
         else
-            ReviewScheduleFile.FromStream(stream)
+            ReviewScheduleFile.ReadFromStream(stream)
 
-    static member WriteStream(data: IReadOnlyDictionary<string, ReviewData>, stream: Stream) : unit =
+    static member WriteToStream(entries: IReadOnlyDictionary<string, ReviewData>, stream: Stream) : unit =
         let bw = new BinaryWriter(stream, Encoding.UTF8, leaveOpen = true)
         bw.Write(VERSION)
-        bw.Write(data.Count)
-        for kvp in data do
-            ReviewScheduleFile.WriteCardEntry(kvp.Key, kvp.Value, bw)
+        bw.Write(entries.Count)
+
+        let write_entry(id: string, data: ReviewData) : unit =
+            bw.Write id
+            bw.Write data.Reviews
+            bw.Write (byte data.Level)
+            bw.Write (byte data.Difficulty)
+            bw.Write data.LastReviewed
+            bw.Write data.Interval
+
+        for kvp in entries do
+            write_entry(kvp.Key, kvp.Value)
+
         bw.Dispose()
 
-    member this.Write(data: IReadOnlyDictionary<string, ReviewData>) : unit =
+    member this.WriteToFile(data: IReadOnlyDictionary<string, ReviewData>) : unit =
         let bak_path = path + ".bak"
         let temp_path = path + ".tmp"
         let stream = File.Open(temp_path, FileMode.Create)
-        ReviewScheduleFile.WriteStream(data, stream)
+        ReviewScheduleFile.WriteToStream(data, stream)
         stream.Dispose()
 
         try
@@ -219,20 +220,20 @@ type ReviewScheduleFile(path: string) =
 type ReviewSchedule(path: string) =
 
     let db = ReviewScheduleFile(path)
-    let mem = db.Load()
+    let schedule_data = db.ReadFromFile()
 
     let mutable buried: Set<string> = Set.empty
 
     member this.Save() =
-        db.Write(mem)
+        db.WriteToFile(schedule_data)
 
     member this.SaveDebounced() =
-        // todo: can save or not depending on how recently it was saved
-        // errors can be ignored
+        // todo: save if not saved in 30s
+        // todo: ignore errors
         this.Save()
 
     member this.Get(key: string) : ReviewData voption =
-        match mem.TryGetValue(key) with
+        match schedule_data.TryGetValue(key) with
         | true, data -> ValueSome data
         | false, _ -> ValueNone
 
@@ -243,7 +244,7 @@ type ReviewSchedule(path: string) =
 
     member this.Schedule(key: string, data: ReviewData, now: int64) : ScheduleResult =
         let old_level = this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
-        mem.[key] <- data
+        schedule_data.[key] <- data
         this.SaveDebounced()
         {
             Key = key
@@ -257,25 +258,25 @@ type ReviewSchedule(path: string) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         this.Schedule(key, f <| this.Get(key).Value <| now, now)
 
-    member private this.Bump(meta: Card) : ScheduleResult =
-        this.Reschedule(meta.BumpKey.Value, fun data now -> data.Bump(now, this.Get(meta.Key).Value.Interval))
-
-    member this.Data = mem.AsReadOnly()
+    member this.Data = schedule_data.AsReadOnly()
 
     member this.SyncWith(other_data: IReadOnlyDictionary<string, ReviewData>) : int =
         let mutable updates = 0
         for key in other_data.Keys do
-            if mem.ContainsKey(key) then
-                let existing = mem.[key]
+            if schedule_data.ContainsKey(key) then
+                let existing = schedule_data.[key]
                 let incoming = other_data.[key]
                 if incoming.LastReviewed > existing.LastReviewed then
-                    mem.[key] <- incoming
+                    schedule_data.[key] <- incoming
                     updates <- updates + 1
             else
-                mem.[key] <- other_data.[key]
+                schedule_data.[key] <- other_data.[key]
                 updates <- updates + 1
         this.Save()
         updates
+
+    member private this.Bump(card: Card) : ScheduleResult =
+        this.Reschedule(card.BumpKey.Value, fun data now -> data.Bump(now, this.Get(card.Key).Value.Interval))
 
     member this.Learn (card: Card) : ScheduleResult =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
