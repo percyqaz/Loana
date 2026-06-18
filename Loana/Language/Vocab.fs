@@ -4,10 +4,10 @@ open System
 open System.Drawing
 open System.Text.RegularExpressions
 
-module Key =
+module AsciiIdentifier =
 
-    let of_german (text: string) =
-        text
+    let from_deutsch (deutsch: string) : string =
+        deutsch
             .Replace("ö", "oe")
             .Replace("ä", "ae")
             .Replace("ü", "ue")
@@ -16,9 +16,9 @@ module Key =
             .Replace(" ", "_")
 
 type Knowledge<'T> =
-    | ToBeDetermined
-    | Nothing
-    | Something of 'T
+    | Unknown
+    | KnownNothing
+    | KnownValue of 'T
 
 [<RequireQualifiedAccess>]
 type Gender =
@@ -27,12 +27,20 @@ type Gender =
     | Neuter
     | Plural
 
-    override this.ToString() =
+    override this.ToString() : string =
         match this with
         | Masculine -> "m"
         | Feminine -> "f"
         | Neuter -> "n"
         | Plural -> "p"
+
+    static member FromString(value: string) : Gender =
+        match value with
+        | "m" -> Masculine
+        | "f" -> Feminine
+        | "n" -> Neuter
+        | "p" -> Plural
+        | _ -> failwithf "could not parse gender from '%s'" value
 
     member this.Color : Color =
         match this with
@@ -41,14 +49,6 @@ type Gender =
         | Feminine -> Color.FromArgb(0xFF_E090C0)
         | Plural -> Color.FromArgb(0xFF_E0E090)
 
-    static member Parse(string: string) : Gender =
-        match string with
-        | "m" -> Masculine
-        | "f" -> Feminine
-        | "n" -> Neuter
-        | "p" -> Plural
-        | _ -> failwithf "could not parse gender from '%s'" string
-
 [<RequireQualifiedAccess>]
 type Case =
     | Nominative
@@ -56,7 +56,7 @@ type Case =
     | Dative
     | Genitive
 
-    override this.ToString() =
+    override this.ToString() : string =
         match this with
         | Nominative -> "nom"
         | Accusative -> "acc"
@@ -70,7 +70,7 @@ type Case =
         | Dative -> Color.DarkMagenta
         | Genitive -> Color.Gold
 
-    static member LIST =
+    static member LIST : Case list =
         [
             Nominative
             Accusative
@@ -85,7 +85,7 @@ type Person =
     | Third of Gender
     | Formal
 
-    override this.ToString() =
+    override this.ToString() : string =
         match this with
         | First false -> "1"
         | First true -> "1p"
@@ -94,7 +94,7 @@ type Person =
         | Third g -> "3" + g.ToString()
         | Formal -> "F"
 
-    static member LIST =
+    static member LIST : Person list =
         [
             First false
             First true
@@ -117,12 +117,15 @@ type Annotation =
         | Some note -> sprintf "%s [%s]" this.Text note
         | None -> this.Text
 
-    static member Parse(s: string) =
-        let m = Regex.Match(s, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
-        let note = match m.Groups.[3].Value with "" -> None | s -> Some s
-        match m.Groups.[1].Value with
-        | "" -> failwithf "Parsing '%s' as an annotation failed" s
-        | text -> { Text = text; Note = note }
+    static member FromString(value: string) =
+        let regex_match = Regex.Match(value, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
+        let note = regex_match.Groups.[3].Value
+        let text = regex_match.Groups.[1].Value
+        
+        let optional_note = if note = "" then None else Some note
+        if text = "" then failwithf "Parsing '%s' as an annotation failed" value
+        
+        { Text = text; Note = optional_note }
 
 type Vocab =
     {
@@ -130,21 +133,36 @@ type Vocab =
         English: Annotation
         EnglishAlternatives: Annotation list
     }
-    override this.ToString() =
-        sprintf "%s = %s" this.Deutsch this.EnglishKey
+    override this.ToString() : string =
+        sprintf "%s = %s" this.Deutsch this.EnglishAsciiIdentifier
 
-    member this.Key = Key.of_german this.Deutsch
-    member this.EnglishKey = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
+    static member FromString(value: string) : Vocab =
+        let split_by_equals = value.Split("=", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+        if split_by_equals.Length < 2 then failwithf "Parsing '%s' as vocab failed: no '=' in provided value" value
+        
+        let deutsch = split_by_equals.[0]
+        
+        let english_alternatives = split_by_equals.[1].Split(",", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+        assert(english_alternatives.Length >= 1)
+        
+        {
+            Deutsch = deutsch
+            English =
+                english_alternatives
+                |> Seq.head
+                |> Annotation.FromString
+            EnglishAlternatives =
+                english_alternatives
+                |> Seq.tail
+                |> Seq.map Annotation.FromString
+                |> List.ofSeq
+        }
 
-    member this.DetectVerb = this.English.Text.StartsWith("to ") && this.EnglishAlternatives |> List.forall _.Text.StartsWith("to ")
-    member this.DetectNoun = this.Deutsch.Length > 0 && Char.IsUpper(this.Deutsch.[0])
+    member this.DeutschAsciiIdentifier : string = AsciiIdentifier.from_deutsch this.Deutsch
+    member this.EnglishAsciiIdentifier : string = (this.English :: this.EnglishAlternatives) |> Seq.map _.ToString() |> String.concat ", "
 
-    static member Parse(s: string) =
-        let split = s.Split("=", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
-        if split.Length < 2 then failwithf "Parsing '%s' as vocab failed" s
-        let alts = split.[1].Split(",", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
-        if alts.Length < 1 then failwithf "should be unreachable"
-        { Deutsch = split.[0]; English = Annotation.Parse alts.[0]; EnglishAlternatives = Seq.skip 1 alts |> Seq.map Annotation.Parse |> List.ofSeq }
+    member this.LooksLikeAVerb : bool = this.English.Text.StartsWith("to ") && this.EnglishAlternatives |> List.forall _.Text.StartsWith("to ")
+    member this.LooksLikeANoun : bool = this.Deutsch.Length > 0 && Char.IsUpper(this.Deutsch.[0])
 
 type NounGuts =
     | Masculine of plural: Knowledge<Vocab>
@@ -152,7 +170,7 @@ type NounGuts =
     | Neuter of plural: Knowledge<Vocab>
     | Plural
 
-    member this.Gender =
+    member this.Gender : Gender =
         match this with
         | Masculine _ -> Gender.Masculine
         | Feminine _ -> Gender.Feminine
@@ -165,58 +183,60 @@ type Noun =
         Guts: NounGuts
     }
 
-    member this.Deutsch = this.Translation.Deutsch
-    member this.English = this.Translation.English
-    member this.EnglishAlternatives = this.Translation.EnglishAlternatives
+    member this.Deutsch : string = this.Translation.Deutsch
+    member this.English : Annotation = this.Translation.English
+    member this.EnglishAlternatives : Annotation list = this.Translation.EnglishAlternatives
 
     member this.Plural : Knowledge<Vocab> =
         match this.Guts with
-        | Plural -> Nothing
+        | Plural -> KnownNothing
         | Masculine plural
         | Feminine plural
         | Neuter plural -> plural
 
     member this.PluralForm : Noun option =
         match this.Plural with
-        | Something plural -> Some { Translation = plural; Guts = Plural }
+        | KnownValue plural -> Some { Translation = plural; Guts = Plural }
         | _ -> None
 
-    member this.KeyWithGender =
-        this.Guts.Gender.ToString() + "_" + Key.of_german this.Deutsch
+    member this.AsciiIdentifierWithGender : string =
+        this.Guts.Gender.ToString() + "_" + AsciiIdentifier.from_deutsch this.Deutsch
 
-    override this.ToString() =
+    override this.ToString() : string =
         match this.Guts with
         | Plural -> sprintf "%O :p" this.Translation
         | Masculine p
         | Feminine p
         | Neuter p ->
             match p with
-            | Something plural -> sprintf "%O :%O plural %O" this.Translation this.Guts.Gender plural
-            | Nothing -> sprintf "%O :%O no_plural" this.Translation this.Guts.Gender
-            | ToBeDetermined -> sprintf "%O :%O" this.Translation this.Guts.Gender
+            | KnownValue plural -> sprintf "%O :%O plural %O" this.Translation this.Guts.Gender plural
+            | KnownNothing -> sprintf "%O :%O no_plural" this.Translation this.Guts.Gender
+            | Unknown -> sprintf "%O :%O" this.Translation this.Guts.Gender
 
 type Adjective =
     {
         Translation: Vocab
     }
 
-    member this.Deutsch = this.Translation.Deutsch
-    member this.English = this.Translation.English
-    member this.EnglishAlternatives = this.Translation.EnglishAlternatives
+    member this.Deutsch : string = this.Translation.Deutsch
+    member this.English : Annotation = this.Translation.English
+    member this.EnglishAlternatives : Annotation list = this.Translation.EnglishAlternatives
 
-    member this.Key = Key.of_german this.Deutsch
+    member this.AsciiIdentifier: string = AsciiIdentifier.from_deutsch this.Deutsch
 
 [<RequireQualifiedAccess>]
-type VerbQuiz =
+type VerbTense =
     | Present
     | SimplePast
     | Imperative
-    override this.ToString() =
+    
+    override this.ToString() : string =
         match this with
         | Present -> "pr"
         | SimplePast -> "pa"
         | Imperative -> "im"
-    static member Parse(value: string) =
+        
+    static member FromString(value: string) : VerbTense =
         match value with
         | "pr" -> Present
         | "pa" -> SimplePast
@@ -228,10 +248,10 @@ type Verb =
         Infinitive: Vocab
         PastParticiple: Knowledge<Vocab>
         Dative: bool
-        Quizzes: VerbQuiz list
+        Tenses: VerbTense list
     }
-    override this.ToString() =
+    override this.ToString() : string =
         match this.PastParticiple with
-        | ToBeDetermined -> this.Infinitive.ToString()
-        | Nothing -> sprintf "%O :%s" this.Infinitive (String.concat " " (this.Quizzes |> List.map _.ToString()))
-        | Something pp -> sprintf "%O :%spp %O" this.Infinitive (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))) pp
+        | Unknown -> this.Infinitive.ToString()
+        | KnownNothing -> sprintf "%O :%s" this.Infinitive (String.concat " " (this.Tenses |> List.map _.ToString()))
+        | KnownValue pp -> sprintf "%O :%spp %O" this.Infinitive (String.concat "" (this.Tenses |> List.map (fun x -> x.ToString() + " "))) pp

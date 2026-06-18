@@ -58,7 +58,7 @@ module VerbDownloader =
         // todo?: prepositions after
 
         Console.WriteLine("Downloading HTML ...")
-        let de_html = download_de_verb_page(Key.of_german verb_base)
+        let de_html = download_de_verb_page(AsciiIdentifier.from_deutsch verb_base)
         Console.WriteLine("Parsing HTML ...")
         let de_present_tense = find_conjugation_list "Indikativ Präsens" de_html
         let de_past_tense = find_conjugation_list "Indikativ Präteritum" de_html
@@ -78,12 +78,12 @@ module VerbDownloader =
             + (match separation with Some s -> " " + s | None -> "")
 
         seq {
-            for q in verb.Quizzes do
+            for q in verb.Tenses do
                 match q with
-                | VerbQuiz.Present ->
+                | VerbTense.Present ->
                     for person in Person.LIST do yield VerbInflection.Present (TensePerson.OfPerson person), de de_present_tense person
-                | VerbQuiz.SimplePast -> for person in Person.LIST do yield VerbInflection.SimplePast (TensePerson.OfPerson person), de de_past_tense person
-                | VerbQuiz.Imperative -> failwith "nyi"
+                | VerbTense.SimplePast -> for person in Person.LIST do yield VerbInflection.SimplePast (TensePerson.OfPerson person), de de_past_tense person
+                | VerbTense.Imperative -> failwith "nyi"
         }
 
     // let extend_verb_legacy(verb: Verb) : Verb =

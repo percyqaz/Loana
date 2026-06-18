@@ -4,8 +4,8 @@ open Loana.Language
 open Loana.Data
 
 type VerbCacheEntry =
-    { Verb: Verb; Quiz: VerbQuiz }
-    member this.Key = sprintf "verb-%O-%s" this.Quiz this.Verb.Infinitive.Key
+    { Verb: Verb; Quiz: VerbTense }
+    member this.Key = sprintf "verb-%O-%s" this.Quiz this.Verb.Infinitive.DeutschAsciiIdentifier
 
 type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
 
@@ -21,7 +21,7 @@ type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
             for word in words.Entries do
                 match word.Item with
                 | Verb v ->
-                    for q in v.Quizzes do
+                    for q in v.Tenses do
                         yield { Verb = v; Quiz = q }
                 | _ -> ()
         }

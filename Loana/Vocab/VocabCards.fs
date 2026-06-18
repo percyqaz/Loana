@@ -6,38 +6,38 @@ type VocabCard =
 
     static member M_Tier1_RecogniseDE(v: Vocab) =
         {
-            Key = $"vocab-recognise-{v.Key}"
+            Key = $"vocab-recognise-{v.DeutschAsciiIdentifier}"
             Type = RecogniseDE v
             Tier = 1
-            ReferenceKey = v.Key
+            ReferenceKey = v.DeutschAsciiIdentifier
             BumpKey = None
         }
 
     static member M_Tier2_RecallDE(v: Vocab) =
         {
-            Key = $"vocab-recall-{v.Key}"
+            Key = $"vocab-recall-{v.DeutschAsciiIdentifier}"
             Type = RecallDE v
             Tier = 2
-            ReferenceKey = v.Key
-            BumpKey = Some $"vocab-recognise-{v.Key}"
+            ReferenceKey = v.DeutschAsciiIdentifier
+            BumpKey = Some $"vocab-recognise-{v.DeutschAsciiIdentifier}"
         }
 
     static member M_Tier3_RecogniseArticleDE(n: Noun) =
         {
-            Key = $"noun-recognise-{n.KeyWithGender}"
+            Key = $"noun-recognise-{n.AsciiIdentifierWithGender}"
             Type = RecogniseArticleDE n
             Tier = 3
-            ReferenceKey = n.Translation.Key
+            ReferenceKey = n.Translation.DeutschAsciiIdentifier
             BumpKey = None
         }
 
     static member M_Tier4_RecallArticleDE(n: Noun) =
         {
-            Key = $"noun-recall-{n.KeyWithGender}"
+            Key = $"noun-recall-{n.AsciiIdentifierWithGender}"
             Type = RecallArticleDE n
             Tier = 4
-            ReferenceKey = n.Translation.Key
-            BumpKey = Some $"noun-recognise-{n.KeyWithGender}"
+            ReferenceKey = n.Translation.DeutschAsciiIdentifier
+            BumpKey = Some $"noun-recognise-{n.AsciiIdentifierWithGender}"
         }
 
     static member M_Tier5_RecognisePluralDE(n: Noun) =

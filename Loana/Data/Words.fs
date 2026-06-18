@@ -20,18 +20,18 @@ module Wordlist =
             match next with
             | "p" | "m" | "f" | "n" ->
                 if gender.IsSome then failwithf "Gender was set twice for noun: %O" vocab
-                gender <- Some (Gender.Parse next)
+                gender <- Some (Gender.FromString next)
             | "no_plural" ->
                 if gender.IsNone then failwithf "'no_plural' must be set after gender for noun: %O" vocab
                 noplural <- true
             | "plural" ->
                 if gender.IsNone then failwithf "plural must be set after gender for noun: %O" vocab
                 if noplural then failwithf "plural conflicts with 'no_plural' for noun: %O" vocab
-                plural <- Some (Vocab.Parse (String.concat " " mtags))
+                plural <- Some (Vocab.FromString (String.concat " " mtags))
                 mtags <- []
             | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next vocab
 
-        let guts_plural = if noplural then Nothing else match plural with Some p -> Something p | None -> ToBeDetermined
+        let guts_plural = if noplural then KnownNothing else match plural with Some p -> KnownValue p | None -> Unknown
         {
             Translation = vocab
             Guts =
@@ -45,8 +45,8 @@ module Wordlist =
 
     let internal parse_verb_inner(vocab: Vocab, tags: string list) : Verb =
         let mutable mtags = tags
-        let mutable quizzes: VerbQuiz list = []
-        let mutable pp: Knowledge<Vocab> = if tags <> [] then Nothing else ToBeDetermined
+        let mutable quizzes: VerbTense list = []
+        let mutable pp: Knowledge<Vocab> = if tags <> [] then KnownNothing else Unknown
         let mutable dative = false
 
         while mtags <> [] do
@@ -54,20 +54,20 @@ module Wordlist =
             mtags <- mtags.Tail
             match next with
             | "pa" | "pr" | "im" ->
-                quizzes <- quizzes @ [VerbQuiz.Parse(next)]
+                quizzes <- quizzes @ [ VerbTense.FromString(next)]
             | "dat" ->
                 if dative then failwith "Dative specified twice"
                 if quizzes <> [] then failwith "Dative must be specified before quizzes"
                 dative <- true
             | "pp" ->
-                pp <- Something (Vocab.Parse (String.concat " " mtags))
+                pp <- KnownValue (Vocab.FromString (String.concat " " mtags))
                 mtags <- []
             | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next vocab
 
         {
             Infinitive = vocab
             PastParticiple = pp
-            Quizzes = quizzes |> List.distinct
+            Tenses = quizzes |> List.distinct
             Dative = dative
         }
 
@@ -80,7 +80,7 @@ module Wordlist =
                 split.[1].Split(" ", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries) |> List.ofArray
             else
                 []
-        let vocab = Vocab.Parse split.[0]
+        let vocab = Vocab.FromString split.[0]
         vocab, tags
 
     let parse_noun : string -> Noun =
@@ -121,7 +121,7 @@ type WordBank(path: string) =
 
     member this.CheckDuplicate(source: Source, line_n: int, vocab: Vocab, item: WordlistItem) : unit =
 
-        let ded_de = vocab.Key
+        let ded_de = vocab.DeutschAsciiIdentifier
         if deduplicate_de.ContainsKey(ded_de) then
             let existing_conflict = deduplicate_de.[ded_de]
             let identical = item = existing_conflict.Item
@@ -134,7 +134,7 @@ type WordBank(path: string) =
         else
             deduplicate_de.Add(ded_de, { SourceFile = source.File; Line = line_n; Item = item })
 
-        let ded_en = vocab.EnglishKey
+        let ded_en = vocab.EnglishAsciiIdentifier
         if deduplicate_en.ContainsKey(ded_en) then
             let existing_conflict = deduplicate_en.[ded_en]
             let identical = item = existing_conflict.Item
@@ -150,18 +150,18 @@ type WordBank(path: string) =
     member this.AddVocab(source: Source, line_n: int, line: string) : unit =
         let v, tags = Wordlist.parse_core line
 
-        if v.DetectVerb then
+        if v.LooksLikeAVerb then
             let verb = Wordlist.parse_verb_inner(v, tags)
             match verb.PastParticiple with
-            | Something pp -> this.CheckDuplicate(source, line_n, pp, Verb verb)
+            | KnownValue pp -> this.CheckDuplicate(source, line_n, pp, Verb verb)
             | _ -> ()
             this.CheckDuplicate(source, line_n, v, Verb verb)
             entries.Add { Item = Verb verb; Source = source }
 
-        elif v.DetectNoun && tags <> [] then
+        elif v.LooksLikeANoun && tags <> [] then
             let noun = Wordlist.parse_noun_inner(v, tags)
             match noun.Plural with
-            | Something plural -> this.CheckDuplicate(source, line_n, plural, Noun noun)
+            | KnownValue plural -> this.CheckDuplicate(source, line_n, plural, Noun noun)
             | _ -> ()
             this.CheckDuplicate(source, line_n, v, Noun noun)
             entries.Add { Item = Noun noun; Source = source }

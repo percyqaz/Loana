@@ -6,9 +6,9 @@ type VerbCard =
 
     static member M_Inflection(v: Verb, i: VerbInflection, inflected_text: string) : Card =
         {
-            Key = $"verb-{v.Infinitive.Key}-{i.ToString()}"
+            Key = $"verb-{v.Infinitive.DeutschAsciiIdentifier}-{i.ToString()}"
             Type = Inflection(v, i, inflected_text)
             Tier = 1
-            ReferenceKey = v.Infinitive.Key
+            ReferenceKey = v.Infinitive.DeutschAsciiIdentifier
             BumpKey = None
         }

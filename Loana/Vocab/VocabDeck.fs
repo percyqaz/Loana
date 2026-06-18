@@ -39,7 +39,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 yield tier_2
 
             match v.PastParticiple with
-            | Something pp ->
+            | KnownValue pp ->
                 let tier_3 = VocabCard.M_Tier3_RecognisePastParticipleDE(pp)
                 let tier_4 = VocabCard.M_Tier4_RecallPastParticipleDE(pp)
                 if this.LevelOf tier_2 >= 4 then
@@ -107,7 +107,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             yield VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
             yield VocabCard.M_Tier2_RecallDE(v.Infinitive)
             match v.PastParticiple with
-            | Something pp ->
+            | KnownValue pp ->
                 yield VocabCard.M_Tier3_RecognisePastParticipleDE(pp)
                 yield VocabCard.M_Tier4_RecallPastParticipleDE(pp)
             | _ -> ()
@@ -159,11 +159,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         seq {
             for word in words.Entries do
                 match word.Item with
-                | Vocab v when v.DetectNoun ->
+                | Vocab v when v.LooksLikeANoun ->
                     let message = sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source.File
                     if this.LevelOf(VocabCard.M_Tier2_RecallDE(v)) >= 4 then yield Chore.urgent message
                     else yield Chore.non_urgent message
-                | Noun n when n.Plural.IsToBeDetermined ->
+                | Noun n when n.Plural.IsUnknown ->
                     let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" n.Deutsch word.Source.File
                     yield Chore.non_urgent message
                 | _ -> ()

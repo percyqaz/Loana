@@ -59,9 +59,9 @@ type VerbInflection =
     
     member this.AsQuiz =
         match this with
-        | Present _ -> VerbQuiz.Present
-        | SimplePast _ -> VerbQuiz.SimplePast
-        | Imperative _ -> VerbQuiz.Imperative
+        | Present _ -> VerbTense.Present
+        | SimplePast _ -> VerbTense.SimplePast
+        | Imperative _ -> VerbTense.Imperative
 
     override this.ToString() =
         match this with

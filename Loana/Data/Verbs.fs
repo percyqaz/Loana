@@ -68,23 +68,23 @@ type VerbBank(path: string) =
     member this.Ensure(verb: Verb) : Map<VerbInflection, string> =
         let mutable inflections = this.Get(verb) |> ValueOption.defaultValue Map.empty
         let mutable missing = false
-        for q in verb.Quizzes do
+        for q in verb.Tenses do
             match q with
-            | VerbQuiz.Present ->
+            | VerbTense.Present ->
                 if
                     not (inflections.ContainsKey(VerbInflection.Present TensePerson.ThirdSingular)
                     || inflections.ContainsKey(VerbInflection.Present TensePerson.FirstSingular))
                 then
                     Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
                     missing <- true
-            | VerbQuiz.SimplePast ->
+            | VerbTense.SimplePast ->
                 if
                     not (inflections.ContainsKey(VerbInflection.SimplePast TensePerson.ThirdSingular)
                     || inflections.ContainsKey(VerbInflection.SimplePast TensePerson.FirstSingular))
                 then
                     Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
                     missing <- true
-            | VerbQuiz.Imperative ->
+            | VerbTense.Imperative ->
                 if
                     not (inflections.ContainsKey(VerbInflection.Imperative ImperativePerson.SecondSingular))
                 then

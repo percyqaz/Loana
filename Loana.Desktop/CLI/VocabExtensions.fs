@@ -20,8 +20,8 @@ type VocabExtensions =
     [<Extension>]
     static member HighlightString(this: Vocab) =
         let color =
-            if this.DetectVerb then Color.FromArgb(0xFF_ffddff)
-            elif this.DetectNoun then Color.FromArgb(0xFF_ddffdd)
+            if this.LooksLikeAVerb then Color.FromArgb(0xFF_ffddff)
+            elif this.LooksLikeANoun then Color.FromArgb(0xFF_ddffdd)
             else Color.White
 
         Console.ColorText(this.Deutsch, color, Color.Transparent) +
@@ -39,29 +39,29 @@ type VocabExtensions =
         | Neuter p ->
             let gender_highlight_string = Console.ColorText(" :" + this.Guts.Gender.ToString(), this.Guts.Gender.Color, Color.Transparent)
             match p with
-            | Something plural ->
+            | KnownValue plural ->
                 this.Translation.HighlightString() +
                 gender_highlight_string +
                 Console.ColorText(" plural ", Gender.Plural.Color, Color.Transparent) +
                 plural.HighlightString()
-            | Nothing ->
+            | KnownNothing ->
                 this.Translation.HighlightString() +
                 gender_highlight_string +
                 Console.ColorText(" no_plural", Gender.Plural.Color, Color.Transparent)
-            | ToBeDetermined ->
+            | Unknown ->
                 this.Translation.HighlightString() +
                 gender_highlight_string
 
     [<Extension>]
     static member HighlightString(this: Verb) =
         match this.PastParticiple with
-        | ToBeDetermined -> this.Infinitive.HighlightString()
-        | Nothing ->
+        | Unknown -> this.Infinitive.HighlightString()
+        | KnownNothing ->
             this.Infinitive.HighlightString() +
-            Console.ColorText(" :" + (String.concat " " (this.Quizzes |> List.map (fun x -> x.ToString()))), Color.FromArgb(0xFF_ffddff), Color.Transparent)
-        | Something pp ->
+            Console.ColorText(" :" + (String.concat " " (this.Tenses |> List.map (fun x -> x.ToString()))), Color.FromArgb(0xFF_ffddff), Color.Transparent)
+        | KnownValue pp ->
             this.Infinitive.HighlightString() +
-            Console.ColorText(" :" + (String.concat "" (this.Quizzes |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Transparent) +
+            Console.ColorText(" :" + (String.concat "" (this.Tenses |> List.map (fun x -> x.ToString() + " "))), Color.FromArgb(0xFF_ffddff), Color.Transparent) +
             Console.ColorText("pp ", Color.FromArgb(0xFF_ffdddd), Color.Transparent) +
             pp.HighlightString()
 

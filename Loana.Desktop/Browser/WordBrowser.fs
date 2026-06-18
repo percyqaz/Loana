@@ -29,7 +29,7 @@ type WordBrowser(words: WordBank) =
                     | WordlistItem.Verb v -> v.Infinitive
                     | WordlistItem.Vocab v -> v
                 t.Deutsch.Contains(query, StringComparison.InvariantCultureIgnoreCase)
-                || t.EnglishKey.Contains(query, StringComparison.InvariantCultureIgnoreCase)
+                || t.EnglishAsciiIdentifier.Contains(query, StringComparison.InvariantCultureIgnoreCase)
             )
             |> ResizeArray
         position <-
@@ -61,9 +61,9 @@ type WordBrowser(words: WordBank) =
                 let tag, tag_color =
                     match result.Item with
                     | Noun _ -> "noun", Color.FromArgb(0xFF_ffddff)
-                    | Vocab v when v.DetectNoun -> "noun?", Color.FromArgb(0xFF_ffddff)
+                    | Vocab v when v.LooksLikeANoun -> "noun?", Color.FromArgb(0xFF_ffddff)
                     | Verb _ -> "verb", Color.FromArgb(0xFF_ddffdd)
-                    | Vocab v when v.DetectVerb -> "verb?", Color.FromArgb(0xFF_ddffdd)
+                    | Vocab v when v.LooksLikeAVerb -> "verb?", Color.FromArgb(0xFF_ddffdd)
                     | Vocab _ -> "word", Color.White
                 let tags_width = tag.Length + 2 + 1 + result.Source.File.Length + 2
 
