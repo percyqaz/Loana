@@ -2,5 +2,4 @@
 **/obj
 **/.vs
 **/.idea
-Loana/config
-/Loana.Mobile/Loana.Mobile.csproj.user
+**/*.user

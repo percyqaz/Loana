@@ -124,27 +124,28 @@ type WordBank(path: string) =
 
     let deduplicate_de = Dictionary<string, DuplicateEntry>()
     let deduplicate_en = Dictionary<string, DuplicateEntry>()
-    
-    let report_duplicate(language: string, source: Source, line_n: int, item: WordlistItem, existing_conflict: DuplicateEntry) : unit =
-        let is_identical = item = existing_conflict.Item
-        if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
-            failwithf "%s %s definition! \n %s (%s:%i)\n %s (%s:%i)"
-                (if is_identical then "Duplicate" else "Conflict with")
-                language
-                (item.ToString()) source.File line_n
-                (existing_conflict.Item.ToString()) existing_conflict.SourceFile existing_conflict.Line
-                
-    let check_language_duplicate(language: string, already_seen: Dictionary<string, DuplicateEntry>, source: Source, line_n: int, ascii_identifier: string, item: WordlistItem) =
-        match already_seen.TryGetValue(ascii_identifier) with
-        | true, existing_conflict -> report_duplicate(language, source, line_n, item, existing_conflict)
-        | false, _ -> already_seen.Add(ascii_identifier, { SourceFile = source.File; Line = line_n; Item = item })
 
-    member this.CheckDuplicate(source: Source, line_n: int, vocab: Vocab, item: WordlistItem) : unit =
+    member private this.CheckDuplicate(source: Source, line_n: int, vocab: Vocab, item: WordlistItem) : unit =
+    
+        let report_duplicate(language: string, existing_conflict: DuplicateEntry) : unit =
+            let is_identical = item = existing_conflict.Item
+            if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
+                failwithf "%s %s definition! \n %s (%s:%i)\n %s (%s:%i)"
+                    (if is_identical then "Duplicate" else "Conflict with")
+                    language
+                    (item.ToString()) source.File line_n
+                    (existing_conflict.Item.ToString()) existing_conflict.SourceFile existing_conflict.Line
+                    
+        let check_language_duplicate(language: string, already_seen: Dictionary<string, _>, ascii_identifier: string) =
+            match already_seen.TryGetValue(ascii_identifier) with
+            | true, existing_conflict -> report_duplicate(language, existing_conflict)
+            | false, _ -> already_seen.Add(ascii_identifier, { SourceFile = source.File; Line = line_n; Item = item })
+            
         let de_ascii_identifier = vocab.DeutschAsciiIdentifier
-        check_language_duplicate("German", deduplicate_de, source, line_n, de_ascii_identifier, item)
+        check_language_duplicate("German", deduplicate_de, de_ascii_identifier)
 
         let en_ascii_identifier = vocab.EnglishAsciiIdentifier
-        check_language_duplicate("English", deduplicate_en, source, line_n, en_ascii_identifier, item)
+        check_language_duplicate("English", deduplicate_en, en_ascii_identifier)
 
     member private this.AddVocab(source: Source, line_n: int, line: string) : unit =
         let v, tags = Wordlist.parse_core line
@@ -171,17 +172,16 @@ type WordBank(path: string) =
 
     member private this.TryAddLine(source: Source, line_n: int, line: string) : Result<unit, string> =
         try
-            if line = "" || line.StartsWith "#" then
-                () // reserved for comments for now
-            this.AddVocab(source, line_n, line)
+            let is_comment = line.StartsWith "#"
+            if line <> "" && not is_comment then
+                this.AddVocab(source, line_n, line)
             Ok()
         with err -> Error err.Message
 
     member this.ReadFile(source: Source, file_path: string) : unit =
         File.ReadAllLines(file_path)
-        |> Seq.where (fun line -> line.Trim() <> "")
-        |> Seq.iteri (fun i line ->
-            match this.TryAddLine(source, i, line) with
+        |> Seq.iteri (fun line_n line ->
+            match this.TryAddLine(source, line_n, line) with
             | Ok() -> ()
             | Error "" -> ()
             | Error reason ->
@@ -237,73 +237,86 @@ type WordBank(path: string) =
     member this.Groups : IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
 
     member this.WriteToDirectory() : unit =
-        Directory.CreateDirectory(path) |> ignore
-        Directory.EnumerateFiles(path)
-        |> Seq.where(fun file -> Path.GetExtension(file).ToLower() = ".wordlist")
-        |> Seq.iter File.Delete
+        let ensure_directory_exists_and_empty() : unit =
+            Directory.CreateDirectory(path) |> ignore
+            Directory.EnumerateFiles(path)
+            |> Seq.where(fun file -> Path.GetExtension(file).ToLower() = ".wordlist")
+            |> Seq.iter File.Delete
 
-        let wordlist_meta = seq {
-            for group in this.Groups do
-                yield $"# {group.Name}"
-                for list in group.Lists do
-                    yield list
-        }
-        File.WriteAllLines(Path.Combine(path, "wordlists.meta"), wordlist_meta)
-        this.Entries
-        |> Seq.groupBy _.Source.File
-        |> Seq.iter (fun (file, entries) ->
-            File.WriteAllLines(Path.Combine(path, file + ".wordlist"), entries |> Seq.map _.Item.ToString())
-        )
+        let write_wordlist_meta() : unit =
+            let wordlist_meta_lines = seq {
+                for group in this.Groups do
+                    yield $"# {group.Name}"
+                    for list in group.Lists do
+                        yield list
+            }
+            File.WriteAllLines(Path.Combine(path, "wordlists.meta"), wordlist_meta_lines)
+            
+        let write_wordlist(wordlist_name: string, entries: WordlistEntry seq) : unit =
+            let wordlist_path = Path.Combine(path, wordlist_name + ".wordlist")
+            let entries_as_strings = entries |> Seq.map _.Item.ToString()
+            File.WriteAllLines(wordlist_path, entries_as_strings)
+        
+        ensure_directory_exists_and_empty()
+        write_wordlist_meta()
+        for wordlist_name, entries in this.Entries |> Seq.groupBy _.Source.File do
+            write_wordlist(wordlist_name, entries)
 
     member this.WriteToStream(stream: Stream) : unit =
-        let grouped = this.Entries |> Seq.groupBy _.Source.File |> Seq.map (fun (file, items) -> (file, Array.ofSeq items)) |> Map.ofSeq
+        let wordlist_to_entries =
+            this.Entries
+            |> Seq.groupBy _.Source.File
+            |> Seq.map (fun (wordlist_name, entries) -> (wordlist_name, Array.ofSeq entries))
+            |> Map.ofSeq
+            
         use bw = new BinaryWriter(stream, Text.Encoding.UTF8, true)
         bw.Write(groups.Count)
-        for group in this.Groups do
+        
+        let write_wordlist(wordlist_name: string, entries: WordlistEntry array) : unit =
+            bw.Write(wordlist_name)
+            bw.Write(entries.Length)
+            for entry in entries do
+                bw.Write(entry.Item.ToString())
+        
+        let write_group(group: WordlistGroup) : unit =
             bw.Write(group.Name)
             bw.Write(group.Lists.Count)
-            for list in group.Lists do
-                bw.Write(list)
-                let entries = grouped.[list]
-                bw.Write(entries.Length)
-                for entry in entries do
-                    bw.Write(entry.Item.ToString())
+            for wordlist_name in group.Lists do
+                let entries = wordlist_to_entries.[wordlist_name]
+                write_wordlist(wordlist_name, entries)
+            
+        for group in this.Groups do
+            write_group(group)
 
     member this.ReadFromStream(stream: Stream) : unit =
         if entries.Count > 0 && OperatingSystem.IsWindows() then failwith "This will OVERWRITE your current entries! Guard rail for now"
+        
         groups.Clear()
         entries.Clear()
         deduplicate_de.Clear()
         deduplicate_en.Clear()
+        
         use br = new BinaryReader(stream, Text.Encoding.UTF8)
-        let group_count = br.ReadInt32()
-        for _ = 0 to group_count - 1 do
+        
+        let read_wordlist(group_name: string) : string =
+            let wordlist_name = br.ReadString()
+            let entry_count = br.ReadInt32()
+            for line_n = 0 to entry_count - 1 do
+                match this.TryAddLine({ Group = group_name; File = wordlist_name }, line_n, br.ReadString()) with
+                | Ok () -> ()
+                | Error reason -> Console.WriteLine(reason)
+            wordlist_name
+        
+        let read_group() : WordlistGroup =
             let group_name = br.ReadString()
             let group_list_count = br.ReadInt32()
-            let group_lists = ResizeArray<string>()
-            for _ = 0 to group_list_count - 1 do
-                let list_name = br.ReadString()
-                let entry_count = br.ReadInt32()
-                for i = 0 to entry_count - 1 do
-                    match this.TryAddLine({ Group = group_name; File = list_name }, i, br.ReadString()) with
-                    | Ok () -> ()
-                    
-                    | Error reason -> Console.WriteLine(reason)
-                group_lists.Add(list_name)
-            groups.Add({ Name = group_name; Lists = group_lists })
-
-    // todo: this is a UI function, move it
-    //member this.Categorise() : unit =
-    //    let options = this.Groups |> Seq.collect _.Lists |> Seq.except ["uncategorised"] |> Seq.toArray
-    //    for entry in this.Entries |> Seq.where(fun e -> e.Source.File = "uncategorised") do
-    //        Console.Clear()
-    //        Console.WriteLine()
-    //        Console.WriteLine(entry.Item.HighlightString())
-    //        Console.WriteLine()
-    //        for i, option in Array.indexed options do
-    //            Console.Write($"[%02i{i}]", Color.LightGray, Color.SlateGray)
-    //            Console.WriteLine(" " + option)
-    //        match Int32.TryParse(Console.ReadLine()) with
-    //        | true, n when n >= 0 && n < options.Length ->
-    //            File.AppendAllLines(Path.Combine(path, options.[n] + ".wordlist"), [entry.Item.ToString()])
-    //        | _ -> ()
+            let group_lists = ResizeArray<string>(group_list_count)
+            for _ = 1 to group_list_count do
+                let wordlist_name = read_wordlist(group_name)
+                group_lists.Add(wordlist_name)
+            { Name = group_name; Lists = group_lists }
+        
+        let group_count = br.ReadInt32()
+        for _ = 1 to group_count do
+            let next_group = read_group()
+            groups.Add(next_group)
