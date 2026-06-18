@@ -347,7 +347,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             let verb_cards =
                 verb_cache.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
-                |> Seq.filter (fun (i, _) -> i.ToTense = verb.Quiz)
+                |> Seq.filter (fun (i, _) -> i.ToTense = verb.Tense)
                 |> Seq.map (fun (i, text) -> VerbCard.M_Inflection(verb.Verb, i, text))
                 |> Array.ofSeq
 
@@ -373,7 +373,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             let verb_cards =
                 verb_cache.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
-                |> Seq.filter (fun (i, _) -> i.ToTense = verb.Quiz)
+                |> Seq.filter (fun (i, _) -> i.ToTense = verb.Tense)
                 |> Seq.map (fun (i, text) -> VerbCard.M_Inflection(verb.Verb, i, text))
                 |> Array.ofSeq
 

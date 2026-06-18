@@ -31,14 +31,22 @@ type MenuRender =
         buffer.Clear() |> ignore
 
     static member Redraw() : unit =
-        System.Console.SetCursorPosition(0, 0)
-        MenuRender.FlushInline()
-        let struct (original_left, original_top) = System.Console.GetCursorPosition()
-        let blank_line = String.replicate width " "
-        for i = original_top to System.Console.WindowHeight - 1 do
-            System.Console.SetCursorPosition(0, i)
-            System.Console.Write(blank_line)
-        System.Console.SetCursorPosition(original_left, original_top)
+        let draw_buffer_top() =
+            System.Console.SetCursorPosition(0, 0)
+            MenuRender.FlushInline()
+
+        let fill_screen_blank_lines() =
+            let struct (original_left, original_top) = System.Console.GetCursorPosition()
+
+            let blank_line = String.replicate width " "
+            for i = original_top to System.Console.WindowHeight - 1 do
+                System.Console.SetCursorPosition(0, i)
+                System.Console.Write(blank_line)
+
+            System.Console.SetCursorPosition(original_left, original_top)
+
+        draw_buffer_top()
+        fill_screen_blank_lines()
 
     static member Write(text: string, fg: Color, bg: Color) = buffer.Append(Console.ColorText(text, fg, bg)) |> ignore
     static member Write(text: string, fg: Color) = MenuRender.Write(text, fg, Color.Transparent)
@@ -50,10 +58,16 @@ type MenuRender =
     static member WriteLine() = MenuRender.WriteLine("", Color.White, Color.Transparent)
 
     static member Pad(text: string) = text.PadLeft(MenuRender.Width / 2 + text.Length / 2).PadRight(MenuRender.Width)
+
     static member FormatInterval(seconds: int64) =
-        let minutes = seconds / System.TimeSpan.SecondsPerMinute
-        let interval = sprintf "%02id%02ih%02im" (minutes / System.TimeSpan.MinutesPerDay) ((minutes / 60L) % 24L) (minutes % 60L)
-        interval.Replace("00d", "   ")
+        let total_minutes = seconds / System.TimeSpan.SecondsPerMinute
+        let minutes = total_minutes % 60L
+        let hours = (total_minutes / 60L) % 24L
+        let days = (total_minutes / System.TimeSpan.MinutesPerDay)
+        if days > 0 then
+            sprintf "%02id%02ih%02im" days hours minutes
+        else
+            sprintf "%02ih%02im" hours minutes
 
     static member Width = width
     static member UpdateWidth() =

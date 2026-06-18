@@ -90,7 +90,7 @@ type ReviewData =
 
     member this.NextReview : int64 = this.LastReviewed + this.Interval
 
-    member this.DueLevel(now: int64) : int =
+    member this.OverduePriority(now: int64) : int =
         let amount_overdue = now - this.NextReview
         if amount_overdue < 0L then -1 else float32 amount_overdue / float32 (max 1L this.Interval) * 10000f |> floor |> int
 

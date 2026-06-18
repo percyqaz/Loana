@@ -27,7 +27,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         |> Seq.choose (fun c ->
             match scheduler.Get c.Key with
             | ValueSome data ->
-                let dl = data.DueLevel now
+                let dl = data.OverduePriority now
                 if dl >= 0 then Some (c, dl) else None
             | ValueNone -> None
         )

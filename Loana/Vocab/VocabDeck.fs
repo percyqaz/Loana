@@ -15,33 +15,33 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.Scheduler = scheduler
 
-    member inline this.LevelOf(c: Card) : int =
-        match this.Scheduler.Get c.Key with
+    member inline this.LevelOf(card: Card) : int =
+        match this.Scheduler.Get card.Key with
         | ValueSome data -> data.Level
         | ValueNone -> 0
 
-    member private this.AvailableCards(v: Vocab) : Card seq =
+    member private this.AvailableCards(vocab: Vocab) : Card seq =
         seq {
-            let tier_1 = VocabCard.M_Tier1_RecogniseDE(v)
+            let tier_1 = VocabCard.M_Tier1_RecogniseDE(vocab)
             yield tier_1
 
             if this.LevelOf tier_1 >= 2 then
-                yield VocabCard.M_Tier2_RecallDE(v)
+                yield VocabCard.M_Tier2_RecallDE(vocab)
         }
 
-    member private this.AvailableCards(v: Verb) : Card seq =
+    member private this.AvailableCards(verb: Verb) : Card seq =
         seq {
-            let tier_1 = VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
-            let tier_2 = VocabCard.M_Tier2_RecallDE(v.Infinitive)
+            let tier_1 = VocabCard.M_Tier1_RecogniseDE(verb.Infinitive)
+            let tier_2 = VocabCard.M_Tier2_RecallDE(verb.Infinitive)
             yield tier_1
 
             if this.LevelOf tier_1 >= 2 then
                 yield tier_2
 
-            match v.PastParticiple with
-            | KnownValue pp ->
-                let tier_3 = VocabCard.M_Tier3_RecognisePastParticipleDE(pp)
-                let tier_4 = VocabCard.M_Tier4_RecallPastParticipleDE(pp)
+            match verb.PastParticiple with
+            | KnownValue past_particle ->
+                let tier_3 = VocabCard.M_Tier3_RecognisePastParticipleDE(past_particle)
+                let tier_4 = VocabCard.M_Tier4_RecallPastParticipleDE(past_particle)
                 if this.LevelOf tier_2 >= 4 then
                     yield tier_3
                 if this.LevelOf tier_3 >= 2 then
@@ -49,12 +49,12 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
             | _ -> ()
         }
 
-    member private this.AvailableCards(n: Noun) : Card seq =
+    member private this.AvailableCards(noun: Noun) : Card seq =
         seq {
-            let tier_1 = VocabCard.M_Tier1_RecogniseDE(n.Translation)
-            let tier_2 = VocabCard.M_Tier2_RecallDE(n.Translation)
-            let tier_3 = VocabCard.M_Tier3_RecogniseArticleDE(n)
-            let tier_4 = VocabCard.M_Tier4_RecallArticleDE(n)
+            let tier_1 = VocabCard.M_Tier1_RecogniseDE(noun.Translation)
+            let tier_2 = VocabCard.M_Tier2_RecallDE(noun.Translation)
+            let tier_3 = VocabCard.M_Tier3_RecogniseArticleDE(noun)
+            let tier_4 = VocabCard.M_Tier4_RecallArticleDE(noun)
 
             if this.LevelOf tier_1 < 2 then
                 yield tier_1
@@ -68,7 +68,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 yield tier_3
                 yield tier_4
 
-            match n.PluralForm with
+            match noun.PluralForm with
             | Some p ->
                 let tier_5 = VocabCard.M_Tier5_RecognisePluralDE(p)
                 let tier_6 = VocabCard.M_Tier6_RecallPluralDE(p)
@@ -81,62 +81,62 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member private this.AvailableCards(word: WordlistItem): Card seq =
         match word with
-        | Vocab v -> this.AvailableCards v
-        | Noun n -> this.AvailableCards n
-        | Verb v -> this.AvailableCards v
+        | Vocab vocab -> this.AvailableCards vocab
+        | Noun noun -> this.AvailableCards noun
+        | Verb verb -> this.AvailableCards verb
 
     member this.AvailableCards(sources: string seq) : Card seq =
-        let s = Set.ofSeq sources
+        let sources_set = Set.ofSeq sources
         seq {
             for word in words.Entries do
-                if s.IsEmpty || s.Contains word.Source.File then
+                if sources_set.IsEmpty || sources_set.Contains word.Source.File then
                     yield! this.AvailableCards(word.Item)
         }
         |> Seq.cache
 
     member this.AvailableCards() = this.AvailableCards([])
 
-    member private this.PossibleCards(v: Vocab) : Card seq =
+    member private this.PossibleCards(vocab: Vocab) : Card seq =
         seq {
-            yield VocabCard.M_Tier1_RecogniseDE(v)
-            yield VocabCard.M_Tier2_RecallDE(v)
+            yield VocabCard.M_Tier1_RecogniseDE(vocab)
+            yield VocabCard.M_Tier2_RecallDE(vocab)
         }
 
-    member private this.PossibleCards(v: Verb) : Card seq =
+    member private this.PossibleCards(verb: Verb) : Card seq =
         seq {
-            yield VocabCard.M_Tier1_RecogniseDE(v.Infinitive)
-            yield VocabCard.M_Tier2_RecallDE(v.Infinitive)
-            match v.PastParticiple with
-            | KnownValue pp ->
-                yield VocabCard.M_Tier3_RecognisePastParticipleDE(pp)
-                yield VocabCard.M_Tier4_RecallPastParticipleDE(pp)
+            yield VocabCard.M_Tier1_RecogniseDE(verb.Infinitive)
+            yield VocabCard.M_Tier2_RecallDE(verb.Infinitive)
+            match verb.PastParticiple with
+            | KnownValue past_participle ->
+                yield VocabCard.M_Tier3_RecognisePastParticipleDE(past_participle)
+                yield VocabCard.M_Tier4_RecallPastParticipleDE(past_participle)
             | _ -> ()
         }
 
-    member private this.PossibleCards(n: Noun) : Card seq =
+    member private this.PossibleCards(noun: Noun) : Card seq =
         seq {
-            yield VocabCard.M_Tier1_RecogniseDE(n.Translation)
-            yield VocabCard.M_Tier2_RecallDE(n.Translation)
-            yield VocabCard.M_Tier3_RecogniseArticleDE(n)
-            yield VocabCard.M_Tier4_RecallArticleDE(n)
-            match n.PluralForm with
-            | Some p ->
-                yield VocabCard.M_Tier5_RecognisePluralDE(p)
-                yield VocabCard.M_Tier6_RecallPluralDE(p)
+            yield VocabCard.M_Tier1_RecogniseDE(noun.Translation)
+            yield VocabCard.M_Tier2_RecallDE(noun.Translation)
+            yield VocabCard.M_Tier3_RecogniseArticleDE(noun)
+            yield VocabCard.M_Tier4_RecallArticleDE(noun)
+            match noun.PluralForm with
+            | Some plural ->
+                yield VocabCard.M_Tier5_RecognisePluralDE(plural)
+                yield VocabCard.M_Tier6_RecallPluralDE(plural)
             | None -> ()
         }
 
     member private this.PossibleCards(word: WordlistItem) : Card seq =
         match word with
-        | Vocab v -> this.PossibleCards v
-        | Noun n -> this.PossibleCards n
-        | Verb v -> this.PossibleCards v
+        | Vocab vocab -> this.PossibleCards vocab
+        | Noun noun -> this.PossibleCards noun
+        | Verb verb -> this.PossibleCards verb
 
     member this.PossibleCards(sources: string seq) : Card seq =
-        let s = Set.ofSeq sources
+        let sources_set = Set.ofSeq sources
         seq {
             for word in words.Entries do
-                if s.IsEmpty || s.Contains word.Source.File then
+                if sources_set.IsEmpty || sources_set.Contains word.Source.File then
                     yield! this.PossibleCards(word.Item)
         }
         |> Seq.cache
@@ -145,12 +145,12 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) =
         cards
-        |> Seq.where (fun c -> c.Tier >= min_tier && c.Tier <= max_tier)
+        |> Seq.where (fun card -> card.Tier >= min_tier && card.Tier <= max_tier)
 
     member this.FilterByLevel(cards: Card seq, minlevel: int, maxlevel: int) =
         cards
-        |> Seq.where (fun c ->
-            match scheduler.Get c.Key with
+        |> Seq.where (fun card ->
+            match scheduler.Get card.Key with
             | ValueSome data -> data.Level >= minlevel && data.Level <= maxlevel
             | ValueNone -> false
         )
@@ -159,51 +159,67 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         seq {
             for word in words.Entries do
                 match word.Item with
-                | Vocab v when v.LooksLikeANoun ->
-                    let message = sprintf "'%O' in '%s' is missing gender!" v.Deutsch word.Source.File
-                    if this.LevelOf(VocabCard.M_Tier2_RecallDE(v)) >= 4 then yield Chore.urgent message
+                | Vocab vocab when vocab.LooksLikeANoun ->
+                    let message = sprintf "'%O' in '%s' is missing gender!" vocab.Deutsch word.Source.File
+                    if this.LevelOf(VocabCard.M_Tier2_RecallDE(vocab)) >= 4 then yield Chore.urgent message
                     else yield Chore.non_urgent message
-                | Noun n when n.Plural.IsUnknown ->
-                    let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" n.Deutsch word.Source.File
+                | Noun noun when noun.Plural.IsUnknown ->
+                    let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" noun.Deutsch word.Source.File
                     yield Chore.non_urgent message
                 | _ -> ()
         }
 
     member inline this.LearningCards(cards: Card seq) =
         cards
-        |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsNone && not(this.Scheduler.IsBuried c.Key))
+        |> Seq.where (fun card -> (this.Scheduler.Get card.Key).IsNone && not(this.Scheduler.IsBuried card.Key))
 
     member inline this.ReviewCards(cards: Card seq) =
         cards
-        |> Seq.where (fun c -> (this.Scheduler.Get c.Key).IsSome)
+        |> Seq.where (fun card -> (this.Scheduler.Get card.Key).IsSome)
 
-    member inline this.DueReviewCards(cards: Card seq, now: int64) =
-        cards
-        |> Seq.choose (fun c ->
-            match this.Scheduler.Get c.Key with
-            | ValueSome data ->
-                let due_level = data.DueLevel now
-                if due_level >= 0 then Some (c, due_level) else None
-            | ValueNone -> None
-        )
-        |> Seq.sortByDescending snd
-        |> Seq.map fst
-        |> Seq.toArray
-        |> fun x ->
-            let hidden = Set.ofSeq (Array.choose _.BumpKey x)
-            x |> Array.filter (fun c -> not (hidden.Contains c.Key))
+    member inline this.DueReviewCards(cards: Card seq, now: int64) : Card array =
 
-    member inline this.AheadReviewCards(cards: Card seq, now: int64) =
-        cards
-        |> Seq.choose (fun c ->
-            match this.Scheduler.Get c.Key with
-            | ValueSome data ->
-                let n = data.NextReview
-                if n > now then Some (c, n) else None
-            | ValueNone -> None
-        )
-        |> Seq.sortBy snd
-        |> Seq.map fst
+        let card_priority_or_none(card: Card) : int voption =
+            this.Scheduler.Get card.Key
+            |> ValueOption.map (_.OverduePriority(now))
+            |> ValueOption.filter ((>=) 0)
+
+        let cards_desc_by_priority =
+            cards
+            |> Seq.choose (fun card ->
+                match card_priority_or_none(card) with
+                | ValueSome priority -> Some (card, priority)
+                | ValueNone -> None
+            )
+            |> Seq.sortByDescending snd
+            |> Seq.map fst
+            |> Seq.toArray
+
+        let filter_bumped_cards(cards: Card array) =
+            let hidden = Set.ofSeq (Array.choose _.BumpKey cards)
+            cards |> Array.filter (fun card -> not (hidden.Contains card.Key))
+
+        filter_bumped_cards(cards_desc_by_priority)
+
+    member inline this.AheadReviewCards(cards: Card seq, now: int64) : Card array =
+
+        let card_next_review_or_none(card: Card) : int64 voption =
+            this.Scheduler.Get card.Key
+            |> ValueOption.map (_.NextReview)
+            |> ValueOption.filter ((>) now)
+
+        let cards_asc_by_next_review =
+            cards
+            |> Seq.choose (fun card ->
+                match card_next_review_or_none(card) with
+                | ValueSome next_review -> Some (card, next_review)
+                | ValueNone -> None
+            )
+            |> Seq.sortBy snd
+            |> Seq.map fst
+            |> Seq.toArray
+
+        cards_asc_by_next_review
 
     member inline this.LevelDistribution(cards: Card seq) : (int * int) seq =
         cards
@@ -211,6 +227,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.countBy id
         |> Seq.sortBy fst
 
+    // todo: move UI state and functions to UI only
     member this.LearnBatchSize = 4 * study_size_multiplier
     member this.ReviewBatchSize = 10 * study_size_multiplier
 
