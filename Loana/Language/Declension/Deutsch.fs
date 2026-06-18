@@ -66,8 +66,8 @@ module Deutsch =
 
             | Gender.Plural, Case.Nominative -> "e", false
             | Gender.Plural, Case.Accusative -> "e", false
-            | Gender.Plural, Case.Dative -> "en", false // unverified
-            | Gender.Plural, Case.Genitive -> "er", false // unverified
+            | Gender.Plural, Case.Dative -> "en", false
+            | Gender.Plural, Case.Genitive -> "er", false
         if ending <> "" then
             [(if needs_strong_declension then ArticleDeclension else StrongDeclension) [Text ending]], needs_strong_declension
         else

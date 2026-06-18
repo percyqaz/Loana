@@ -2,7 +2,7 @@
 
 module English =
 
-    let indefinite_article (following_word: string) =
+    let indefinite_article (following_word: string) : string =
         if following_word.StartsWith("a") ||
            following_word.StartsWith("e") ||
            following_word.StartsWith("i") ||
