@@ -129,18 +129,18 @@ public class FlashcardView : ContentView
             };
         var english = card.Type switch
         {
-            CardType.RecogniseDE x => x.v.English,
-            CardType.RecallDE x => x.v.English,
-            CardType.RecogniseArticleDE x => x.n.English,
-            CardType.RecallArticleDE x => x.n.English,
+            CardType.RecogniseDE x => x.vocab.English,
+            CardType.RecallDE x => x.vocab.English,
+            CardType.RecogniseArticleDE x => x.noun.English,
+            CardType.RecallArticleDE x => x.noun.English,
             _ => throw new InvalidOperationException()
         };
         var englishes = card.Type switch
         {
-            CardType.RecogniseDE x => x.v.EnglishAlternatives,
-            CardType.RecallDE x => x.v.EnglishAlternatives,
-            CardType.RecogniseArticleDE x => x.n.EnglishAlternatives,
-            CardType.RecallArticleDE x => x.n.EnglishAlternatives,
+            CardType.RecogniseDE x => x.vocab.EnglishAlternatives,
+            CardType.RecallDE x => x.vocab.EnglishAlternatives,
+            CardType.RecogniseArticleDE x => x.noun.EnglishAlternatives,
+            CardType.RecallArticleDE x => x.noun.EnglishAlternatives,
             _ => throw new InvalidOperationException()
         };
         foreach (var x in Annotation(english, englishes.Length == 0))
@@ -203,18 +203,18 @@ public class FlashcardView : ContentView
     {
         var deutsch = card.Type switch
         {
-            CardType.RecogniseDE x => x.v.Deutsch,
-            CardType.RecallDE x => x.v.Deutsch,
-            CardType.RecogniseArticleDE x => x.n.Deutsch,
-            CardType.RecallArticleDE x => x.n.Deutsch,
+            CardType.RecogniseDE x => x.vocab.Deutsch,
+            CardType.RecallDE x => x.vocab.Deutsch,
+            CardType.RecogniseArticleDE x => x.noun.Deutsch,
+            CardType.RecallArticleDE x => x.noun.Deutsch,
             _ => throw new InvalidOperationException()
         };
         var gender = card.Type switch
         {
             CardType.RecogniseDE => null,
             CardType.RecallDE => null,
-            CardType.RecogniseArticleDE x => x.n.Guts.Gender,
-            CardType.RecallArticleDE x => x.n.Guts.Gender,
+            CardType.RecogniseArticleDE x => x.noun.Guts.Gender,
+            CardType.RecallArticleDE x => x.noun.Guts.Gender,
             _ => throw new InvalidOperationException()
         };
         if (gender?.IsMasculine == true)

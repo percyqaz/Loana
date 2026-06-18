@@ -1,11 +1,11 @@
 namespace Loana.Language
 
 type CardType =
-    | RecogniseDE of v: Vocab
-    | RecallDE of v: Vocab
-    | RecogniseArticleDE of n: Noun
-    | RecallArticleDE of n: Noun
-    | Inflection of v: Verb * i: VerbInflection * inflected_text: string
+    | RecogniseDE of vocab: Vocab
+    | RecallDE of vocab: Vocab
+    | RecogniseArticleDE of noun: Noun
+    | RecallArticleDE of noun: Noun
+    | Inflection of verb: Verb * inflection: VerbInflection * inflected_text: string
 
 type Card =
     {

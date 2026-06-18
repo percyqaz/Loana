@@ -21,7 +21,7 @@ type VerbFile(path: string) =
         |> Seq.iter (fun line ->
             if line.[0] = '|' then
                 let split = line.Substring(2).Split(" = ", StringSplitOptions.TrimEntries)
-                current_inflections <- current_inflections.Add(VerbInflection.Parse(split.[0]), split.[1])
+                current_inflections <- current_inflections.Add(VerbInflection.FromString(split.[0]), split.[1])
             else
                 match current_verb with
                 | None -> if not current_inflections.IsEmpty then failwith "Inflections above first verb!"
@@ -72,15 +72,15 @@ type VerbBank(path: string) =
             match q with
             | VerbTense.Present ->
                 if
-                    not (inflections.ContainsKey(VerbInflection.Present TensePerson.ThirdSingular)
-                    || inflections.ContainsKey(VerbInflection.Present TensePerson.FirstSingular))
+                    not (inflections.ContainsKey(VerbInflection.Present InflectionPerson.ThirdSingular)
+                    || inflections.ContainsKey(VerbInflection.Present InflectionPerson.FirstSingular))
                 then
                     Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
                     missing <- true
             | VerbTense.SimplePast ->
                 if
-                    not (inflections.ContainsKey(VerbInflection.SimplePast TensePerson.ThirdSingular)
-                    || inflections.ContainsKey(VerbInflection.SimplePast TensePerson.FirstSingular))
+                    not (inflections.ContainsKey(VerbInflection.SimplePast InflectionPerson.ThirdSingular)
+                    || inflections.ContainsKey(VerbInflection.SimplePast InflectionPerson.FirstSingular))
                 then
                     Console.WriteLine(sprintf "'%s' is missing present inflections" verb.Infinitive.Deutsch, Color.Yellow)
                     missing <- true
