@@ -9,29 +9,35 @@ open Loana.Language
 module Wordlist =
 
     let internal parse_noun_inner(vocab: Vocab, tags: string list) : Noun =
-        let mutable mtags = tags
+        let mutable remaining_tags = tags
         let mutable gender : Gender option = None
         let mutable plural : Vocab option = None
-        let mutable noplural : bool = false
+        let mutable no_plural : bool = false
 
-        while mtags <> [] do
-            let next = mtags.Head
-            mtags <- mtags.Tail
+        while remaining_tags <> [] do
+            let next = remaining_tags.Head
+            remaining_tags <- remaining_tags.Tail
             match next with
             | "p" | "m" | "f" | "n" ->
                 if gender.IsSome then failwithf "Gender was set twice for noun: %O" vocab
                 gender <- Some (Gender.FromString next)
             | "no_plural" ->
                 if gender.IsNone then failwithf "'no_plural' must be set after gender for noun: %O" vocab
-                noplural <- true
+                no_plural <- true
             | "plural" ->
                 if gender.IsNone then failwithf "plural must be set after gender for noun: %O" vocab
-                if noplural then failwithf "plural conflicts with 'no_plural' for noun: %O" vocab
-                plural <- Some (Vocab.FromString (String.concat " " mtags))
-                mtags <- []
+                if no_plural then failwithf "plural conflicts with 'no_plural' for noun: %O" vocab
+                plural <- Some (Vocab.FromString (String.concat " " remaining_tags))
+                remaining_tags <- []
             | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next vocab
 
-        let guts_plural = if noplural then KnownNothing else match plural with Some p -> KnownValue p | None -> Unknown
+        let guts_plural =
+            if no_plural then KnownNothing
+            else
+                match plural with
+                | Some p -> KnownValue p
+                | None -> Unknown
+        
         {
             Translation = vocab
             Guts =
@@ -44,43 +50,43 @@ module Wordlist =
         }
 
     let internal parse_verb_inner(vocab: Vocab, tags: string list) : Verb =
-        let mutable mtags = tags
-        let mutable quizzes: VerbTense list = []
-        let mutable pp: Knowledge<Vocab> = if tags <> [] then KnownNothing else Unknown
-        let mutable dative = false
+        let mutable remaining_tags = tags
+        let mutable verb_tenses: VerbTense list = []
+        let mutable past_participle: Knowledge<Vocab> = if tags <> [] then KnownNothing else Unknown
+        let mutable is_dative = false
 
-        while mtags <> [] do
-            let next = mtags.Head
-            mtags <- mtags.Tail
+        while remaining_tags <> [] do
+            let next = remaining_tags.Head
+            remaining_tags <- remaining_tags.Tail
             match next with
             | "pa" | "pr" | "im" ->
-                quizzes <- quizzes @ [ VerbTense.FromString(next)]
+                verb_tenses <- verb_tenses @ [ VerbTense.FromString(next)]
             | "dat" ->
-                if dative then failwith "Dative specified twice"
-                if quizzes <> [] then failwith "Dative must be specified before quizzes"
-                dative <- true
+                if is_dative then failwith "Dative specified twice"
+                if verb_tenses <> [] then failwith "Dative must be specified before quizzes"
+                is_dative <- true
             | "pp" ->
-                pp <- KnownValue (Vocab.FromString (String.concat " " mtags))
-                mtags <- []
+                past_participle <- KnownValue (Vocab.FromString (String.concat " " remaining_tags))
+                remaining_tags <- []
             | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next vocab
 
         {
             Infinitive = vocab
-            PastParticiple = pp
-            Tenses = quizzes |> List.distinct
-            Dative = dative
+            PastParticiple = past_participle
+            Tenses = verb_tenses |> List.distinct
+            Dative = is_dative
         }
 
     let internal parse_core (line: string) : Vocab * string list =
         if line = "" then failwith "Cannot parse empty line as a noun"
 
-        let split = line.Split(":", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+        let split_by_colon = line.Split(":", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
         let tags =
-            if split.Length = 2 then
-                split.[1].Split(" ", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries) |> List.ofArray
+            if split_by_colon.Length = 2 then
+                split_by_colon.[1].Split(" ", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries) |> List.ofArray
             else
                 []
-        let vocab = Vocab.FromString split.[0]
+        let vocab = Vocab.FromString split_by_colon.[0]
         vocab, tags
 
     let parse_noun : string -> Noun =
@@ -93,7 +99,7 @@ type WordlistItem =
     | Noun of Noun
     | Verb of Verb
     | Vocab of Vocab
-    override this.ToString() =
+    override this.ToString() : string =
         match this with
         | Noun n -> n.ToString()
         | Verb v -> v.ToString()
@@ -118,36 +124,29 @@ type WordBank(path: string) =
 
     let deduplicate_de = Dictionary<string, DuplicateEntry>()
     let deduplicate_en = Dictionary<string, DuplicateEntry>()
+    
+    let report_duplicate(language: string, source: Source, line_n: int, item: WordlistItem, existing_conflict: DuplicateEntry) : unit =
+        let is_identical = item = existing_conflict.Item
+        if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
+            failwithf "%s %s definition! \n %s (%s:%i)\n %s (%s:%i)"
+                (if is_identical then "Duplicate" else "Conflict with")
+                language
+                (item.ToString()) source.File line_n
+                (existing_conflict.Item.ToString()) existing_conflict.SourceFile existing_conflict.Line
+                
+    let check_language_duplicate(language: string, already_seen: Dictionary<string, DuplicateEntry>, source: Source, line_n: int, ascii_identifier: string, item: WordlistItem) =
+        match already_seen.TryGetValue(ascii_identifier) with
+        | true, existing_conflict -> report_duplicate(language, source, line_n, item, existing_conflict)
+        | false, _ -> already_seen.Add(ascii_identifier, { SourceFile = source.File; Line = line_n; Item = item })
 
     member this.CheckDuplicate(source: Source, line_n: int, vocab: Vocab, item: WordlistItem) : unit =
+        let de_ascii_identifier = vocab.DeutschAsciiIdentifier
+        check_language_duplicate("German", deduplicate_de, source, line_n, de_ascii_identifier, item)
 
-        let ded_de = vocab.DeutschAsciiIdentifier
-        if deduplicate_de.ContainsKey(ded_de) then
-            let existing_conflict = deduplicate_de.[ded_de]
-            let identical = item = existing_conflict.Item
+        let en_ascii_identifier = vocab.EnglishAsciiIdentifier
+        check_language_duplicate("English", deduplicate_en, source, line_n, en_ascii_identifier, item)
 
-            if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
-                failwithf "%s German definition! \n %s (%s:%i)\n %s (%s:%i)"
-                    (if identical then "Duplicate" else "Conflict with")
-                    (item.ToString()) source.File line_n
-                    (existing_conflict.Item.ToString()) existing_conflict.SourceFile existing_conflict.Line
-        else
-            deduplicate_de.Add(ded_de, { SourceFile = source.File; Line = line_n; Item = item })
-
-        let ded_en = vocab.EnglishAsciiIdentifier
-        if deduplicate_en.ContainsKey(ded_en) then
-            let existing_conflict = deduplicate_en.[ded_en]
-            let identical = item = existing_conflict.Item
-
-            if existing_conflict.SourceFile <> source.File || existing_conflict.Line <> line_n then
-                failwithf "%s English definition! \n %s (%s:%i)\n %s (%s:%i)"
-                    (if identical then "Duplicate" else "Conflict with")
-                    (item.ToString()) source.File line_n
-                    (existing_conflict.Item.ToString()) existing_conflict.SourceFile existing_conflict.Line
-        else
-            deduplicate_en.Add(ded_en, { SourceFile = source.File; Line = line_n; Item = item })
-
-    member this.AddVocab(source: Source, line_n: int, line: string) : unit =
+    member private this.AddVocab(source: Source, line_n: int, line: string) : unit =
         let v, tags = Wordlist.parse_core line
 
         if v.LooksLikeAVerb then
@@ -170,7 +169,7 @@ type WordBank(path: string) =
             this.CheckDuplicate(source, line_n, v, Vocab v)
             entries.Add { Item = Vocab v; Source = source }
 
-    member this.TryAdd(source: Source, line_n: int, line: string) : Result<unit, string> =
+    member private this.TryAddLine(source: Source, line_n: int, line: string) : Result<unit, string> =
         try
             if line = "" || line.StartsWith "#" then
                 () // reserved for comments for now
@@ -182,43 +181,52 @@ type WordBank(path: string) =
         File.ReadAllLines(file_path)
         |> Seq.where (fun line -> line.Trim() <> "")
         |> Seq.iteri (fun i line ->
-            match this.TryAdd(source, i, line) with
+            match this.TryAddLine(source, i, line) with
             | Ok() -> ()
             | Error "" -> ()
             | Error reason ->
                 Console.Write($" {source.File}: ", Color.LightBlue, Color.FromArgb 0x202020)
                 Console.WriteLine(" " + reason, Color.Red)
         )
-
+        
+    member private this.GetMetaList() : string array =
+        let meta_list = Path.Combine(path, "wordlists.meta")
+        if File.Exists(meta_list) |> not then
+            Console.WriteLine(sprintf "'%s' doesn't exist!" meta_list, Color.Red)
+            [||]
+        else
+            File.ReadAllLines(meta_list)
+            
+    member private this.TryLoadWordlist(group: WordlistGroup, wordlist_name: string) =
+        let wordlist_path = Path.Combine(path, wordlist_name + ".wordlist")
+        if Path.Exists(wordlist_path) then
+            group.Lists.Add(wordlist_name)
+            this.ReadFile({ Group = group.Name; File = wordlist_name }, wordlist_path)
+        else
+            Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" wordlist_name wordlist_path, Color.Red)
+            
     member private this.Reload() : unit =
         groups.Clear()
         entries.Clear()
         deduplicate_de.Clear()
         deduplicate_en.Clear()
 
-        let meta_list = Path.Combine(path, "wordlists.meta")
-        if File.Exists(meta_list) |> not then
-            Console.WriteLine(sprintf "'%s' doesn't exist!" meta_list, Color.Red)
-        else
-            let mutable group : WordlistGroup option = None
-            for line in File.ReadAllLines(meta_list) do
-                if line.StartsWith("#") then
-                    let new_group = { Name = line.TrimStart('#').Trim(); Lists = ResizeArray() }
-                    groups.Add new_group
-                    group <- Some new_group
-
-                elif group.IsSome then
-                    let filename = line.Trim()
-                    let wl_path = Path.Combine(path, filename + ".wordlist")
-                    if Path.Exists(wl_path) then
-                        group.Value.Lists.Add(filename)
-                        this.ReadFile({ Group = group.Value.Name; File = filename }, wl_path)
-                    else
-                        Console.WriteLine(sprintf "Could not find wordlist '%s' at %s" filename wl_path, Color.Red)
-
-                else
-                    let filename = line.Trim()
-                    Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" filename, Color.Red)
+        let mutable current_group : WordlistGroup option = None
+        
+        let start_new_group(name: string) : unit =
+            let new_group = { Name = name; Lists = ResizeArray() }
+            groups.Add new_group
+            current_group <- Some new_group
+        
+        for line in this.GetMetaList() do
+            if line.StartsWith("#") then
+                let group_name = line.TrimStart('#').Trim()
+                start_new_group(group_name)
+            else
+                let wordlist_name = line.Trim()
+                match current_group with
+                | Some group -> this.TryLoadWordlist(group, wordlist_name)
+                | None -> Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" wordlist_name, Color.Red)
 
     static member FromDirectory(path: string) : WordBank =
         let words = WordBank(path)
@@ -228,11 +236,11 @@ type WordBank(path: string) =
     member this.Entries : IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
     member this.Groups : IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
 
-    member this.ToDirectory() =
+    member this.WriteToDirectory() : unit =
         Directory.CreateDirectory(path) |> ignore
         Directory.EnumerateFiles(path)
-        |> Seq.where(fun f -> Path.GetExtension(f).ToLower() = ".wordlist")
-        |> Seq.iter(fun f -> File.Delete(f))
+        |> Seq.where(fun file -> Path.GetExtension(file).ToLower() = ".wordlist")
+        |> Seq.iter File.Delete
 
         let wordlist_meta = seq {
             for group in this.Groups do
@@ -247,7 +255,7 @@ type WordBank(path: string) =
             File.WriteAllLines(Path.Combine(path, file + ".wordlist"), entries |> Seq.map _.Item.ToString())
         )
 
-    member this.WritePayload(stream: Stream) : unit =
+    member this.WriteToStream(stream: Stream) : unit =
         let grouped = this.Entries |> Seq.groupBy _.Source.File |> Seq.map (fun (file, items) -> (file, Array.ofSeq items)) |> Map.ofSeq
         use bw = new BinaryWriter(stream, Text.Encoding.UTF8, true)
         bw.Write(groups.Count)
@@ -261,7 +269,7 @@ type WordBank(path: string) =
                 for entry in entries do
                     bw.Write(entry.Item.ToString())
 
-    member this.ReadPayload(stream: Stream) : unit =
+    member this.ReadFromStream(stream: Stream) : unit =
         if entries.Count > 0 && OperatingSystem.IsWindows() then failwith "This will OVERWRITE your current entries! Guard rail for now"
         groups.Clear()
         entries.Clear()
@@ -277,8 +285,9 @@ type WordBank(path: string) =
                 let list_name = br.ReadString()
                 let entry_count = br.ReadInt32()
                 for i = 0 to entry_count - 1 do
-                    match this.TryAdd({ Group = group_name; File = list_name }, i, br.ReadString()) with
+                    match this.TryAddLine({ Group = group_name; File = list_name }, i, br.ReadString()) with
                     | Ok () -> ()
+                    
                     | Error reason -> Console.WriteLine(reason)
                 group_lists.Add(list_name)
             groups.Add({ Name = group_name; Lists = group_lists })

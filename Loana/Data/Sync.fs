@@ -65,13 +65,13 @@ module Sync =
 
     let private downstream_wordlist_sync(socket: Socket, words: WordBank) =
         let words_bytes = receive_payload(socket, WORDLIST_HEADER)
-        words.ReadPayload(new MemoryStream(words_bytes))
-        words.ToDirectory()
+        words.ReadFromStream(new MemoryStream(words_bytes))
+        words.WriteToDirectory()
         Console.WriteLine(sprintf "Downloaded %i wordlist entries during sync" words.Entries.Count)
 
     let private upstream_wordlist_sync(socket: Socket, words: WordBank) =
         let our_words_stream = new MemoryStream()
-        words.WritePayload(our_words_stream)
+        words.WriteToStream(our_words_stream)
         let our_words_bytes = our_words_stream.ToArray()
         our_words_stream.Dispose()
         send_payload(socket, WORDLIST_HEADER, our_words_bytes)
