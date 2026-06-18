@@ -14,14 +14,15 @@ if OperatingSystem.IsWindows() then
     Console.CursorVisible <- false
     Console.Title <- "Loana v0.1"
 
-let config = ResizeArray(try File.ReadAllLines("config") with :? FileNotFoundException -> [||])
+let config_path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".loana")
+let config = ResizeArray(try File.ReadAllLines(config_path) with :? FileNotFoundException -> [||])
 let data_path =
     while config.Count < 1 || not (Directory.Exists(config.[0])) do
         Console.Write("Enter a path to store data: ")
         let user_input = Console.ReadLine()
         if Directory.Exists(user_input) then
             config.Add(user_input)
-            File.WriteAllLines("config", [|user_input|])
+            File.WriteAllLines(config_path, [|user_input|])
         else
             Console.WriteLine("That path doesn't exist, put in something else")
     config.[0]
