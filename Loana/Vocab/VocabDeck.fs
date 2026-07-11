@@ -4,9 +4,9 @@ open Loana.Language
 open Loana.Data
 
 type Chore =
-    { Message: string; Urgent: bool }
-    static member urgent message = { Message = message; Urgent = true }
-    static member non_urgent message = { Message = message; Urgent = false }
+    { Message: string; IsUrgent: bool }
+    static member Urgent(message: string) : Chore = { Message = message; IsUrgent = true }
+    static member NonUrgent(message: string) : Chore = { Message = message; IsUrgent = false }
 
 type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
@@ -161,11 +161,11 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 match word.Item with
                 | Vocab vocab when vocab.LooksLikeANoun ->
                     let message = sprintf "'%O' in '%s' is missing gender!" vocab.Deutsch word.Source.File
-                    if this.LevelOf(VocabCard.M_Tier2_RecallDE(vocab)) >= 4 then yield Chore.urgent message
-                    else yield Chore.non_urgent message
+                    if this.LevelOf(VocabCard.M_Tier2_RecallDE(vocab)) >= 4 then yield Chore.Urgent message
+                    else yield Chore.NonUrgent message
                 | Noun noun when noun.Plural.IsUnknown ->
                     let message = sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" noun.Deutsch word.Source.File
-                    yield Chore.non_urgent message
+                    yield Chore.NonUrgent message
                 | _ -> ()
         }
 

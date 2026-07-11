@@ -103,7 +103,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
         MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0xFF_202020))
         MenuRender.Write( $" %3i{vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0xFF_202040))
         MenuRender.Write( $" %3i{vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
-        MenuRender.Write( $" %i{Seq.length (vocab.Chores() |> Seq.filter _.Urgent)} chores ".PadLeft(16), Color.Pink, Color.FromArgb(0xFF_202020))
+        MenuRender.Write( $" %i{Seq.length (vocab.Chores() |> Seq.filter _.IsUrgent)} chores ".PadLeft(16), Color.Pink, Color.FromArgb(0xFF_202020))
         MenuRender.WriteLine()
         for group in words.Groups do
 
@@ -250,8 +250,8 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
     member this.VocabChoresList () =
         Console.WriteLine(MenuRender.Pad " Chores list ", Color.White, Color.FromArgb(0xFF_303030))
         let chores = vocab.Chores() |> Seq.cache
-        let urgent = chores |> Seq.filter _.Urgent |> Seq.truncate 20 |> Array.ofSeq
-        let non_urgent = chores |> Seq.filter (_.Urgent >> not) |> Seq.truncate 20 |> Array.ofSeq
+        let urgent = chores |> Seq.filter _.IsUrgent |> Seq.truncate 20 |> Array.ofSeq
+        let non_urgent = chores |> Seq.filter (_.IsUrgent >> not) |> Seq.truncate 20 |> Array.ofSeq
 
         Console.WriteLine(MenuRender.Pad (sprintf " - %i Urgent - " urgent.Length), Color.LightGray, Color.FromArgb(0xFF_202020))
         for chore in urgent do Console.WriteLine(chore.Message, Color.DeepPink)
