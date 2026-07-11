@@ -409,8 +409,8 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow -> previous_selection()
-                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.UpArrow | ConsoleKey.K -> previous_selection()
+                | ConsoleKey.DownArrow | ConsoleKey.J -> next_selection()
                 | ConsoleKey.Enter -> this.VocabStats(get_filtered(wordlists))
                 | ConsoleKey.L -> this.VocabLearn(get_filtered(wordlists))
                 | ConsoleKey.R -> this.VocabReview(get_filtered(wordlists))
@@ -430,8 +430,8 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow -> previous_selection()
-                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.UpArrow | ConsoleKey.K -> previous_selection()
+                | ConsoleKey.DownArrow | ConsoleKey.J -> next_selection()
                 | ConsoleKey.L -> this.VerbsLearn(verbs.LearningEntries(verbs.AvailableEntries()))
                 | ConsoleKey.R -> this.VerbsReview(verbs.DueReviewEntries(verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
                 | _ -> ()
@@ -442,8 +442,8 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow -> previous_selection()
-                | ConsoleKey.DownArrow -> next_selection()
+                | ConsoleKey.UpArrow | ConsoleKey.K -> previous_selection()
+                | ConsoleKey.DownArrow | ConsoleKey.J -> next_selection()
                 | ConsoleKey.Enter -> quizzes.Study(quiz)
                 | ConsoleKey.A -> quizzes.Study(quizzes.Auto())
                 | _ -> ()
