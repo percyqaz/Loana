@@ -176,34 +176,50 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
     member inline this.ReviewCards(cards: Card seq) =
         cards
         |> Seq.where (fun card -> (this.Scheduler.Get card.Key).IsSome)
+        
+    member inline this.DueReviewCards(cards: Card seq, now: int64) : Card array =
 
-    member inline this.DueReviewCards(cards: Card seq, now: int64) =
-        cards
-        |> Seq.choose (fun c ->
-            match this.Scheduler.Get c.Key with
-            | ValueSome data ->
-                let due_level = data.OverduePriority(now)
-                if due_level >= 0 then Some (c, due_level) else None
-            | ValueNone -> None
-        )
-        |> Seq.sortByDescending snd
-        |> Seq.map fst
-        |> Seq.toArray
-        |> fun x ->
-            let hidden = Set.ofSeq (Array.choose _.BumpKey x)
-            x |> Array.filter (fun c -> not (hidden.Contains c.Key))
+        let card_priority_or_none(card: Card) : int voption =
+            this.Scheduler.Get card.Key
+            |> ValueOption.map _.OverduePriority(now)
+            |> ValueOption.filter (fun priority -> priority >= 0)
 
-    member inline this.AheadReviewCards(cards: Card seq, now: int64) =
-        cards
-        |> Seq.choose (fun c ->
-            match this.Scheduler.Get c.Key with
-            | ValueSome data ->
-                let n = data.NextReview
-                if n > now then Some (c, n) else None
-            | ValueNone -> None
-        )
-        |> Seq.sortBy snd
-        |> Seq.map fst
+        let cards_desc_by_priority =
+            cards
+            |> Seq.choose (fun card ->
+                match card_priority_or_none(card) with
+                | ValueSome priority -> Some (card, priority)
+                | ValueNone -> None
+            )
+            |> Seq.sortByDescending snd
+            |> Seq.map fst
+            |> Seq.toArray
+
+        let filter_bumped_cards(cards: Card array) =
+            let hidden = Set.ofSeq (Array.choose _.BumpKey cards)
+            cards |> Array.filter (fun card -> not (hidden.Contains card.Key))
+
+        filter_bumped_cards(cards_desc_by_priority)
+
+    member inline this.AheadReviewCards(cards: Card seq, now: int64) : Card array =
+
+        let card_next_review_or_none(card: Card) : int64 voption =
+            this.Scheduler.Get card.Key
+            |> ValueOption.map _.NextReview
+            |> ValueOption.filter (fun next_review -> next_review > now)
+
+        let cards_asc_by_next_review =
+            cards
+            |> Seq.choose (fun card ->
+                match card_next_review_or_none(card) with
+                | ValueSome next_review -> Some (card, next_review)
+                | ValueNone -> None
+            )
+            |> Seq.sortBy snd
+            |> Seq.map fst
+            |> Seq.toArray
+
+        cards_asc_by_next_review
 
     member inline this.LevelDistribution(cards: Card seq) : (int * int) seq =
         cards
