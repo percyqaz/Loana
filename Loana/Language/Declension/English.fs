@@ -3,11 +3,13 @@
 module English =
 
     let indefinite_article (following_word: string) : string =
-        if following_word.StartsWith("a") ||
-           following_word.StartsWith("e") ||
-           following_word.StartsWith("i") ||
-           following_word.StartsWith("o") ||
-           following_word.StartsWith("u") then
+        if
+            following_word.StartsWith("a")
+            || following_word.StartsWith("e")
+            || following_word.StartsWith("i")
+            || following_word.StartsWith("o")
+            || following_word.StartsWith("u")
+        then
             "an"
         else
             "a"
@@ -28,9 +30,9 @@ module English =
         | Person.Second false, Case.Accusative -> Text "you"
         | Person.Second false, Case.Dative -> Text "you"
 
-        | Person.Second true, Case.Nominative -> Gender(Gender.Plural, [Text "you"])
-        | Person.Second true, Case.Accusative -> Gender(Gender.Plural, [Text "you"])
-        | Person.Second true, Case.Dative -> Gender(Gender.Plural, [Text "you"])
+        | Person.Second true, Case.Nominative -> Gender(Gender.Plural, [ Text "you" ])
+        | Person.Second true, Case.Accusative -> Gender(Gender.Plural, [ Text "you" ])
+        | Person.Second true, Case.Dative -> Gender(Gender.Plural, [ Text "you" ])
 
         | Person.Third Gender.Masculine, Case.Nominative -> Text "he"
         | Person.Third Gender.Masculine, Case.Accusative -> Text "him"
@@ -46,57 +48,71 @@ module English =
         | Person.Third Gender.Plural, Case.Accusative -> Text "them"
         | Person.Third Gender.Plural, Case.Dative -> Text "them"
 
-        | Person.Formal, Case.Nominative -> Annotation("Formal", [Text "you"])
-        | Person.Formal, Case.Accusative -> Annotation("Formal", [Text "you"])
-        | Person.Formal, Case.Dative -> Annotation("Formal", [Text "you"])
-        |> fun x -> [Case(case, [x])]
+        | Person.Formal, Case.Nominative -> Annotation("Formal", [ Text "you" ])
+        | Person.Formal, Case.Accusative -> Annotation("Formal", [ Text "you" ])
+        | Person.Formal, Case.Dative -> Annotation("Formal", [ Text "you" ])
+        |> fun x -> [ Case(case, [ x ]) ]
 
     let possessive_pronoun (person: Person) : AnnotationTree =
         match person with
         | Person.First false -> Text "my"
         | Person.First true -> Text "our"
         | Person.Second false -> Text "your"
-        | Person.Second true -> Gender(Gender.Plural, [Text "your"])
+        | Person.Second true -> Gender(Gender.Plural, [ Text "your" ])
         | Person.Third Gender.Masculine -> Text "his"
         | Person.Third Gender.Feminine -> Text "her"
         | Person.Third Gender.Neuter -> Text "its"
         | Person.Third Gender.Plural -> Text "their"
-        | Person.Formal -> Annotation("Formal", [Text "your"])
-        |> fun x -> [x]
+        | Person.Formal -> Annotation("Formal", [ Text "your" ])
+        |> fun x -> [ x ]
 
     let reflexive_pronoun (person: Person) (is_dative: bool) : AnnotationTree =
         match person with
         | Person.First false -> Text "myself"
         | Person.First true -> Text "ourselves"
         | Person.Second false -> Text "yourself"
-        | Person.Second true -> Gender(Gender.Plural, [Text "yourself"])
+        | Person.Second true -> Gender(Gender.Plural, [ Text "yourself" ])
         | Person.Third Gender.Masculine -> Text "himself"
         | Person.Third Gender.Feminine -> Text "herself"
         | Person.Third Gender.Neuter -> Text "itself"
         | Person.Third Gender.Plural -> Text "themselves"
-        | Person.Formal -> Annotation("Formal", [Text "yourself"])
-        |> fun x -> [Case ((if is_dative then Case.Dative else Case.Accusative), [x])]
+        | Person.Formal -> Annotation("Formal", [ Text "yourself" ])
+        |> fun x -> [ Case((if is_dative then Case.Dative else Case.Accusative), [ x ]) ]
 
     let definite_fragment (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
         let genitive = if case.IsGenitive then "of " else ""
+
         match adjective with
-        | Some adjective ->
-            [Case(case, [Text $"{genitive}the {adjective.English} {noun.English}"])]
-        | None ->
-            [Case(case, [Text $"{genitive}the {noun.English}"])]
+        | Some adjective -> [ Case(case, [ Text $"{genitive}the {adjective.English} {noun.English}" ]) ]
+        | None -> [ Case(case, [ Text $"{genitive}the {noun.English}" ]) ]
 
     let indefinite_fragment (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
         let genitive = if case.IsGenitive then "of " else ""
+
         match adjective with
         | Some adjective ->
-            [Case(case, [Text $"{genitive}{indefinite_article adjective.English.Text} {adjective.English} {noun.English}"])]
+            [
+                Case(
+                    case,
+                    [
+                        Text $"{genitive}{indefinite_article adjective.English.Text} {adjective.English} {noun.English}"
+                    ]
+                )
+            ]
         | None ->
-            [Case(case, [Text $"{genitive}{indefinite_article noun.English.Text} {noun.English}"])]
+            [
+                Case(case, [ Text $"{genitive}{indefinite_article noun.English.Text} {noun.English}" ])
+            ]
 
     let possessive_fragment (person: Person) (adjective: Adjective option) (noun: Noun) (case: Case) : AnnotationTree =
-        let genitive = if case.IsGenitive then [Text "of "] else []
+        let genitive = if case.IsGenitive then [ Text "of " ] else []
+
         match adjective with
         | Some adjective ->
-            [Case(case, genitive @ possessive_pronoun person @ [Text $" {adjective.English} {noun.English}"])]
+            [
+                Case(case, genitive @ possessive_pronoun person @ [ Text $" {adjective.English} {noun.English}" ])
+            ]
         | None ->
-            [Case(case, genitive @ possessive_pronoun person @ [Text $" {noun.English}"])]
+            [
+                Case(case, genitive @ possessive_pronoun person @ [ Text $" {noun.English}" ])
+            ]

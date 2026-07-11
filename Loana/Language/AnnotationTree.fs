@@ -16,13 +16,12 @@ module AnnotationTree =
     let rec flatten_fragment (fragment: AnnotationFragment) : string =
         match fragment with
         | Text str -> str
-        | Gender (_, children) -> flatten_tree children
-        | Case (_, children) -> flatten_tree children
+        | Gender(_, children) -> flatten_tree children
+        | Case(_, children) -> flatten_tree children
         | StrongDeclension children -> flatten_tree children
         | WeakDeclension children -> flatten_tree children
         | ArticleDeclension children -> flatten_tree children
-        | Annotation (_, children) -> flatten_tree children
+        | Annotation(_, children) -> flatten_tree children
 
     and flatten_tree (tree: AnnotationTree) : string =
-        List.map flatten_fragment tree
-        |> String.concat ""
+        List.map flatten_fragment tree |> String.concat ""
