@@ -11,7 +11,8 @@ module internal ArticleConstants =
     let SPOON = Wordlist.parse_noun "Löffel = spoon :m plural Löffel = spoons"
     let FORK = Wordlist.parse_noun "Gabel = fork :f plural Gabeln = forks"
     let KNIFE = Wordlist.parse_noun "Messer = knife :n plural Messer = knives"
-    let NOUNS : Noun array =
+
+    let NOUNS: Noun array =
         [|
             SPOON
             FORK
@@ -21,7 +22,7 @@ module internal ArticleConstants =
             KNIFE.PluralForm.Value
         |]
 
-    let KLEIN : Adjective = { Translation = Wordlist.parse_vocab "klein = small" }
+    let KLEIN: Adjective = { Translation = Wordlist.parse_vocab "klein = small" }
 
 type GermanPracticeQuestion =
 
@@ -46,5 +47,5 @@ type Quiz =
         match obj with
         | :? Quiz as q -> q.Name = this.Name
         | _ -> false
-    override this.GetHashCode (): int =
-        this.Name.GetHashCode()
+
+    override this.GetHashCode() : int = this.Name.GetHashCode()
