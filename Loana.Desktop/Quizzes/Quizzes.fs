@@ -1,4 +1,4 @@
-﻿namespace Loana.Desktop.Quizzes
+namespace Loana.Desktop.Quizzes
 
 open System
 open Loana.Data
@@ -20,14 +20,14 @@ type QuizScheduler(scheduler: ReviewSchedule) =
     member this.Quizzes: Quiz seq = quizzes
 
     member this.Learning() =
-        quizzes |> Seq.where(fun c -> (scheduler.Get c.Key).IsNone)
+        quizzes |> Seq.where(fun c -> (scheduler.Get(c.Key)).IsNone)
 
     member this.DueReview(now: int64) =
         quizzes
         |> Seq.choose(fun c ->
-            match scheduler.Get c.Key with
+            match scheduler.Get(c.Key) with
             | ValueSome data ->
-                let dl = data.OverduePriority now
+                let dl = data.OverduePriority(now)
                 if dl >= 0 then Some(c, dl) else None
             | ValueNone -> None
         )
@@ -37,7 +37,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
     member this.AheadReview(now: int64) =
         quizzes
         |> Seq.choose(fun c ->
-            match scheduler.Get c.Key with
+            match scheduler.Get(c.Key) with
             | ValueSome data ->
                 let n = data.NextReview
                 if n > now then Some(c, n) else None
@@ -48,7 +48,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
 
     member this.Auto() : Quiz =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        Seq.concat [ this.DueReview now; this.Learning(); this.AheadReview now ] |> Seq.head
+        Seq.concat [ this.DueReview(now); this.Learning(); this.AheadReview(now) ] |> Seq.head
 
     member this.Study(quiz: Quiz) =
         match QuizSession(quiz.Name, quiz.Questions()).Start() with
@@ -56,7 +56,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         | Some v ->
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
-            match scheduler.Get quiz.Key with
+            match scheduler.Get(quiz.Key) with
             | ValueNone ->
                 scheduler.Schedule(quiz.Key, ReviewData.Level1(now, 1), now).HighlightString() |> Console.WriteLine
             | ValueSome _ ->

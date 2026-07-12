@@ -8,6 +8,7 @@ type VerbCacheEntry =
         Verb: Verb
         Tense: VerbTense
     }
+
     member this.Key =
         sprintf "verb-%O-%s" this.Tense this.Verb.Infinitive.DeutschAsciiIdentifier
 
@@ -16,7 +17,7 @@ type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
     member this.Scheduler = scheduler
 
     member inline this.LevelOf(cached_verb: VerbCacheEntry) : int =
-        match this.Scheduler.Get cached_verb.Key with
+        match this.Scheduler.Get(cached_verb.Key) with
         | ValueSome data -> data.Level
         | ValueNone -> 0
 
@@ -32,15 +33,15 @@ type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.cache
 
     member inline this.LearningEntries(entries: VerbCacheEntry seq) =
-        entries |> Seq.where(fun cached_verb -> (this.Scheduler.Get cached_verb.Key).IsNone)
+        entries |> Seq.where(fun cached_verb -> (this.Scheduler.Get(cached_verb.Key)).IsNone)
 
     member inline this.ReviewEntries(entries: VerbCacheEntry seq) =
-        entries |> Seq.where(fun cached_verb -> (this.Scheduler.Get cached_verb.Key).IsSome)
+        entries |> Seq.where(fun cached_verb -> (this.Scheduler.Get(cached_verb.Key)).IsSome)
 
     member inline this.DueReviewEntries(entries: VerbCacheEntry seq, now: int64) =
 
         let priority_or_none (cached_verb: VerbCacheEntry) : int voption =
-            this.Scheduler.Get cached_verb.Key |> ValueOption.map(_.OverduePriority(now)) |> ValueOption.filter((>=) 0)
+            this.Scheduler.Get(cached_verb.Key) |> ValueOption.map(_.OverduePriority(now)) |> ValueOption.filter((>=) 0)
 
         entries
         |> Seq.choose(fun cached_verb ->
@@ -54,7 +55,7 @@ type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
     member inline this.AheadReviewEntries(entries: VerbCacheEntry seq, now: int64) =
 
         let next_review_or_none (cached_verb: VerbCacheEntry) : int64 voption =
-            this.Scheduler.Get cached_verb.Key |> ValueOption.map(_.NextReview) |> ValueOption.filter((>) now)
+            this.Scheduler.Get(cached_verb.Key) |> ValueOption.map(_.NextReview) |> ValueOption.filter((>) now)
 
         let verbs_asc_by_next_review =
             entries

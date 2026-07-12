@@ -1,4 +1,4 @@
-﻿namespace Loana.Desktop.Quizzes
+namespace Loana.Desktop.Quizzes
 
 open System.Drawing
 open Loana.Language
@@ -43,6 +43,7 @@ type Quiz =
         Key: string
         Questions: unit -> Question array
     }
+
     override this.Equals(obj: obj) =
         match obj with
         | :? Quiz as q -> q.Name = this.Name

@@ -1,4 +1,4 @@
-﻿open System
+open System
 open System.IO
 open System.Drawing
 open Loana.Data
@@ -43,7 +43,7 @@ let mutable waiting_acceptance = true
 while waiting_acceptance do
 
     Console.Clear()
-    Console.WriteLine(MenuRender.Pad "Loading ...", Color.White, Color.FromArgb(0xFF_303030))
+    Console.WriteLine(MenuRender.Pad("Loading ..."), Color.White, Color.FromArgb(0xFF_303030))
 
     let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
     let words = WordBank.FromDirectory(Path.Combine(data_path))
@@ -59,7 +59,7 @@ while waiting_acceptance do
         let struct (x, y) = Console.GetCursorPosition()
 
         fun () ->
-            MenuRender.WriteLine(MenuRender.Pad "Loana has loaded!", Color.LightGreen, Color.FromArgb(0xFF_303030))
+            MenuRender.WriteLine(MenuRender.Pad("Loana has loaded!"), Color.LightGreen, Color.FromArgb(0xFF_303030))
 
             for i = 0 to 3 do
                 b.[int(floor(r.NextDouble() * 60.0)) + 15 + 80 * 24] <- 80.0
@@ -81,7 +81,7 @@ while waiting_acceptance do
                         MenuRender.Write(p + " \n" + (if i / 80 < 23 then p else ""), Color.White, bg)
 
             MenuRender.WriteLine(
-                MenuRender.Pad "[S] Sync  [C] Categorise  [R] Reload  [Enter] Launch",
+                MenuRender.Pad("[S] Sync  [C] Categorise  [R] Reload  [Enter] Launch"),
                 Color.LightGray,
                 Color.FromArgb(0xFF_202020)
             )

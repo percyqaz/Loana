@@ -1,4 +1,4 @@
-﻿namespace Loana.Language
+namespace Loana.Language
 
 open System
 open System.Text.RegularExpressions
@@ -10,14 +10,14 @@ module VerbDownloader =
 
     let private download_de_verb_page (verb: string) : string =
         http_client.GetStringAsync(
-            Uri(sprintf "https://conjugator.reverso.net/conjugation-german-verb-%s.html" (Uri.EscapeDataString verb))
+            Uri(sprintf "https://conjugator.reverso.net/conjugation-german-verb-%s.html" (Uri.EscapeDataString(verb)))
         )
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
     let private download_en_verb_page (verb: string) : string =
         http_client.GetStringAsync(
-            Uri(sprintf "https://conjugator.reverso.net/conjugation-english-verb-%s.html" (Uri.EscapeDataString verb))
+            Uri(sprintf "https://conjugator.reverso.net/conjugation-english-verb-%s.html" (Uri.EscapeDataString(verb)))
         )
         |> Async.AwaitTask
         |> Async.RunSynchronously
@@ -51,15 +51,9 @@ module VerbDownloader =
                 .Match(html, sprintf "<div class=\"blue-box-wrap.*?\" mobile-title=\"%s\\s*\">(.*?)<\/div>" title)
                 .Groups.[1].Value
 
-        Regex
-            .Match(div_matching_title, "<i class=\"particletxt\">(.*?)<\/i>")
-            .Groups.[1].Value
-        + Regex
-            .Match(div_matching_title, "<i class=\"verbtxt\">(.*?)<\/i>")
-            .Groups.[1].Value
-        + Regex
-            .Match(div_matching_title, "<i class=\"auxgraytxt\">(.*?)<\/i>")
-            .Groups.[1].Value
+        Regex.Match(div_matching_title, "<i class=\"particletxt\">(.*?)<\/i>").Groups.[1].Value
+        + Regex.Match(div_matching_title, "<i class=\"verbtxt\">(.*?)<\/i>").Groups.[1].Value
+        + Regex.Match(div_matching_title, "<i class=\"auxgraytxt\">(.*?)<\/i>").Groups.[1].Value
 
     let fetch_verb_inflections (verb: Verb) : (VerbInflection * string) seq =
 
@@ -86,7 +80,7 @@ module VerbDownloader =
 
         let de (pronoun_to_inflection: Map<string, string>) (person: Person) =
             let pronoun =
-                match InflectionPerson.FromPerson person with
+                match InflectionPerson.FromPerson(person) with
                 | FirstSingular -> "ich"
                 | FirstThirdPluralFormal -> "Sie"
                 | ThirdSingular -> "er/sie/es"
@@ -109,10 +103,10 @@ module VerbDownloader =
                 match q with
                 | VerbTense.Present ->
                     for person in Person.LIST do
-                        yield VerbInflection.Present(InflectionPerson.FromPerson person), de de_present_tense person
+                        yield VerbInflection.Present(InflectionPerson.FromPerson(person)), de de_present_tense person
                 | VerbTense.SimplePast ->
                     for person in Person.LIST do
-                        yield VerbInflection.SimplePast(InflectionPerson.FromPerson person), de de_past_tense person
+                        yield VerbInflection.SimplePast(InflectionPerson.FromPerson(person)), de de_past_tense person
                 | VerbTense.Imperative -> failwith "nyi"
         }
 

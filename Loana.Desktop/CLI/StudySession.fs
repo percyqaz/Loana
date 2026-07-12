@@ -14,6 +14,7 @@ type CardLine =
             BG: Color
             Length: int
         }
+
     static member Empty(bg: Color) = { Content = ""; BG = bg; Length = 0 }
 
     static member (+)(this: CardLine, extra: CardFragment) =
@@ -30,6 +31,7 @@ type CardSide =
         {
             Lines: CardLine list
         }
+
     static member Empty = { Lines = [] }
     static member (+)(this: CardSide, line: CardLine) = { Lines = this.Lines @ [ line ] }
     static member Create = List.fold (+) CardSide.Empty
@@ -42,6 +44,7 @@ type StudySessionResult =
         Bad: int
         Forgot: int
     }
+
     member this.NotGood = this.Ok + this.Bad + this.Forgot
 
 [<AbstractClass>]
@@ -61,7 +64,7 @@ type StudySession(title: string, cards: Card array) =
         let inner_width = edges_width - 4
 
         let empty () =
-            MenuRender.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0xFF_101010))
+            MenuRender.WriteLine(MenuRender.Pad(""), Color.White, Color.FromArgb(0xFF_101010))
 
         let horizontal_edge () =
             MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
@@ -114,7 +117,7 @@ type StudySession(title: string, cards: Card array) =
 
             draw_title()
             draw_card front
-            MenuRender.WriteLine(MenuRender.Pad "[Space] Reveal", Color.LightGray, Color.FromArgb(0xFF_303030))
+            MenuRender.WriteLine(MenuRender.Pad("[Space] Reveal"), Color.LightGray, Color.FromArgb(0xFF_303030))
             draw_log()
             MenuRender.Redraw()
 
@@ -153,20 +156,20 @@ type StudySession(title: string, cards: Card array) =
                         loop <- false
                     | ConsoleKey.Z ->
                         buttons.[3] <- buttons.[3] + 1
-                        this.Forget current
+                        this.Forget(current)
                         loop <- false
                     | ConsoleKey.OemComma ->
                         buttons.[2] <- buttons.[2] + 1
-                        this.Demote current
+                        this.Demote(current)
                         loop <- false
                     | ConsoleKey.OemPeriod ->
                         buttons.[1] <- buttons.[1] + 1
-                        this.Keep current
+                        this.Keep(current)
                         loop <- false
                     | ConsoleKey.Oem2
                     | ConsoleKey.Divide ->
                         buttons.[0] <- buttons.[0] + 1
-                        this.Promote current
+                        this.Promote(current)
                         loop <- false
                     | _ -> ()
 

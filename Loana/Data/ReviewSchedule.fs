@@ -69,7 +69,7 @@ type ReviewData =
 
         let tenths = 11 - difficulty
         let fuzz = int64 <| Random().Next(int TimeSpan.SecondsPerMinute * 30)
-        ReviewData.BaseInterval level * int64 tenths / 10L - fuzz + max 0L overdue_by
+        ReviewData.BaseInterval(level) * int64 tenths / 10L - fuzz + max 0L overdue_by
 
     static member Level1(now: int64, difficulty: int) : ReviewData =
         let difficulty = difficulty |> max 1 |> min 10
@@ -209,12 +209,12 @@ type ReviewScheduleFile(path: string) =
         bw.Write(entries.Count)
 
         let write_entry (id: string, data: ReviewData) : unit =
-            bw.Write id
-            bw.Write data.Reviews
+            bw.Write(id)
+            bw.Write(data.Reviews)
             bw.Write(byte data.Level)
             bw.Write(byte data.Difficulty)
-            bw.Write data.LastReviewed
-            bw.Write data.Interval
+            bw.Write(data.LastReviewed)
+            bw.Write(data.Interval)
 
         for kvp in entries do
             write_entry(kvp.Key, kvp.Value)
@@ -256,11 +256,11 @@ type ReviewSchedule(path: string) =
 
     member this.IsBuried(key: string) : bool = buried.Contains(key)
 
-    member this.Bury(key: string) : unit = buried <- buried.Add key
+    member this.Bury(key: string) : unit = buried <- buried.Add(key)
 
     member this.Schedule(key: string, data: ReviewData, now: int64) : ScheduleResult =
         let old_level =
-            this.Get key |> ValueOption.map _.Level |> ValueOption.defaultValue 0
+            this.Get(key) |> ValueOption.map _.Level |> ValueOption.defaultValue 0
 
         schedule_data.[key] <- data
         this.SaveDebounced()

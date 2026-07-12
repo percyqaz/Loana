@@ -1,4 +1,4 @@
-﻿namespace Loana.Data
+namespace Loana.Data
 
 open System
 open System.Drawing
@@ -89,15 +89,15 @@ type VerbBank(path: string) =
         let mutable inflections = this.Get(verb) |> ValueOption.defaultValue Map.empty
 
         let missing_present_inflections () =
-            not(inflections.ContainsKey(VerbInflection.Present InflectionPerson.ThirdSingular))
-            && not(inflections.ContainsKey(VerbInflection.Present InflectionPerson.FirstSingular))
+            not(inflections.ContainsKey(VerbInflection.Present(InflectionPerson.ThirdSingular)))
+            && not(inflections.ContainsKey(VerbInflection.Present(InflectionPerson.FirstSingular)))
 
         let missing_past_inflections () =
-            not(inflections.ContainsKey(VerbInflection.SimplePast InflectionPerson.ThirdSingular))
-            && not(inflections.ContainsKey(VerbInflection.SimplePast InflectionPerson.FirstSingular))
+            not(inflections.ContainsKey(VerbInflection.SimplePast(InflectionPerson.ThirdSingular)))
+            && not(inflections.ContainsKey(VerbInflection.SimplePast(InflectionPerson.FirstSingular)))
 
         let missing_imperative_inflections () =
-            not(inflections.ContainsKey(VerbInflection.Imperative ImperativePerson.SecondSingular))
+            not(inflections.ContainsKey(VerbInflection.Imperative(ImperativePerson.SecondSingular)))
 
         let detect_missing () : bool =
             let mutable has_missing = false

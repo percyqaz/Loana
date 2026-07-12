@@ -1,4 +1,4 @@
-﻿namespace Loana.Language
+namespace Loana.Language
 
 open System
 open System.Drawing
@@ -106,6 +106,7 @@ type Annotation =
         Text: string
         Note: string option
     }
+
     override this.ToString() =
         match this.Note with
         | Some note -> sprintf "%s [%s]" this.Text note
@@ -129,6 +130,7 @@ type Vocab =
         English: Annotation
         EnglishAlternatives: Annotation list
     }
+
     override this.ToString() : string =
         sprintf "%s = %s" this.Deutsch this.EnglishAsciiIdentifier
 
@@ -142,8 +144,7 @@ type Vocab =
         let deutsch = split_by_equals.[0]
 
         let english_alternatives =
-            split_by_equals.[1]
-                .Split(",", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+            split_by_equals.[1].Split(",", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
 
         assert (english_alternatives.Length >= 1)
 
@@ -250,6 +251,7 @@ type Verb =
         Dative: bool
         Tenses: VerbTense list
     }
+
     override this.ToString() : string =
         match this.PastParticiple with
         | Unknown -> this.Infinitive.ToString()

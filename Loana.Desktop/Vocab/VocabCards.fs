@@ -28,9 +28,9 @@ type VocabCard =
                     | None -> ()
             }
             |> List.ofSeq
-            |> CardLine.Create Color.White
+            |> CardLine.Create(Color.White)
 
-        CardSide.Create
+        CardSide.Create(
             [
                 CardLine.Create GERMAN_BG []
                 CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
@@ -38,8 +38,9 @@ type VocabCard =
                 CardLine.Create Color.White []
                 CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
                 CardLine.Create Color.White []
-            ],
-        CardSide.Create
+            ]
+        ),
+        CardSide.Create(
             [
                 CardLine.Create GERMAN_BG []
                 CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
@@ -48,6 +49,7 @@ type VocabCard =
                 en_side
                 CardLine.Create Color.White []
             ]
+        )
 
     static member RecallDE(v: Vocab) : CardSide * CardSide =
         let en_side =
@@ -67,9 +69,9 @@ type VocabCard =
                     | None -> ()
             }
             |> List.ofSeq
-            |> CardLine.Create Color.White
+            |> CardLine.Create(Color.White)
 
-        CardSide.Create
+        CardSide.Create(
             [
                 CardLine.Create Color.White []
                 en_side
@@ -77,8 +79,9 @@ type VocabCard =
                 CardLine.Create GERMAN_BG []
                 CardLine.Create GERMAN_BG [ { Text = "???"; FG = Color.White; BG = GERMAN_BG } ]
                 CardLine.Create GERMAN_BG []
-            ],
-        CardSide.Create
+            ]
+        ),
+        CardSide.Create(
             [
                 CardLine.Create Color.White []
                 en_side
@@ -87,6 +90,7 @@ type VocabCard =
                 CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
                 CardLine.Create GERMAN_BG []
             ]
+        )
 
     static member RecogniseArticleDE(n: Noun) : CardSide * CardSide =
         let en_side =
@@ -108,7 +112,7 @@ type VocabCard =
                     | None -> ()
             }
             |> List.ofSeq
-            |> CardLine.Create Color.White
+            |> CardLine.Create(Color.White)
 
         let de_side_white, de_side_colored =
             let article =
@@ -127,7 +131,7 @@ type VocabCard =
                     { Text = n.Deutsch; FG = n.Guts.Gender.Color; BG = GERMAN_BG }
                 ]
 
-        CardSide.Create
+        CardSide.Create(
             [
                 CardLine.Create GERMAN_BG []
                 de_side_white
@@ -135,8 +139,9 @@ type VocabCard =
                 CardLine.Create Color.White []
                 CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
                 CardLine.Create Color.White []
-            ],
-        CardSide.Create
+            ]
+        ),
+        CardSide.Create(
             [
                 CardLine.Create GERMAN_BG []
                 de_side_colored
@@ -145,6 +150,7 @@ type VocabCard =
                 en_side
                 CardLine.Create Color.White []
             ]
+        )
 
     static member RecallArticleDE(n: Noun) : CardSide * CardSide =
         let en_side =
@@ -166,7 +172,7 @@ type VocabCard =
                     | None -> ()
             }
             |> List.ofSeq
-            |> CardLine.Create Color.White
+            |> CardLine.Create(Color.White)
 
         let de_side =
             let article =
@@ -179,7 +185,7 @@ type VocabCard =
                     { Text = n.Deutsch; FG = n.Guts.Gender.Color; BG = GERMAN_BG }
                 ]
 
-        CardSide.Create
+        CardSide.Create(
             [
                 CardLine.Create Color.White []
                 en_side
@@ -187,8 +193,9 @@ type VocabCard =
                 CardLine.Create GERMAN_BG []
                 CardLine.Create GERMAN_BG [ { Text = "???"; FG = Color.White; BG = GERMAN_BG } ]
                 CardLine.Create GERMAN_BG []
-            ],
-        CardSide.Create
+            ]
+        ),
+        CardSide.Create(
             [
                 CardLine.Create Color.White []
                 en_side
@@ -197,11 +204,12 @@ type VocabCard =
                 de_side
                 CardLine.Create GERMAN_BG []
             ]
+        )
 
     static member Render(card: Card) =
         match card.Type with
-        | RecogniseDE v -> VocabCard.RecogniseDE v
-        | RecallDE v -> VocabCard.RecallDE v
-        | RecogniseArticleDE n -> VocabCard.RecogniseArticleDE n
-        | RecallArticleDE n -> VocabCard.RecallArticleDE n
+        | RecogniseDE v -> VocabCard.RecogniseDE(v)
+        | RecallDE v -> VocabCard.RecallDE(v)
+        | RecogniseArticleDE n -> VocabCard.RecogniseArticleDE(n)
+        | RecallArticleDE n -> VocabCard.RecallArticleDE(n)
         | Inflection _ -> failwith "todo: split verb mode into separate code instead of the hack it is now"

@@ -211,7 +211,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
                 MenuRender.Write("]", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
 
         for quiz in quizzes.Quizzes do
-            let schedule = scheduler.Get quiz.Key
+            let schedule = scheduler.Get(quiz.Key)
             let level = schedule |> ValueOption.map _.Level |> ValueOption.defaultValue 0
 
             let next_review =
@@ -319,7 +319,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             Console.ReadKey(true) |> ignore
 
     member this.VocabChoresList() =
-        Console.WriteLine(MenuRender.Pad " Chores list ", Color.White, Color.FromArgb(0xFF_303030))
+        Console.WriteLine(MenuRender.Pad(" Chores list "), Color.White, Color.FromArgb(0xFF_303030))
         let chores = vocab.Chores() |> Seq.cache
         let urgent = chores |> Seq.filter _.IsUrgent |> Seq.truncate 20 |> Array.ofSeq
 
@@ -351,14 +351,14 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
         let by_hour =
             vocab.AheadReviewCards(all_cards, now)
-            |> Seq.map(fun c -> (scheduler.Get c.Key).Value.NextReview - now)
+            |> Seq.map(fun c -> (scheduler.Get(c.Key)).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerHour)
             |> Map.ofSeq
 
         let by_day =
             vocab.AheadReviewCards(all_cards, now)
-            |> Seq.map(fun c -> (scheduler.Get c.Key).Value.NextReview - now)
+            |> Seq.map(fun c -> (scheduler.Get(c.Key)).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerDay)
             |> Map.ofSeq
@@ -366,7 +366,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
         let forgotten =
             all_cards
             |> Seq.choose(fun c ->
-                match scheduler.Get c.Key with
+                match scheduler.Get(c.Key) with
                 | ValueSome v when (v.Reviews > v.Level && v.Level < 4) || v.Difficulty > 5 -> Some(v, c.Key)
                 | _ -> None
             )
@@ -382,12 +382,12 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             MenuRender.WriteLine()
 
         MenuRender.WriteLine(
-            MenuRender.Pad " Stats for selected deck(s) ",
+            MenuRender.Pad(" Stats for selected deck(s) "),
             Color.LightGray,
             Color.FromArgb(0xFF_303030)
         )
 
-        MenuRender.WriteLine(MenuRender.Pad " - Distribution - ", Color.LightGray, Color.FromArgb(0xFF_202020))
+        MenuRender.WriteLine(MenuRender.Pad(" - Distribution - "), Color.LightGray, Color.FromArgb(0xFF_202020))
 
         all_cards
         |> vocab.LevelDistribution
@@ -408,7 +408,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
         )
 
         MenuRender.WriteLine(
-            MenuRender.Pad " - Upcoming workload (axis in days) - ",
+            MenuRender.Pad(" - Upcoming workload (axis in days) - "),
             Color.LightGray,
             Color.FromArgb(0xFF_303030)
         )
@@ -432,7 +432,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
         MenuRender.WriteLine()
 
         MenuRender.WriteLine(
-            MenuRender.Pad " - Upcoming workload (axis in weeks) - ",
+            MenuRender.Pad(" - Upcoming workload (axis in weeks) - "),
             Color.LightGray,
             Color.FromArgb(0xFF_303030)
         )
@@ -455,7 +455,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
         MenuRender.WriteLine()
 
         if forgotten.Length > 0 then
-            MenuRender.WriteLine(MenuRender.Pad " - Forgotten cards - ", Color.Red, Color.FromArgb(0xFF_303030))
+            MenuRender.WriteLine(MenuRender.Pad(" - Forgotten cards - "), Color.Red, Color.FromArgb(0xFF_303030))
 
             for data, key in forgotten do
                 MenuRender.Write(
@@ -508,12 +508,10 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             if not result.EndEarly then
                 let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
-                scheduler
-                    .Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now)
-                    .LogTo
+                scheduler.Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now).LogTo
                     session
 
-        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
+        Console.WriteLine(MenuRender.Pad("Session ended."), Color.LightGreen, Color.FromArgb(0xFF_303030))
         Console.ReadKey(true) |> ignore
 
     member this.VerbsReview(entries: VerbCacheEntry seq) =
@@ -540,7 +538,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             elif result.Forgot > 0 then scheduler.Reschedule(verb.Key, _.Forget).LogTo session
             else scheduler.Reschedule(verb.Key, _.Demote).LogTo session
 
-        Console.WriteLine(MenuRender.Pad "Session ended.", Color.LightGreen, Color.FromArgb(0xFF_303030))
+        Console.WriteLine(MenuRender.Pad("Session ended."), Color.LightGreen, Color.FromArgb(0xFF_303030))
         Console.ReadKey(true) |> ignore
 
     member this.Run() : unit =
@@ -555,7 +553,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             match selection with
             | VocabGroup wordlists ->
                 MenuRender.WriteLine(
-                    MenuRender.Pad " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter ",
+                    MenuRender.Pad(" [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter "),
                     Color.LightGray,
                     Color.FromArgb(0xFF_303030)
                 )
@@ -585,7 +583,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
             | VerbMode ->
                 MenuRender.WriteLine(
-                    MenuRender.Pad " [L] Learn  [R] Review ",
+                    MenuRender.Pad(" [L] Learn  [R] Review "),
                     Color.LightGray,
                     Color.FromArgb(0xFF_303030)
                 )
@@ -607,7 +605,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
             | Quiz quiz ->
                 MenuRender.WriteLine(
-                    MenuRender.Pad " [Enter] Quiz  [A] Auto ",
+                    MenuRender.Pad(" [Enter] Quiz  [A] Auto "),
                     Color.LightGray,
                     Color.FromArgb(0xFF_303030)
                 )

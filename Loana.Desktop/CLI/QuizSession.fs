@@ -12,6 +12,7 @@ type QuestionLine =
             Content: QuestionFragment list
             Length: int
         }
+
     static member Empty = { Content = []; Length = 0 }
 
     static member (+)(this: QuestionLine, extra: QuestionFragment) =
@@ -38,7 +39,7 @@ type QuizSession(title: string, questions: Question array) =
     let mutable mistakes = 0
 
     let empty () =
-        MenuRender.WriteLine(MenuRender.Pad "", Color.White, Color.FromArgb(0xFF_101010))
+        MenuRender.WriteLine(MenuRender.Pad(""), Color.White, Color.FromArgb(0xFF_101010))
 
     let horizontal_edge () =
         MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
@@ -66,7 +67,7 @@ type QuizSession(title: string, questions: Question array) =
         empty()
         horizontal_edge()
         front.Lines |> List.iter(line front.BG)
-        line back.BG (QuestionLine.Create [])
+        line back.BG (QuestionLine.Create([]))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
         MenuRender.Write(" ", Color.White, back.BG)
@@ -75,7 +76,7 @@ type QuizSession(title: string, questions: Question array) =
         MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.WriteLine()
-        back.Lines |> List.iter(fun _ -> line back.BG (QuestionLine.Create []))
+        back.Lines |> List.iter(fun _ -> line back.BG (QuestionLine.Create([])))
         horizontal_edge()
         let i = 5 + front.Lines.Length + 1 + back.Lines.Length
 
@@ -89,7 +90,7 @@ type QuizSession(title: string, questions: Question array) =
         empty()
         horizontal_edge()
         front.Lines |> List.iter(line front.BG)
-        line back.BG (QuestionLine.Create [])
+        line back.BG (QuestionLine.Create([]))
         MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
         MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
         MenuRender.Write(" ", Color.White, back.BG)
@@ -130,7 +131,7 @@ type QuizSession(title: string, questions: Question array) =
 
             draw_title()
             let x, y = draw_front(current.Front, current.Back)
-            MenuRender.WriteLine(MenuRender.Pad "[Enter] Submit", Color.LightGray, Color.FromArgb(0xFF_303030))
+            MenuRender.WriteLine(MenuRender.Pad("[Enter] Submit"), Color.LightGray, Color.FromArgb(0xFF_303030))
             draw_log()
             MenuRender.Redraw()
             let struct (x2, y2) = Console.GetCursorPosition()
@@ -143,7 +144,7 @@ type QuizSession(title: string, questions: Question array) =
 
                 draw_title()
                 draw_back(current.Front, current.Back, input)
-                MenuRender.WriteLine(MenuRender.Pad " [Enter] Continue ", Color.LightGray, Color.FromArgb(0xFF_303030))
+                MenuRender.WriteLine(MenuRender.Pad(" [Enter] Continue "), Color.LightGray, Color.FromArgb(0xFF_303030))
                 draw_log()
                 MenuRender.Redraw()
 
@@ -156,12 +157,12 @@ type QuizSession(title: string, questions: Question array) =
                         quit_early <- true
                         loop <- false
                     | ConsoleKey.Enter ->
-                        this.ReplaceNear current
+                        this.ReplaceNear(current)
                         loop <- false
                     | _ -> ()
 
         Console.WriteLine(
-            MenuRender.Pad $" Session ended. {mistakes} mistakes! ",
+            MenuRender.Pad($" Session ended. {mistakes} mistakes! "),
             Color.LightGreen,
             Color.FromArgb(0xFF_202020)
         )

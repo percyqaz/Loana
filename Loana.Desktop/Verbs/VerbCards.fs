@@ -31,7 +31,7 @@ type VerbCard =
                     | None -> ()
             }
             |> List.ofSeq
-            |> CardLine.Create QUESTION_BG
+            |> CardLine.Create(QUESTION_BG)
 
         let answer_bg, quiz_hint =
             match i with
@@ -55,7 +55,7 @@ type VerbCard =
                 | ImperativePerson.SecondSingular -> "(du)"
                 | ImperativePerson.ThirdPluralFormal -> List.randomChoice [ "wir"; "Sie" ]
 
-        CardSide.Create
+        CardSide.Create(
             [
                 CardLine.Create QUESTION_BG []
                 CardLine.Create QUESTION_BG [ { Text = v.Infinitive.Deutsch; FG = Color.White; BG = QUESTION_BG } ]
@@ -70,8 +70,9 @@ type VerbCard =
                         { Text = (if i.IsImperative then pronoun else ""); FG = ANSWER_NOTE; BG = answer_bg }
                     ]
                 CardLine.Create answer_bg []
-            ],
-        CardSide.Create
+            ]
+        ),
+        CardSide.Create(
             [
                 CardLine.Create QUESTION_BG []
                 CardLine.Create QUESTION_BG [ { Text = v.Infinitive.Deutsch; FG = Color.White; BG = QUESTION_BG } ]
@@ -87,3 +88,4 @@ type VerbCard =
                     ]
                 CardLine.Create answer_bg []
             ]
+        )

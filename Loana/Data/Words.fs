@@ -1,4 +1,4 @@
-﻿namespace Loana.Data
+namespace Loana.Data
 
 open System
 open System.Collections.Generic
@@ -26,7 +26,7 @@ module Wordlist =
                 if gender.IsSome then
                     failwithf "Gender was set twice for noun: %O" vocab
 
-                gender <- Some(Gender.FromString next)
+                gender <- Some(Gender.FromString(next))
             | "no_plural" ->
                 if gender.IsNone then
                     failwithf "'no_plural' must be set after gender for noun: %O" vocab
@@ -108,13 +108,12 @@ module Wordlist =
 
         let tags =
             if split_by_colon.Length = 2 then
-                split_by_colon.[1]
-                    .Split(" ", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+                split_by_colon.[1].Split(" ", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
                 |> List.ofArray
             else
                 []
 
-        let vocab = Vocab.FromString split_by_colon.[0]
+        let vocab = Vocab.FromString(split_by_colon.[0])
         vocab, tags
 
     let parse_noun: string -> Noun = parse_core >> parse_noun_inner
@@ -125,6 +124,7 @@ type WordlistItem =
     | Noun of Noun
     | Verb of Verb
     | Vocab of Vocab
+
     override this.ToString() : string =
         match this with
         | Noun n -> n.ToString()
@@ -186,7 +186,7 @@ type WordBank(path: string) =
             | _ -> ()
 
             this.CheckDuplicate(source, line_n, v, Verb verb)
-            entries.Add { Item = Verb verb; Source = source }
+            entries.Add({ Item = Verb verb; Source = source })
 
         elif v.LooksLikeANoun && tags <> [] then
             let noun = Wordlist.parse_noun_inner(v, tags)
@@ -196,15 +196,15 @@ type WordBank(path: string) =
             | _ -> ()
 
             this.CheckDuplicate(source, line_n, v, Noun noun)
-            entries.Add { Item = Noun noun; Source = source }
+            entries.Add({ Item = Noun noun; Source = source })
 
         else
             this.CheckDuplicate(source, line_n, v, Vocab v)
-            entries.Add { Item = Vocab v; Source = source }
+            entries.Add({ Item = Vocab v; Source = source })
 
     member private this.TryAddLine(source: Source, line_n: int, line: string) : Result<unit, string> =
         try
-            let is_comment = line.StartsWith "#"
+            let is_comment = line.StartsWith("#")
 
             if line <> "" && not is_comment then
                 this.AddVocab(source, line_n, line)
@@ -220,7 +220,7 @@ type WordBank(path: string) =
             | Ok() -> ()
             | Error "" -> ()
             | Error reason ->
-                Console.Write($" {source.File}: ", Color.LightBlue, Color.FromArgb 0x202020)
+                Console.Write($" {source.File}: ", Color.LightBlue, Color.FromArgb(0x202020))
                 Console.WriteLine(" " + reason, Color.Red)
         )
 
@@ -252,7 +252,7 @@ type WordBank(path: string) =
 
         let start_new_group (name: string) : unit =
             let new_group = { Name = name; Lists = ResizeArray() }
-            groups.Add new_group
+            groups.Add(new_group)
             current_group <- Some new_group
 
         for line in this.GetMetaList() do

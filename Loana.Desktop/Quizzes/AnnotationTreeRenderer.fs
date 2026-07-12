@@ -1,4 +1,4 @@
-﻿namespace Loana.Desktop.Quizzes
+namespace Loana.Desktop.Quizzes
 
 open System.Drawing
 open Loana.Language
@@ -27,7 +27,7 @@ module AnnotationTreeRenderer =
                 let l =
                     match fragment with
                     | Text str ->
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = str
                                 Start = position
@@ -35,6 +35,7 @@ module AnnotationTreeRenderer =
                                 Color = Color.White
                                 Layer = 0
                             }
+                        )
 
                         position <- position + str.Length
                         0
@@ -42,7 +43,7 @@ module AnnotationTreeRenderer =
                         let start = position
                         let layer = 1 + walk children
 
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = gender.ToString()
                                 Start = start
@@ -50,13 +51,14 @@ module AnnotationTreeRenderer =
                                 Color = gender.Color
                                 Layer = layer
                             }
+                        )
 
                         layer
                     | Case(case, children) ->
                         let start = position
                         let layer = 1 + walk children
 
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = case.ToString()
                                 Start = start
@@ -64,13 +66,14 @@ module AnnotationTreeRenderer =
                                 Color = case.Color
                                 Layer = layer
                             }
+                        )
 
                         layer
                     | StrongDeclension children ->
                         let start = position
                         let layer = 1 + walk children
 
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = "S"
                                 Start = start
@@ -78,13 +81,14 @@ module AnnotationTreeRenderer =
                                 Color = Color.Red
                                 Layer = layer
                             }
+                        )
 
                         layer
                     | WeakDeclension children ->
                         let start = position
                         let layer = 1 + walk children
 
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = "W"
                                 Start = start
@@ -92,13 +96,14 @@ module AnnotationTreeRenderer =
                                 Color = Color.DarkCyan
                                 Layer = layer
                             }
+                        )
 
                         layer
                     | ArticleDeclension children ->
                         let start = position
                         let layer = 1 + walk children
 
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = "D"
                                 Start = start
@@ -106,13 +111,14 @@ module AnnotationTreeRenderer =
                                 Color = Color.OrangeRed
                                 Layer = layer
                             }
+                        )
 
                         layer
                     | Annotation(note, children) ->
                         let start = position
                         let layer = 1 + walk children
 
-                        frags.Add
+                        frags.Add(
                             {
                                 Text = note
                                 Start = start
@@ -120,6 +126,7 @@ module AnnotationTreeRenderer =
                                 Color = Color.Gray
                                 Layer = layer
                             }
+                        )
 
                         layer
 
@@ -162,6 +169,6 @@ module AnnotationTreeRenderer =
             |> QuestionLine.Create
 
         {
-            Lines = QuestionLine.Create [] :: (lines |> List.map render_line) @ [ QuestionLine.Create [] ]
+            Lines = QuestionLine.Create([]) :: (lines |> List.map render_line) @ [ QuestionLine.Create([]) ]
             BG = background
         }
