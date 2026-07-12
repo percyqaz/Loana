@@ -5,13 +5,11 @@
     <TargetFramework>net10.0</TargetFramework>
 	<PublishTrimmed>True</PublishTrimmed>
 	<PublishAot>True</PublishAot>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>True</Optimize>
     <Tailcalls>True</Tailcalls>
+    <WarningsAsErrors>FS3569</WarningsAsErrors>
   </PropertyGroup>
-
+    
   <ItemGroup>
     <Compile Include="Language\Vocab.fs" />
     <Compile Include="Language\AnnotationTree.fs" />

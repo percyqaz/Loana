@@ -16,6 +16,7 @@ type WordBrowser(words: WordBank) =
     let mutable results: IReadOnlyList<WordlistEntry> = words.Entries
     let mutable position = 0
 
+    [<Literal>]
     let PAGE_SIZE = 20
 
     let update_search_results () =

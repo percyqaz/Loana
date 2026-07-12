@@ -48,7 +48,10 @@ type StudySessionResult =
 type StudySession(title: string, cards: Card array) =
     let cards = ResizeArray<Card>(cards |> Seq.randomShuffle)
 
+    [<Literal>]
     let CARD_AREA = 20
+
+    [<Literal>]
     let LOG_SIZE = 16
 
     static let log = ResizeArray()

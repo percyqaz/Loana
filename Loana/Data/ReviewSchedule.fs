@@ -161,6 +161,7 @@ type ReviewData =
 
 type ReviewScheduleFile(path: string) =
 
+    [<Literal>]
     static let VERSION = 2
 
     static member ReadFromStream(stream: Stream) : Dictionary<string, ReviewData> =

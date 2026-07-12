@@ -535,7 +535,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             let result = session.Start()
 
             if result.EndEarly then session_entries.Clear()
-            else if result.NotGood = 0 then scheduler.Reschedule(verb.Key, _.Promote).LogTo session
+            elif result.NotGood = 0 then scheduler.Reschedule(verb.Key, _.Promote).LogTo session
             elif result.NotGood = 1 then scheduler.Reschedule(verb.Key, _.Keep).LogTo session
             elif result.Forgot > 0 then scheduler.Reschedule(verb.Key, _.Forget).LogTo session
             else scheduler.Reschedule(verb.Key, _.Demote).LogTo session

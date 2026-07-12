@@ -38,9 +38,13 @@ module Sync =
 
             sent <- sent + outgoing
 
+    [<Literal>]
     let PORT = 1992
+
     let SCHEDULE_HEADER = System.Text.Encoding.UTF8.GetBytes("loana-sched-sync")
     let WORDLIST_HEADER = System.Text.Encoding.UTF8.GetBytes("loana-words-sync")
+
+    [<Literal>]
     let MAX_PAYLOAD_BYTES = 4_000_000
 
     let private receive_payload (socket: Socket, header: byte array) : byte array =

@@ -154,10 +154,10 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member this.PossibleCards() = this.PossibleCards([])
 
-    member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) =
+    member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) : Card seq =
         cards |> Seq.where(fun card -> card.Tier >= min_tier && card.Tier <= max_tier)
 
-    member this.FilterByLevel(cards: Card seq, minlevel: int, maxlevel: int) =
+    member this.FilterByLevel(cards: Card seq, minlevel: int, maxlevel: int) : Card seq =
         cards
         |> Seq.where(fun card ->
             match scheduler.Get card.Key with

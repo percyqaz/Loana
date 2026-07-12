@@ -90,7 +90,7 @@ module Wordlist =
             | "pp" ->
                 past_participle <- KnownValue(Vocab.FromString(String.concat " " remaining_tags))
                 remaining_tags <- []
-            | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next vocab
+            | _ -> failwithf "Unrecognised tag '%s' for verb: %O" next vocab
 
         {
             Infinitive = vocab

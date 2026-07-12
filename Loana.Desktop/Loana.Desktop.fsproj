@@ -5,6 +5,9 @@
     <TargetFramework>net10.0</TargetFramework>
 	<PackAsTool>true</PackAsTool>
     <ToolCommandName>loana</ToolCommandName>
+    <Optimize>True</Optimize>
+    <Tailcalls>True</Tailcalls>
+    <WarningsAsErrors>FS3569</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

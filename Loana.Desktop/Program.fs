@@ -72,7 +72,7 @@ while waiting_acceptance do
 
                 if i / 80 < 24 then
                     MenuRender.Write(
-                        c[min 7 (int b.[i])].ToString(),
+                        c.[min 7 (int b.[i])].ToString(),
                         color,
                         Color.FromArgb(255, 16 + int color.G / 2, 16 + int color.G / 4, 16)
                     )

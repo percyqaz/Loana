@@ -26,7 +26,10 @@ type Question = { Front: QuestionSide; Back: QuestionSide; Answer: string }
 type QuizSession(title: string, questions: Question array) =
     let questions = ResizeArray<Question>(questions |> Seq.randomShuffle)
 
+    [<Literal>]
     let QUESTION_AREA = 20
+
+    [<Literal>]
     let LOG_SIZE = 16
 
     let log = ResizeArray()
