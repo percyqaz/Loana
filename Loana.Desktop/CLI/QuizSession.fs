@@ -15,7 +15,7 @@ type QuestionLine =
 
     static member Empty = { Content = []; Length = 0 }
 
-    static member (+)(this: QuestionLine, extra: QuestionFragment) =
+    static member (+)(this: QuestionLine, extra: QuestionFragment) : QuestionLine =
         { Content = this.Content @ [ extra ]; Length = this.Length + extra.Text.Length }
 
     static member Create = List.fold (+) QuestionLine.Empty
@@ -188,11 +188,11 @@ type QuizSession(title: string, questions: Question array) =
 
         result
 
-    member this.ReplaceNear(card: Question) =
+    member this.ReplaceNear(card: Question) : unit =
         mistakes <- mistakes + 1
         questions.Insert(min 4 questions.Count, card)
 
-    member this.Log(message: string) =
+    member this.Log(message: string) : unit =
         Console.WriteLine(message)
         log.Add(message)
 

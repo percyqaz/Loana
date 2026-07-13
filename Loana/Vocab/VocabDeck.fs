@@ -103,7 +103,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         }
         |> Seq.cache
 
-    member this.AvailableCards() = this.AvailableCards([])
+    member this.AvailableCards() : Card seq = this.AvailableCards([])
 
     member private this.PossibleCards(vocab: Vocab) : Card seq =
         seq {
@@ -153,7 +153,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
         }
         |> Seq.cache
 
-    member this.PossibleCards() = this.PossibleCards([])
+    member this.PossibleCards() : Card seq = this.PossibleCards([])
 
     member this.FilterByTier(cards: Card seq, min_tier: int, max_tier: int) : Card seq =
         cards |> Seq.where(fun card -> card.Tier >= min_tier && card.Tier <= max_tier)
@@ -186,10 +186,10 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 | _ -> ()
         }
 
-    member inline this.LearningCards(cards: Card seq) =
+    member inline this.LearningCards(cards: Card seq) : Card seq =
         cards |> Seq.where(fun card -> this.Scheduler.Get(card.Key).IsNone && not(this.Scheduler.IsBuried(card.Key)))
 
-    member inline this.ReviewCards(cards: Card seq) =
+    member inline this.ReviewCards(cards: Card seq) : Card seq =
         cards |> Seq.where(fun card -> this.Scheduler.Get(card.Key).IsSome)
 
     member inline this.DueReviewCards(cards: Card seq, now: int64) : Card array =
@@ -243,8 +243,8 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
     member this.LearnBatchSize = 4 * study_size_multiplier
     member this.ReviewBatchSize = 10 * study_size_multiplier
 
-    member this.IncreaseBatchSize() =
+    member this.IncreaseBatchSize() : unit =
         study_size_multiplier <- study_size_multiplier + 1 |> min 20
 
-    member this.DecreaseBatchSize() =
+    member this.DecreaseBatchSize() : unit =
         study_size_multiplier <- study_size_multiplier - 1 |> max 1

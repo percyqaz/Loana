@@ -107,12 +107,12 @@ type Annotation =
         Note: string option
     }
 
-    override this.ToString() =
+    override this.ToString() : string =
         match this.Note with
         | Some note -> sprintf "%s [%s]" this.Text note
         | None -> this.Text
 
-    static member FromString(value: string) =
+    static member FromString(value: string) : Annotation =
         let regex_match = Regex.Match(value, "([^\[]+?)(\s*\[(.*?)\]\s*)?$")
         let note = regex_match.Groups.[3].Value
         let text = regex_match.Groups.[1].Value

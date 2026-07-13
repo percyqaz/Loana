@@ -181,11 +181,11 @@ type StudySession(title: string, cards: Card array) =
             Forgot = buttons.[3]
         }
 
-    member this.ReplaceNear(card: Card) = cards.Insert(min 4 cards.Count, card)
+    member this.ReplaceNear(card: Card) : unit = cards.Insert(min 4 cards.Count, card)
 
-    member this.ReplaceFar(card: Card) = cards.Add(card)
+    member this.ReplaceFar(card: Card) : unit = cards.Add(card)
 
-    member this.Log(message: string) =
+    member this.Log(message: string) : unit =
         Console.WriteLine(message)
         log.Add(message)
 

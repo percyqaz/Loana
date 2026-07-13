@@ -8,7 +8,7 @@ open Loana.Language
 
 type VerbFile(path: string) =
 
-    member this.Load() =
+    member this.Load() : Dictionary<_, _> =
         let entries = Dictionary<string, Map<VerbInflection, string>>()
 
         let read_all_lines () : string seq =
@@ -43,7 +43,7 @@ type VerbFile(path: string) =
         finish_current_verb()
         entries
 
-    member this.Write(verbs: Dictionary<string, Map<VerbInflection, string>>) =
+    member this.Write(verbs: Dictionary<string, Map<VerbInflection, string>>) : unit =
         let lines =
             seq {
                 for verb in verbs.Keys do

@@ -42,7 +42,7 @@ type WordBrowser(words: WordBank) =
             | Some i -> Seq.tryFindIndex ((=) i) results |> Option.defaultValue 0
             | None -> 0
 
-    member this.Run() =
+    member this.Run() : unit =
         let mutable loop = true
 
         while loop do

@@ -68,7 +68,7 @@ type ReviewData =
         else
 
         let tenths = 11 - difficulty
-        let fuzz = int64 <| Random().Next(int TimeSpan.SecondsPerMinute * 30)
+        let fuzz = int64(Random().Next(int TimeSpan.SecondsPerMinute * 30))
         ReviewData.BaseInterval(level) * int64 tenths / 10L - fuzz + max 0L overdue_by
 
     static member Level1(now: int64, difficulty: int) : ReviewData =
@@ -242,9 +242,9 @@ type ReviewSchedule(path: string) =
 
     let mutable buried: Set<string> = Set.empty
 
-    member this.Save() = db.WriteToFile(schedule_data)
+    member this.Save() : unit = db.WriteToFile(schedule_data)
 
-    member this.SaveDebounced() =
+    member this.SaveDebounced() : unit =
         // todo: save if not saved in 30s
         // todo: ignore errors
         this.Save()
@@ -275,7 +275,7 @@ type ReviewSchedule(path: string) =
 
     member this.Reschedule(key: string, f: ReviewData -> int64 -> ReviewData) : ScheduleResult =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        this.Schedule(key, f <| this.Get(key).Value <| now, now)
+        this.Schedule(key, f (this.Get(key).Value) now, now)
 
     member this.Data = schedule_data.AsReadOnly()
 

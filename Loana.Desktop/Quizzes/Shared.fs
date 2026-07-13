@@ -44,7 +44,7 @@ type Quiz =
         Questions: unit -> Question array
     }
 
-    override this.Equals(obj: obj) =
+    override this.Equals(obj: obj) : bool =
         match obj with
         | :? Quiz as q -> q.Name = this.Name
         | _ -> false

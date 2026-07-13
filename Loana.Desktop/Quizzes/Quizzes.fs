@@ -19,10 +19,10 @@ type QuizScheduler(scheduler: ReviewSchedule) =
 
     member this.Quizzes: Quiz seq = quizzes
 
-    member this.Learning() =
-        quizzes |> Seq.where(fun c -> (scheduler.Get(c.Key)).IsNone)
+    member this.Learning() : Quiz seq =
+        quizzes |> Seq.where(fun c -> scheduler.Get(c.Key).IsNone)
 
-    member this.DueReview(now: int64) =
+    member this.DueReview(now: int64) : Quiz seq =
         quizzes
         |> Seq.choose(fun c ->
             match scheduler.Get(c.Key) with
@@ -34,7 +34,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         |> Seq.sortByDescending snd
         |> Seq.map fst
 
-    member this.AheadReview(now: int64) =
+    member this.AheadReview(now: int64) : Quiz seq =
         quizzes
         |> Seq.choose(fun c ->
             match scheduler.Get(c.Key) with
@@ -50,7 +50,7 @@ type QuizScheduler(scheduler: ReviewSchedule) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         Seq.concat [ this.DueReview(now); this.Learning(); this.AheadReview(now) ] |> Seq.head
 
-    member this.Study(quiz: Quiz) =
+    member this.Study(quiz: Quiz) : unit =
         match QuizSession(quiz.Name, quiz.Questions()).Start() with
         | None -> ()
         | Some v ->

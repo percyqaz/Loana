@@ -6,10 +6,10 @@ open Loana.Desktop.CLI
 type VerbSession(cards: Card array) =
     inherit StudySession("Verb practice", cards)
 
-    override this.Forget(card: Card) = this.ReplaceNear(card)
-    override this.Demote(card: Card) = this.ReplaceNear(card)
-    override this.Keep(card: Card) = this.ReplaceFar(card)
-    override this.Promote(_: Card) = ()
+    override this.Forget(card: Card) : unit = this.ReplaceNear(card)
+    override this.Demote(card: Card) : unit = this.ReplaceNear(card)
+    override this.Keep(card: Card) : unit = this.ReplaceFar(card)
+    override this.Promote(_: Card) : unit = ()
 
     override this.Render(card: Card) : CardSide * CardSide =
         match card.Type with

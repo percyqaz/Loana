@@ -32,16 +32,18 @@ type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
         }
         |> Seq.cache
 
-    member inline this.LearningEntries(entries: VerbCacheEntry seq) =
-        entries |> Seq.where(fun cached_verb -> (this.Scheduler.Get(cached_verb.Key)).IsNone)
+    member inline this.LearningEntries(entries: VerbCacheEntry seq) : VerbCacheEntry seq =
+        entries |> Seq.where(fun cached_verb -> this.Scheduler.Get(cached_verb.Key).IsNone)
 
-    member inline this.ReviewEntries(entries: VerbCacheEntry seq) =
-        entries |> Seq.where(fun cached_verb -> (this.Scheduler.Get(cached_verb.Key)).IsSome)
+    member inline this.ReviewEntries(entries: VerbCacheEntry seq) : VerbCacheEntry seq =
+        entries |> Seq.where(fun cached_verb -> this.Scheduler.Get(cached_verb.Key).IsSome)
 
-    member inline this.DueReviewEntries(entries: VerbCacheEntry seq, now: int64) =
+    member inline this.DueReviewEntries(entries: VerbCacheEntry seq, now: int64) : VerbCacheEntry seq =
 
         let priority_or_none (cached_verb: VerbCacheEntry) : int voption =
-            this.Scheduler.Get(cached_verb.Key) |> ValueOption.map(_.OverduePriority(now)) |> ValueOption.filter((>=) 0)
+            this.Scheduler.Get(cached_verb.Key)
+            |> ValueOption.map(_.OverduePriority(now))
+            |> ValueOption.filter(fun priority -> priority >= 0)
 
         entries
         |> Seq.choose(fun cached_verb ->
@@ -52,10 +54,12 @@ type VerbCache(scheduler: ReviewSchedule, words: WordBank) =
         |> Seq.sortByDescending snd
         |> Seq.map fst
 
-    member inline this.AheadReviewEntries(entries: VerbCacheEntry seq, now: int64) =
+    member inline this.AheadReviewEntries(entries: VerbCacheEntry seq, now: int64) : VerbCacheEntry seq =
 
         let next_review_or_none (cached_verb: VerbCacheEntry) : int64 voption =
-            this.Scheduler.Get(cached_verb.Key) |> ValueOption.map(_.NextReview) |> ValueOption.filter((>) now)
+            this.Scheduler.Get(cached_verb.Key)
+            |> ValueOption.map(_.NextReview)
+            |> ValueOption.filter(fun next_review -> next_review > now)
 
         let verbs_asc_by_next_review =
             entries

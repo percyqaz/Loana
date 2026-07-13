@@ -233,7 +233,7 @@ type WordBank(path: string) =
         else
             File.ReadAllLines(meta_list)
 
-    member private this.TryLoadWordlist(group: WordlistGroup, wordlist_name: string) =
+    member private this.TryLoadWordlist(group: WordlistGroup, wordlist_name: string) : unit =
         let wordlist_path = Path.Combine(path, wordlist_name + ".wordlist")
 
         if Path.Exists(wordlist_path) then
