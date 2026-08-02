@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loana.Mobile", "Loana.Mobil
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Loana.Desktop", "Loana.Desktop\Loana.Desktop.fsproj", "{63D43B7A-E490-46C1-AF79-CC97C1B4558F}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Loana.Tests", "Loana.Tests\Loana.Tests.fsproj", "{B805249F-E92E-4AAD-80F8-7322A593EB45}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63D43B7A-E490-46C1-AF79-CC97C1B4558F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B805249F-E92E-4AAD-80F8-7322A593EB45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B805249F-E92E-4AAD-80F8-7322A593EB45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B805249F-E92E-4AAD-80F8-7322A593EB45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B805249F-E92E-4AAD-80F8-7322A593EB45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -19,7 +19,7 @@ public class LoanaRepository
     {
         _logger = logger;
         Scheduler = new ReviewSchedule(Path.Combine(FileSystem.AppDataDirectory, "cards.dat"));
-        _words = WordBank.Create(FileSystem.AppDataDirectory);
+        _words = WordBank.CreateFromDirectory(FileSystem.AppDataDirectory);
         _logger.LogInformation("Loaded {WordCount} word entries", _words.Entries.Count);
         _vocab = new VocabDeck(Scheduler, _words);
     }

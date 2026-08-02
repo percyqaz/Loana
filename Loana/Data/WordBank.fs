@@ -21,10 +21,10 @@ type WordlistItem =
 type Source = { Group: string; WordlistName: string }
 
 type WordlistEntry = { Source: Source; Item: WordlistItem }
-type WordlistGroup = { Name: string; WordlistNames: ResizeArray<string> }
+type WordlistGroup = { Name: string; WordlistNames: HashSet<string> }
 type DuplicateEntry = { WordlistName: string; Line: int; Item: WordlistItem }
 
-type WordBank(path: string) =
+type WordBank() =
 
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
@@ -106,12 +106,15 @@ type WordBank(path: string) =
         let inline get_or_create_group () : WordlistGroup =
             match groups |> Seq.tryFind(fun g -> g.Name = source.Group) with
             | None ->
-                let group = { Name = source.Group; WordlistNames = ResizeArray() }
+                let group = { Name = source.Group; WordlistNames = HashSet() }
                 groups.Add(group)
                 group
             | Some existing_group -> existing_group
 
-        let inline try_add_line (line_n: int, line: string) =
+        let inline ensure_wordlist_added_to_group () : unit =
+            get_or_create_group().WordlistNames.Add(source.WordlistName) |> ignore
+
+        let inline try_add_line (line_n: int, line: string) : Result<unit, string> =
             try
                 let is_comment = line = "" || line.StartsWith('#')
 
@@ -122,7 +125,7 @@ type WordBank(path: string) =
             with err ->
                 Error err.Message
 
-        get_or_create_group().WordlistNames.Add(source.WordlistName)
+        ensure_wordlist_added_to_group()
 
         lines
         |> Seq.iteri(fun line_n line ->
@@ -140,7 +143,7 @@ type WordBank(path: string) =
         deduplicate_de.Clear()
         deduplicate_en.Clear()
 
-    member this.Reload() : unit =
+    member this.ReadFromDirectory(path: string) : unit =
 
         let inline get_meta_list () =
             let meta_list = Path.Combine(path, "wordlists.meta")
@@ -176,15 +179,15 @@ type WordBank(path: string) =
                 | Some group -> load_wordlist_file({ Group = group; WordlistName = wordlist_name })
                 | None -> Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" wordlist_name, Color.Red)
 
-    static member Create(path: string) : WordBank =
-        let words = WordBank(path)
-        words.Reload()
+    static member CreateFromDirectory(path: string) : WordBank =
+        let words = WordBank()
+        words.ReadFromDirectory(path)
         words
 
     member this.Entries: IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
     member this.Groups: IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
 
-    member this.WriteToDirectory() : unit =
+    member this.WriteToDirectory(path: string) : unit =
 
         let inline ensure_directory_exists_and_empty () : unit =
             Directory.CreateDirectory(path) |> ignore
@@ -265,11 +268,11 @@ type WordBank(path: string) =
         let inline read_group () : WordlistGroup =
             let group_name = br.ReadString()
             let group_list_count = br.ReadInt32()
-            let group_lists = ResizeArray<string>(group_list_count)
+            let group_lists = HashSet<string>(group_list_count)
 
             for _ = 1 to group_list_count do
                 let wordlist_name = read_wordlist(group_name)
-                group_lists.Add(wordlist_name)
+                group_lists.Add(wordlist_name) |> ignore
 
             { Name = group_name; WordlistNames = group_lists }
 

@@ -37,9 +37,7 @@ while waiting_acceptance do
     Console.Clear()
     Console.WriteLine(MenuRender.Pad("Loading ..."), Color.White, Color.FromArgb(0xFF_303030))
 
-    let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
-    let words = WordBank.Create(Path.Combine(data_path))
-    let verbs = VerbBank(Path.Combine(data_path, "verbs.verblist"))
+    let state = LoanaState.Create(data_path)
 
     let mysterious_flame =
         let p = "           "
@@ -92,17 +90,17 @@ while waiting_acceptance do
         | ConsoleKey.Enter ->
             loop <- false
             waiting_acceptance <- false
-            Menu(words, verbs, scheduler).Run()
+            Menu(state).Run()
         | ConsoleKey.R -> loop <- false
         | ConsoleKey.C ->
             loop <- false
-            WordBrowser(words).Run()
+            WordBrowser(state.Words).Run()
         | ConsoleKey.S ->
             loop <- false
             Console.Clear()
             Console.Write("Enter address (blank to host): ")
             let address = Console.ReadLine()
-            if address <> "" then Sync.connect_schedule(scheduler, address) else Sync.host(scheduler, words)
+            if address <> "" then Sync.connect_schedule(state, address) else Sync.host(state)
             Console.ReadLine() |> ignore
         | ConsoleKey.Escape ->
             loop <- false

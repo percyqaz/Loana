@@ -16,7 +16,11 @@ type MenuSelection =
     | VerbMode
     | Quiz of Quiz
 
-type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
+type Menu(state: LoanaState) =
+
+    let words = state.Words
+    let scheduler = state.Scheduler
+    let verb_cache = state.Verbs
 
     let vocab: VocabDeck = VocabDeck(scheduler, words)
     let quizzes: QuizScheduler = QuizScheduler(scheduler)
@@ -351,14 +355,14 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
         let by_hour =
             vocab.AheadReviewCards(all_cards, now)
-            |> Seq.map(fun c -> (scheduler.Get(c.Key)).Value.NextReview - now)
+            |> Seq.map(fun c -> scheduler.Get(c.Key).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerHour)
             |> Map.ofSeq
 
         let by_day =
             vocab.AheadReviewCards(all_cards, now)
-            |> Seq.map(fun c -> (scheduler.Get(c.Key)).Value.NextReview - now)
+            |> Seq.map(fun c -> scheduler.Get(c.Key).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerDay)
             |> Map.ofSeq
@@ -577,7 +581,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
                 | ConsoleKey.OemPlus
                 | ConsoleKey.Add -> vocab.IncreaseBatchSize()
                 | ConsoleKey.S ->
-                    Sync.host(scheduler, words)
+                    Sync.host(state)
                     Console.ReadKey(true) |> ignore
                 | _ -> ()
 

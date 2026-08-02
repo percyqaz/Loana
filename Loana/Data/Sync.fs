@@ -82,20 +82,20 @@ module Sync =
         our_schedule_stream.Dispose()
         send_payload(socket, SCHEDULE_HEADER, our_schedule_bytes)
 
-    let private downstream_wordlist_sync (socket: Socket, words: WordBank) =
+    let private downstream_wordlist_sync (socket: Socket, state: LoanaState) =
         let words_bytes = receive_payload(socket, WORDLIST_HEADER)
-        words.ReadFromStream(new MemoryStream(words_bytes))
-        words.WriteToDirectory()
-        Console.WriteLine(sprintf "Downloaded %i wordlist entries during sync" words.Entries.Count)
+        state.Words.ReadFromStream(new MemoryStream(words_bytes))
+        state.Words.WriteToDirectory(state.Path)
+        Console.WriteLine(sprintf "Downloaded %i wordlist entries during sync" state.Words.Entries.Count)
 
-    let private upstream_wordlist_sync (socket: Socket, words: WordBank) =
+    let private upstream_wordlist_sync (socket: Socket, state: LoanaState) =
         let our_words_stream = new MemoryStream()
-        words.WriteToStream(our_words_stream)
+        state.Words.WriteToStream(our_words_stream)
         let our_words_bytes = our_words_stream.ToArray()
         our_words_stream.Dispose()
         send_payload(socket, WORDLIST_HEADER, our_words_bytes)
 
-    let host (schedule: ReviewSchedule, words: WordBank) : unit =
+    let host (state: LoanaState) : unit =
         let listener =
             new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
 
@@ -123,12 +123,12 @@ module Sync =
 
                 if request.[0] = 127uy then
                     Console.WriteLine("Syncing schedule..")
-                    downstream_schedule_sync(client, schedule)
-                    upstream_schedule_sync(client, schedule)
+                    downstream_schedule_sync(client, state.Scheduler)
+                    upstream_schedule_sync(client, state.Scheduler)
 
                 elif request.[0] = 128uy then
                     Console.WriteLine("Sending wordlists..")
-                    upstream_wordlist_sync(client, words)
+                    upstream_wordlist_sync(client, state)
 
                 else
                     Console.WriteLine("Unknown sync request")
@@ -168,15 +168,15 @@ module Sync =
         socket.ReceiveBufferSize <- 1_000_000
         socket
 
-    let connect_schedule (schedule: ReviewSchedule, address: string) : unit =
+    let connect_schedule (state: LoanaState, address: string) : unit =
         try
             use socket = connect(address)
 
             try
                 Console.WriteLine("Syncing schedule..")
                 send(socket, [| 127uy |])
-                upstream_schedule_sync(socket, schedule)
-                downstream_schedule_sync(socket, schedule)
+                upstream_schedule_sync(socket, state.Scheduler)
+                downstream_schedule_sync(socket, state.Scheduler)
 
                 Console.WriteLine("Sync complete!")
                 Threading.Thread.Sleep(1000)
@@ -188,14 +188,14 @@ module Sync =
             Console.WriteLine(err.Message)
             Console.WriteLine(err.StackTrace)
 
-    let connect_wordlists (words: WordBank, address: string) : unit =
+    let connect_wordlists (state: LoanaState, address: string) : unit =
         try
             use socket = connect(address)
 
             try
                 Console.WriteLine("Requesting wordlists..")
                 send(socket, [| 128uy |])
-                downstream_wordlist_sync(socket, words)
+                downstream_wordlist_sync(socket, state)
 
                 Console.WriteLine("Sync complete!")
                 Threading.Thread.Sleep(1000)
