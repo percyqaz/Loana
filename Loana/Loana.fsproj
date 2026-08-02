@@ -1,32 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <OutputType>Library</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <PublishTrimmed>True</PublishTrimmed>
-        <PublishAot>True</PublishAot>
-        <Optimize>True</Optimize>
-        <Tailcalls>True</Tailcalls>
-        <WarningsAsErrors>FS3569</WarningsAsErrors>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Compile Include="Language\Vocab.fs"/>
-        <Compile Include="Language\AnnotationTree.fs"/>
-        <Compile Include="Language\Declension\Deutsch.fs"/>
-        <Compile Include="Language\Declension\English.fs"/>
-        <Compile Include="Language\VerbInflections.fs"/>
-        <Compile Include="Language\VerbDownloader.fs"/>
-        <Compile Include="Language\Card.fs"/>
-        <Compile Include="Data\WordBank.fs"/>
-        <Compile Include="Data\VerbBank.fs"/>
-        <Compile Include="Data\ReviewSchedule.fs"/>
-        <Compile Include="Data\LoanaState.fs"/>
-        <Compile Include="Data\Sync.fs"/>
-        <Compile Include="Vocab\VocabCards.fs"/>
-        <Compile Include="Vocab\VocabDeck.fs"/>
-        <Compile Include="Verbs\VerbCards.fs"/>
-        <Compile Include="Verbs\VerbCache.fs"/>
-    </ItemGroup>
-
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <PublishTrimmed>True</PublishTrimmed>
+    <PublishAot>True</PublishAot>
+    <Optimize>True</Optimize>
+    <Tailcalls>True</Tailcalls>
+    <WarningsAsErrors>FS3569</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Language\Gender.fs" />
+    <Compile Include="Language\Case.fs" />
+    <Compile Include="Language\Person.fs" />
+    <Compile Include="Language\Vocab\Types.fs" />
+    <Compile Include="Language\Vocab\Annotation.fs" />
+    <Compile Include="Language\Vocab\Vocab.fs" />
+    <Compile Include="Language\Vocab\Noun.fs" />
+    <Compile Include="Language\Vocab\Adjective.fs" />
+    <Compile Include="Language\Vocab\Verb.fs" />
+    <Compile Include="Language\AnnotationTree.fs" />
+    <Compile Include="Language\Declension\Deutsch.fs" />
+    <Compile Include="Language\Declension\English.fs" />
+    <Compile Include="Language\VerbInflections.fs" />
+    <Compile Include="Language\VerbDownloader.fs" />
+    <Compile Include="Language\Card.fs" />
+    <Compile Include="Data\WordBank.fs" />
+    <Compile Include="Data\VerbBank.fs" />
+    <Compile Include="Data\ReviewSchedule.fs" />
+    <Compile Include="Data\LoanaState.fs" />
+    <Compile Include="Data\Sync.fs" />
+    <Compile Include="Vocab\VocabCards.fs" />
+    <Compile Include="Vocab\VocabDeck.fs" />
+    <Compile Include="Verbs\VerbCards.fs" />
+    <Compile Include="Verbs\VerbCache.fs" />
+  </ItemGroup>
 </Project>

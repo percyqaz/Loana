@@ -1,6 +1,5 @@
 namespace Loana.Desktop.Vocab
 
-open System
 open System.Drawing
 open Loana.Language
 open Loana.Data
