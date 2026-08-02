@@ -12,36 +12,36 @@ namespace Loana.Mobile.Data;
 public class LoanaRepository
 {
     private readonly ILogger _logger;
+    private readonly LoanaState _state;
     private readonly VocabDeck _vocab;
-    private readonly WordBank _words;
 
     public LoanaRepository(ILogger<LoanaRepository> logger)
     {
         _logger = logger;
-        Scheduler = new ReviewSchedule(Path.Combine(FileSystem.AppDataDirectory, "cards.dat"));
-        _words = WordBank.CreateFromDirectory(FileSystem.AppDataDirectory);
-        _logger.LogInformation("Loaded {WordCount} word entries", _words.Entries.Count);
-        _vocab = new VocabDeck(Scheduler, _words);
+        _state = LoanaState.Create(FileSystem.AppDataDirectory);
+        _vocab = new VocabDeck(_state.Scheduler, _state.Words);
+        _logger.LogInformation("Loaded {WordCount} word entries", _state.Words.Entries.Count);
     }
 
-    public ReviewSchedule Scheduler { get; }
+    public ReviewSchedule Scheduler => _state.Scheduler;
+    public WordBank Words => _state.Words;
 
     public void DownloadWords(string address)
     {
-        Sync.connect_wordlists(_words, address);
-        _logger.LogInformation("Loaded {WordCount} word entries", _words.Entries.Count);
+        Sync.connect_wordlists(_state, address);
+        _logger.LogInformation("Loaded {WordCount} word entries", _state.Words.Entries.Count);
     }
 
     public void SyncProgress(string address)
     {
-        Sync.connect_schedule(Scheduler, address);
+        Sync.connect_schedule(_state, address);
     }
 
     public async Task<List<VocabListGroup>> ListAsync()
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         List<VocabListGroup> groups = [];
-        foreach (var group in _words.Groups)
+        foreach (var group in Words.Groups)
         {
             var g_available = _vocab.AvailableCards(group.WordlistNames);
             var g_learning = _vocab.LearningCards(g_available);
