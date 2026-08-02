@@ -47,7 +47,7 @@ type ReviewData =
 
     static member LevelColors = level_colors
 
-    static member BaseInterval(level: int) =
+    static member BaseInterval(level: int) : int64 =
         match level with
         | 1 -> TimeSpan.SecondsPerHour * 6L
         | 2 -> TimeSpan.SecondsPerDay * 2L

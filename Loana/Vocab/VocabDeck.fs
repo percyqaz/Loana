@@ -98,7 +98,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
         seq {
             for word in words.Entries do
-                if sources_set.IsEmpty || sources_set.Contains(word.Source.File) then
+                if sources_set.IsEmpty || sources_set.Contains(word.Source.WordlistName) then
                     yield! this.AvailableCards(word.Item)
         }
         |> Seq.cache
@@ -148,7 +148,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
         seq {
             for word in words.Entries do
-                if sources_set.IsEmpty || sources_set.Contains(word.Source.File) then
+                if sources_set.IsEmpty || sources_set.Contains(word.Source.WordlistName) then
                     yield! this.PossibleCards(word.Item)
         }
         |> Seq.cache
@@ -172,7 +172,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                 match word.Item with
                 | Vocab vocab when vocab.LooksLikeANoun ->
                     let message =
-                        sprintf "'%O' in '%s' is missing gender!" vocab.Deutsch word.Source.File
+                        sprintf "'%O' in '%s' is missing gender!" vocab.Deutsch word.Source.WordlistName
 
                     if this.LevelOf(VocabCard.M_Tier2_RecallDE(vocab)) >= 4 then
                         yield Chore.Urgent(message)
@@ -180,7 +180,10 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                         yield Chore.NonUrgent(message)
                 | Noun noun when noun.Plural.IsUnknown ->
                     let message =
-                        sprintf "'%O' in '%s' is missing plural (or no_plural marker)!" noun.Deutsch word.Source.File
+                        sprintf
+                            "'%O' in '%s' is missing plural (or no_plural marker)!"
+                            noun.Deutsch
+                            word.Source.WordlistName
 
                     yield Chore.NonUrgent(message)
                 | _ -> ()

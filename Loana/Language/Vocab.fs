@@ -135,17 +135,16 @@ type Vocab =
         sprintf "%s = %s" this.Deutsch this.EnglishAsciiIdentifier
 
     static member FromString(value: string) : Vocab =
-        let split_by_equals =
-            value.Split("=", 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+        let TRIM_AND_REMOVE_ENTRIES =
+            StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries
+
+        let split_by_equals = value.Split('=', 2, TRIM_AND_REMOVE_ENTRIES)
 
         if split_by_equals.Length < 2 then
             failwithf "Parsing '%s' as vocab failed: no '=' in provided value" value
 
         let deutsch = split_by_equals.[0]
-
-        let english_alternatives =
-            split_by_equals.[1].Split(",", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
-
+        let english_alternatives = split_by_equals.[1].Split(',', TRIM_AND_REMOVE_ENTRIES)
         assert (english_alternatives.Length >= 1)
 
         {
@@ -164,6 +163,28 @@ type Vocab =
 
     member this.LooksLikeANoun: bool =
         this.Deutsch.Length > 0 && Char.IsUpper(this.Deutsch.[0])
+
+[<Struct>]
+type internal TaggedVocab =
+    {
+        Vocab: Vocab
+        Tags: string list
+    }
+
+    static member FromString(line: string) : TaggedVocab =
+        let TRIM_AND_REMOVE_ENTRIES =
+            StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries
+
+        if line = "" then
+            failwith "Cannot parse empty line as a noun"
+
+        let split_by_colon = line.Split(':', 2, TRIM_AND_REMOVE_ENTRIES)
+        let vocab_definition = split_by_colon.[0]
+
+        let tags =
+            if split_by_colon.Length = 2 then split_by_colon.[1].Split(' ', TRIM_AND_REMOVE_ENTRIES) else [||]
+
+        { Vocab = Vocab.FromString(vocab_definition); Tags = List.ofArray(tags) }
 
 type NounGuts =
     | Masculine of plural: Knowledge<Vocab>
@@ -214,6 +235,66 @@ type Noun =
             | KnownNothing -> sprintf "%O :%O no_plural" this.Translation this.Guts.Gender
             | Unknown -> sprintf "%O :%O" this.Translation this.Guts.Gender
 
+    static member internal FromTaggedVocab(t: TaggedVocab) : Noun =
+        let mutable remaining_tags = t.Tags
+        let mutable gender: Gender option = None
+        let mutable plural: Vocab option = None
+        let mutable no_plural: bool = false
+
+        let inline read_tag (next: string) : unit =
+            match next with
+            | "p"
+            | "m"
+            | "f"
+            | "n" ->
+                if gender.IsSome then
+                    failwithf "Gender was set twice for noun: %O" t.Vocab
+
+                gender <- Some(Gender.FromString(next))
+            | "no_plural" ->
+                if gender.IsNone then
+                    failwithf "'no_plural' must be set after gender for noun: %O" t.Vocab
+
+                no_plural <- true
+            | "plural" ->
+                if gender.IsNone then
+                    failwithf "plural must be set after gender for noun: %O" t.Vocab
+
+                if no_plural then
+                    failwithf "plural conflicts with 'no_plural' for noun: %O" t.Vocab
+
+                plural <- Some(Vocab.FromString(String.concat " " remaining_tags))
+                remaining_tags <- []
+            | _ -> failwithf "Unrecognised tag '%s' for noun: %O" next t.Vocab
+
+        while remaining_tags <> [] do
+            let next = remaining_tags.Head
+            remaining_tags <- remaining_tags.Tail
+            read_tag(next)
+
+        let inline guts_plural () =
+            if no_plural then
+                KnownNothing
+            else
+                match plural with
+                | Some p -> KnownValue p
+                | None -> Unknown
+
+        {
+            Translation = t.Vocab
+            Guts =
+                match gender with
+                | None ->
+                    failwithf "No gender was specified for this noun! Got: %O :%s" t.Vocab (String.concat " " t.Tags)
+                | Some Gender.Masculine -> Masculine(guts_plural())
+                | Some Gender.Feminine -> Feminine(guts_plural())
+                | Some Gender.Neuter -> Neuter(guts_plural())
+                | Some Gender.Plural -> Plural
+        }
+
+    static member FromString(line: string) : Noun =
+        Noun.FromTaggedVocab(TaggedVocab.FromString(line))
+
 type Adjective =
     {
         Translation: Vocab
@@ -262,3 +343,44 @@ type Verb =
                 this.Infinitive
                 (String.concat "" (this.Tenses |> List.map(fun x -> x.ToString() + " ")))
                 pp
+
+    static member internal FromTaggedVocab(t: TaggedVocab) : Verb =
+        let mutable remaining_tags = t.Tags
+        let mutable verb_tenses: VerbTense list = []
+        let mutable is_dative = false
+
+        let mutable past_participle: Knowledge<Vocab> =
+            if t.Tags <> [] then KnownNothing else Unknown
+
+        let inline read_tag (next: string) : unit =
+            match next with
+            | "pa"
+            | "pr"
+            | "im" -> verb_tenses <- verb_tenses @ [ VerbTense.FromString(next) ]
+            | "dat" ->
+                if is_dative then
+                    failwith "Dative specified twice"
+
+                if verb_tenses <> [] then
+                    failwith "Dative must be specified before quizzes"
+
+                is_dative <- true
+            | "pp" ->
+                past_participle <- KnownValue(Vocab.FromString(String.concat " " remaining_tags))
+                remaining_tags <- []
+            | _ -> failwithf "Unrecognised tag '%s' for verb: %O" next t.Vocab
+
+        while remaining_tags <> [] do
+            let next = remaining_tags.Head
+            remaining_tags <- remaining_tags.Tail
+            read_tag(next)
+
+        {
+            Infinitive = t.Vocab
+            PastParticiple = past_participle
+            Tenses = verb_tenses |> List.distinct
+            Dative = is_dative
+        }
+
+    static member FromString(line: string) : Verb =
+        Verb.FromTaggedVocab(TaggedVocab.FromString(line))

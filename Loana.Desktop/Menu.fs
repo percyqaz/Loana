@@ -25,8 +25,8 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
     let SELECTION_OPTIONS =
         seq {
             for group in words.Groups do
-                yield VocabGroup(List.ofSeq group.Lists)
-                yield! group.Lists |> Seq.map List.singleton |> Seq.map VocabGroup
+                yield VocabGroup(List.ofSeq group.WordlistNames)
+                yield! group.WordlistNames |> Seq.map List.singleton |> Seq.map VocabGroup
 
             yield VocabGroup []
             yield VerbMode
@@ -130,7 +130,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
 
         for group in words.Groups do
 
-            let word_lists = List.ofSeq group.Lists
+            let word_lists = List.ofSeq group.WordlistNames
 
             MenuRender.Write(
                 $"@ {group.Name.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
@@ -142,7 +142,7 @@ type Menu(words: WordBank, verb_cache: VerbBank, scheduler: ReviewSchedule) =
             progress_bar(word_lists, true)
             MenuRender.WriteLine()
 
-            for wl in group.Lists do
+            for wl in group.WordlistNames do
                 MenuRender.Write(
                     $"| {wl.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
                     (if selection = VocabGroup [ wl ] then Color.Yellow else Color.LightGreen),

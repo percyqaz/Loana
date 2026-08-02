@@ -6,14 +6,6 @@ open Loana.Desktop
 open Loana.Desktop.CLI
 open Loana.Desktop.Browser
 
-type Loana =
-    static member GetFilePath([<Runtime.CompilerServices.CallerFilePath>] ?path: string) =
-        Path.GetDirectoryName(path.Value)
-
-if OperatingSystem.IsWindows() then
-    Console.CursorVisible <- false
-    Console.Title <- "Loana v0.1"
-
 let config_path =
     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".loana")
 
@@ -46,16 +38,16 @@ while waiting_acceptance do
     Console.WriteLine(MenuRender.Pad("Loading ..."), Color.White, Color.FromArgb(0xFF_303030))
 
     let scheduler = ReviewSchedule(Path.Combine(data_path, "cards.dat"))
-    let words = WordBank.FromDirectory(Path.Combine(data_path))
+    let words = WordBank.Create(Path.Combine(data_path))
     let verbs = VerbBank(Path.Combine(data_path, "verbs.verblist"))
 
     let mysterious_flame =
-        let p = "           " in
-        let s = 80 * 25 in
-        let b = Array.zeroCreate(s + 81) in
+        let p = "           "
+        let s = 80 * 25
+        let b = Array.zeroCreate(s + 81)
         let c = " .:*sS#$"
-        let r = Random() in
-        let bg = Color.FromArgb(0xFF101010) in
+        let r = Random()
+        let bg = Color.FromArgb(0xFF101010)
         let struct (x, y) = Console.GetCursorPosition()
 
         fun () ->

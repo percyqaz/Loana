@@ -79,7 +79,7 @@ type WordBrowser(words: WordBank) =
                     | Vocab v when v.LooksLikeAVerb -> "verb?", Color.FromArgb(0xFF_ddffdd)
                     | Vocab _ -> "word", Color.White
 
-                let tags_width = tag.Length + 2 + 1 + result.Source.File.Length + 2
+                let tags_width = tag.Length + 2 + 1 + result.Source.WordlistName.Length + 2
 
                 let bg = Color.FromArgb(if position = i then 0xFF_404020 else 0xFF_202020)
 
@@ -90,7 +90,7 @@ type WordBrowser(words: WordBank) =
                     bg
                 )
 
-                MenuRender.Write($" {result.Source.File} ", Color.LightBlue, Color.DarkBlue)
+                MenuRender.Write($" {result.Source.WordlistName} ", Color.LightBlue, Color.DarkBlue)
                 MenuRender.Write(" ", Color.White, bg)
                 MenuRender.Write($" {tag} ", tag_color, Color.FromArgb(0xFF_303030))
                 MenuRender.WriteLine()

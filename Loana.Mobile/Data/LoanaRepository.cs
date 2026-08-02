@@ -7,23 +7,24 @@ using Microsoft.Extensions.Logging;
 namespace Loana.Mobile.Data;
 
 /// <summary>
-/// Repository class for managing tags in the database.
+///     Repository class for managing tags in the database.
 /// </summary>
 public class LoanaRepository
 {
     private readonly ILogger _logger;
-    private readonly ReviewSchedule _scheduler;
-    private readonly WordBank _words;
     private readonly VocabDeck _vocab;
+    private readonly WordBank _words;
 
     public LoanaRepository(ILogger<LoanaRepository> logger)
     {
         _logger = logger;
-        _scheduler = new ReviewSchedule(Path.Combine(FileSystem.AppDataDirectory, "cards.dat"));
-        _words = WordBank.FromDirectory(FileSystem.AppDataDirectory);
+        Scheduler = new ReviewSchedule(Path.Combine(FileSystem.AppDataDirectory, "cards.dat"));
+        _words = WordBank.Create(FileSystem.AppDataDirectory);
         _logger.LogInformation("Loaded {WordCount} word entries", _words.Entries.Count);
-        _vocab = new VocabDeck(_scheduler, _words);
+        _vocab = new VocabDeck(Scheduler, _words);
     }
+
+    public ReviewSchedule Scheduler { get; }
 
     public void DownloadWords(string address)
     {
@@ -33,7 +34,7 @@ public class LoanaRepository
 
     public void SyncProgress(string address)
     {
-        Sync.connect_schedule(_scheduler, address);
+        Sync.connect_schedule(Scheduler, address);
     }
 
     public async Task<List<VocabListGroup>> ListAsync()
@@ -42,14 +43,14 @@ public class LoanaRepository
         List<VocabListGroup> groups = [];
         foreach (var group in _words.Groups)
         {
-            var g_available = _vocab.AvailableCards(group.Lists);
+            var g_available = _vocab.AvailableCards(group.WordlistNames);
             var g_learning = _vocab.LearningCards(g_available);
             var g_due = _vocab.DueReviewCards(g_available, now);
             var g_ahead = _vocab.AheadReviewCards(g_available, now);
 
             List<VocabList> lists = [];
 
-            foreach (var list in group.Lists)
+            foreach (var list in group.WordlistNames)
             {
                 var available = _vocab.AvailableCards([list]);
                 var learning = _vocab.LearningCards(available);
@@ -59,8 +60,10 @@ public class LoanaRepository
                 lists.Add(new VocabList(list, learning.Count(), due.Count(), ahead.Count(), available.Count()));
             }
 
-            groups.Add(new VocabListGroup(group.Name, g_learning.Count(), g_due.Count(), g_ahead.Count(), g_available.Count(), lists));
+            groups.Add(new VocabListGroup(group.Name, g_learning.Count(), g_due.Count(), g_ahead.Count(),
+                g_available.Count(), lists));
         }
+
         return groups;
     }
 
@@ -91,6 +94,4 @@ public class LoanaRepository
             .Shuffle()
             .ToList();
     }
-
-    public ReviewSchedule Scheduler => _scheduler;
 }

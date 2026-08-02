@@ -2,15 +2,14 @@ namespace Loana.Desktop.Quizzes
 
 open System.Drawing
 open Loana.Language
-open Loana.Data
 open Loana.Desktop.CLI
 
 [<AutoOpen>]
 module internal ArticleConstants =
 
-    let SPOON = Wordlist.parse_noun "Löffel = spoon :m plural Löffel = spoons"
-    let FORK = Wordlist.parse_noun "Gabel = fork :f plural Gabeln = forks"
-    let KNIFE = Wordlist.parse_noun "Messer = knife :n plural Messer = knives"
+    let SPOON = Noun.FromString("Löffel = spoon :m plural Löffel = spoons")
+    let FORK = Noun.FromString("Gabel = fork :f plural Gabeln = forks")
+    let KNIFE = Noun.FromString("Messer = knife :n plural Messer = knives")
 
     let NOUNS: Noun array =
         [|
@@ -22,7 +21,7 @@ module internal ArticleConstants =
             KNIFE.PluralForm.Value
         |]
 
-    let KLEIN: Adjective = { Translation = Wordlist.parse_vocab "klein = small" }
+    let KLEIN: Adjective = { Translation = Vocab.FromString("klein = small") }
 
 type GermanPracticeQuestion =
 
