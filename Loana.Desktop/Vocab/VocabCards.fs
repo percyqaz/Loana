@@ -206,7 +206,7 @@ type VocabCard =
             ]
         )
 
-    static member Render(card: Card) =
+    static member Render(card: Card) : CardSide * CardSide =
         match card.Type with
         | RecogniseDE v -> VocabCard.RecogniseDE(v)
         | RecallDE v -> VocabCard.RecallDE(v)

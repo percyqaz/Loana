@@ -15,16 +15,16 @@ type CardLine =
             Length: int
         }
 
-    static member Empty(bg: Color) = { Content = ""; BG = bg; Length = 0 }
+    static member Empty(bg: Color) : CardLine = { Content = ""; BG = bg; Length = 0 }
 
-    static member (+)(this: CardLine, extra: CardFragment) =
+    static member (+)(this: CardLine, extra: CardFragment) : CardLine =
         {
             Content = this.Content + Console.ColorText(extra.Text, extra.FG, extra.BG)
             BG = this.BG
             Length = this.Length + extra.Text.Length
         }
 
-    static member Create(bg: Color) = List.fold (+) (CardLine.Empty(bg))
+    static member Create(bg: Color) : _ = List.fold (+) (CardLine.Empty(bg))
 
 type CardSide =
     private
@@ -33,7 +33,7 @@ type CardSide =
         }
 
     static member Empty = { Lines = [] }
-    static member (+)(this: CardSide, line: CardLine) = { Lines = this.Lines @ [ line ] }
+    static member (+)(this: CardSide, line: CardLine) : CardSide = { Lines = this.Lines @ [ line ] }
     static member Create = List.fold (+) CardSide.Empty
 
 type StudySessionResult =

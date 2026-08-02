@@ -8,7 +8,7 @@ open Loana.Data
 type OutputResultExtensions =
 
     [<Extension>]
-    static member HighlightString(result: ScheduleResult) =
+    static member HighlightString(result: ScheduleResult) : string =
         Console.ColorText(
             (sprintf " [%i] %s" result.OldLevel result.Key)
                 .PadRight(MenuRender.Width - 52)
@@ -34,4 +34,4 @@ type OutputResultExtensions =
         )
 
     [<Extension>]
-    static member LogTo(result: ScheduleResult, this: StudySession) = result.HighlightString() |> this.Log
+    static member LogTo(result: ScheduleResult, this: StudySession) : unit = result.HighlightString() |> this.Log

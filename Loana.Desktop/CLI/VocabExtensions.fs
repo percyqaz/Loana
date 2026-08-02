@@ -9,7 +9,7 @@ open Loana.Data
 type VocabExtensions =
 
     [<Extension>]
-    static member HighlightString(this: Annotation) =
+    static member HighlightString(this: Annotation) : string =
         match this.Note with
         | Some note ->
             Console.ColorText(this.Text, Color.White, Color.Transparent)
@@ -18,7 +18,7 @@ type VocabExtensions =
         | None -> Console.ColorText(this.Text, Color.White, Color.Transparent)
 
     [<Extension>]
-    static member HighlightString(this: Vocab) =
+    static member HighlightString(this: Vocab) : string =
         let color =
             if this.LooksLikeAVerb then Color.FromArgb(0xFF_ffddff)
             elif this.LooksLikeANoun then Color.FromArgb(0xFF_ddffdd)
@@ -29,7 +29,7 @@ type VocabExtensions =
         + String.concat ", " (this.English :: this.EnglishAlternatives |> Seq.map _.HighlightString())
 
     [<Extension>]
-    static member HighlightString(this: Noun) =
+    static member HighlightString(this: Noun) : string =
         match this.Guts with
         | Plural ->
             this.Translation.HighlightString() + Console.ColorText(" :p", Gender.Plural.Color, Color.Transparent)
@@ -52,7 +52,7 @@ type VocabExtensions =
             | Unknown -> this.Translation.HighlightString() + gender_highlight_string
 
     [<Extension>]
-    static member HighlightString(this: Verb) =
+    static member HighlightString(this: Verb) : string =
         match this.PastParticiple with
         | Unknown -> this.Infinitive.HighlightString()
         | KnownNothing ->
@@ -73,7 +73,7 @@ type VocabExtensions =
             + pp.HighlightString()
 
     [<Extension>]
-    static member HighlightString(this: WordlistItem) =
+    static member HighlightString(this: WordlistItem) : string =
         match this with
         | Noun n -> n.HighlightString()
         | Verb v -> v.HighlightString()
