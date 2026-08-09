@@ -27,6 +27,7 @@ type MenuFilter =
 
 type MenuState =
     {
+        mutable Running: bool
         Data: LoanaState
         Vocab: VocabDeck
         Quizzes: QuizScheduler
@@ -44,6 +45,7 @@ type MenuState =
         let quizzes = QuizScheduler(loana_state.Scheduler)
 
         {
+            Running = true
             Data = loana_state
             Vocab = VocabDeck(loana_state.Scheduler, loana_state.Words)
             Quizzes = quizzes

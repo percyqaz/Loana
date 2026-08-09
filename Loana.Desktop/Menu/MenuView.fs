@@ -195,9 +195,23 @@ type MenuView(state: MenuState) =
             MenuRender.WriteLine()
 
     member this.Run() : unit =
-        let mutable loop = true
+        let buffer = CommandBuffer()
+        buffer.Bind("<Esc>", ":exit<Enter>")
+        buffer.Bind("j", ":down<Enter>")
+        buffer.Bind("<Down>", "j")
+        buffer.Bind("k", ":up<Enter>")
+        buffer.Bind("<Up>", "k")
+        buffer.Bind("<Enter>", ":stats<Enter>")
+        buffer.Bind("r", ":review<Enter>")
+        buffer.Bind("l", ":learn<Enter>")
+        buffer.Bind("a", ":ahead<Enter>")
+        buffer.Bind("c", ":chores<Enter>")
+        buffer.Bind("f", ":filter<Enter>")
+        buffer.Bind("-", ":batch_down<Enter>")
+        buffer.Bind("=", ":batch_up<Enter>")
+        buffer.Bind("s", ":sync<Enter>")
 
-        while loop do
+        while state.Running do
             MenuRender.UpdateWidth()
             this.RenderVocabDashboard()
             this.RenderVerbModeDashboard()
@@ -211,24 +225,8 @@ type MenuView(state: MenuState) =
 
             MenuRender.WriteLine(MenuRender.Pad(guide), Color.LightGray, Color.FromArgb(0xFF_303030))
             MenuRender.Redraw()
-
-            match Console.ReadKey(true).Key with
-            | ConsoleKey.Escape -> loop <- false
-            | ConsoleKey.UpArrow
-            | ConsoleKey.K -> state.PreviousSelection()
-            | ConsoleKey.DownArrow
-            | ConsoleKey.J -> state.NextSelection()
-            | ConsoleKey.Enter -> state.VocabStats()
-            | ConsoleKey.L -> state.Learn()
-            | ConsoleKey.R -> state.Review()
-            | ConsoleKey.A -> state.VocabReviewAhead()
-            | ConsoleKey.C -> state.VocabChoresList()
-            | ConsoleKey.F -> state.CycleFilter()
-            | ConsoleKey.OemMinus
-            | ConsoleKey.Subtract -> state.DecreaseBatchSize()
-            | ConsoleKey.OemPlus
-            | ConsoleKey.Add -> state.IncreaseBatchSize()
-            | ConsoleKey.S ->
-                Sync.host(state.Data)
-                Console.ReadKey(true) |> ignore
-            | _ -> ()
+            
+            Console.Write(buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
+            
+            buffer.AddKey(Console.ReadKey(true))
+            buffer.Dispatch(state.DispatchMessage)

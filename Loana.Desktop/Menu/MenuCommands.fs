@@ -14,6 +14,14 @@ open Loana.Desktop.CLI
 type MenuCommands =
 
     [<Extension>]
+    static member Exit(state: MenuState) : unit = state.Running <- false
+    
+    [<Extension>]
+    static member Sync(state: MenuState) : unit =
+        Sync.host(state.Data)
+        Console.ReadKey(true) |> ignore
+
+    [<Extension>]
     static member NextSelection(state: MenuState) : unit =
         let new_index =
             (Array.IndexOf(state.SelectionOptions, state.Selection) + 1) % state.SelectionOptions.Length
@@ -375,3 +383,27 @@ type MenuCommands =
             Console.ReadKey(true) |> ignore
 
         | _ -> ()
+        
+    [<Extension>]
+    static member DispatchCommand(state: MenuState, command: string) : unit =
+        match command with
+        | "exit" -> state.Exit()
+        | "up" -> state.PreviousSelection()
+        | "down" -> state.NextSelection()
+        | "stats" -> state.VocabStats()
+        | "learn" -> state.Learn()
+        | "review" -> state.Review()
+        | "ahead" -> state.VocabReviewAhead()
+        | "chores" -> state.VocabChoresList()
+        | "filter" -> state.CycleFilter()
+        | "batch_down" -> state.DecreaseBatchSize()
+        | "batch_up" -> state.IncreaseBatchSize()
+        | "sync" -> state.Sync()
+        | _ -> ()
+
+    [<Extension>]
+    static member DispatchMessage(state: MenuState, message: string) : unit =
+        if message.StartsWith(':') then
+            state.DispatchCommand(message.Substring(1))
+        else
+            ()

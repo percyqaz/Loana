@@ -15,6 +15,7 @@
     <Compile Include="CLI\StudySession.fs" />
     <Compile Include="CLI\ScheduleResultExtensions.fs" />
     <Compile Include="CLI\VocabExtensions.fs" />
+    <Compile Include="CLI\CommandBuffer.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />
