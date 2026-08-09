@@ -18,17 +18,13 @@ type MenuSelection =
 
 type Menu(state: LoanaState) =
 
-    let words = state.Words
-    let scheduler = state.Scheduler
-    let verb_cache = state.Verbs
-
-    let vocab: VocabDeck = VocabDeck(scheduler, words)
-    let quizzes: QuizScheduler = QuizScheduler(scheduler)
-    let verbs: VerbCache = VerbCache(scheduler, words)
+    let vocab: VocabDeck = VocabDeck(state.Scheduler, state.Words)
+    let quizzes: QuizScheduler = QuizScheduler(state.Scheduler)
+    let verbs: VerbCache = VerbCache(state.Scheduler, state.Words)
 
     let SELECTION_OPTIONS =
         seq {
-            for group in words.Groups do
+            for group in state.Words.Groups do
                 yield VocabGroup(List.ofSeq group.WordlistNames)
                 yield! group.WordlistNames |> Seq.map List.singleton |> Seq.map VocabGroup
 
@@ -132,7 +128,7 @@ type Menu(state: LoanaState) =
 
         MenuRender.WriteLine()
 
-        for group in words.Groups do
+        for group in state.Words.Groups do
 
             let word_lists = List.ofSeq group.WordlistNames
 
@@ -215,7 +211,7 @@ type Menu(state: LoanaState) =
                 MenuRender.Write("]", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
 
         for quiz in quizzes.Quizzes do
-            let schedule = scheduler.Get(quiz.Key)
+            let schedule = state.Scheduler.Get(quiz.Key)
             let level = schedule |> ValueOption.map _.Level |> ValueOption.defaultValue 0
 
             let next_review =
@@ -254,7 +250,7 @@ type Menu(state: LoanaState) =
             |> Array.ofSeq
 
         if cards.Length > 0 then
-            let result = ReviewSession(cards, scheduler, false).Start()
+            let result = ReviewSession(cards, state.Scheduler, false).Start()
 
             Console.WriteLine(
                 MenuRender
@@ -283,7 +279,7 @@ type Menu(state: LoanaState) =
             |> Array.ofSeq
 
         if cards.Length > 0 then
-            let result = ReviewSession(cards, scheduler, true).Start()
+            let result = ReviewSession(cards, state.Scheduler, true).Start()
 
             Console.WriteLine(
                 MenuRender
@@ -309,7 +305,7 @@ type Menu(state: LoanaState) =
             vocab.LearningCards(cards) |> Seq.truncate vocab.LearnBatchSize |> Array.ofSeq
 
         if cards.Length > 0 then
-            let result = LearnSession(cards, scheduler).Start()
+            let result = LearnSession(cards, state.Scheduler).Start()
 
             Console.WriteLine(
                 MenuRender
@@ -368,14 +364,14 @@ type Menu(state: LoanaState) =
 
         let by_hour =
             vocab.AheadReviewCards(all_cards, now)
-            |> Seq.map(fun c -> scheduler.Get(c.Key).Value.NextReview - now)
+            |> Seq.map(fun c -> state.Scheduler.Get(c.Key).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerHour)
             |> Map.ofSeq
 
         let by_day =
             vocab.AheadReviewCards(all_cards, now)
-            |> Seq.map(fun c -> scheduler.Get(c.Key).Value.NextReview - now)
+            |> Seq.map(fun c -> state.Scheduler.Get(c.Key).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerDay)
             |> Map.ofSeq
@@ -383,7 +379,7 @@ type Menu(state: LoanaState) =
         let forgotten =
             all_cards
             |> Seq.choose(fun c ->
-                match scheduler.Get(c.Key) with
+                match state.Scheduler.Get(c.Key) with
                 | ValueSome v when (v.Reviews > v.Level && v.Level < 4) || v.Difficulty > 5 -> Some(v, c.Key)
                 | _ -> None
             )
@@ -513,7 +509,7 @@ type Menu(state: LoanaState) =
         | None -> ()
         | Some verb ->
             let verb_cards =
-                verb_cache.EnsureAllInflectionsAvailable(verb.Verb)
+                state.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
                 |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
                 |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
@@ -525,7 +521,7 @@ type Menu(state: LoanaState) =
             if not result.EndEarly then
                 let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
-                scheduler
+                state.Scheduler
                     .Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now)
                     .LogTo
                     session
@@ -548,7 +544,7 @@ type Menu(state: LoanaState) =
             session_entries.RemoveAt(0)
 
             let verb_cards =
-                verb_cache.EnsureAllInflectionsAvailable(verb.Verb)
+                state.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
                 |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
                 |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
@@ -558,10 +554,10 @@ type Menu(state: LoanaState) =
             let result = session.Start()
 
             if result.EndEarly then session_entries.Clear()
-            elif result.NotGood = 0 then scheduler.Reschedule(verb.Key, _.Promote).LogTo session
-            elif result.NotGood = 1 then scheduler.Reschedule(verb.Key, _.Keep).LogTo session
-            elif result.Forgot > 0 then scheduler.Reschedule(verb.Key, _.Forget).LogTo session
-            else scheduler.Reschedule(verb.Key, _.Demote).LogTo session
+            elif result.NotGood = 0 then state.Scheduler.Reschedule(verb.Key, _.Promote).LogTo session
+            elif result.NotGood = 1 then state.Scheduler.Reschedule(verb.Key, _.Keep).LogTo session
+            elif result.Forgot > 0 then state.Scheduler.Reschedule(verb.Key, _.Forget).LogTo session
+            else state.Scheduler.Reschedule(verb.Key, _.Demote).LogTo session
 
         Console.WriteLine(
             MenuRender
