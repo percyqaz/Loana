@@ -11,82 +11,7 @@ open Loana.Desktop.Verbs
 open Loana.Desktop.Quizzes
 open Loana.Desktop.CLI
 
-type MenuSelection =
-    | VocabGroup of string list
-    | VerbMode
-    | Quiz of Quiz
-
-[<ReferenceEquality>]
-type MenuFilter =
-    {
-        Name: string
-        Apply: VocabDeck -> Card seq -> Card seq
-    }
-
-    static member val Options =
-        [|
-            { Name = "None"; Apply = fun _ cards -> cards }
-            { Name = "New words only"; Apply = (fun vocab cards -> vocab.FilterByTier(cards, 1, 1)) }
-            { Name = "Unlocks only"; Apply = (fun vocab cards -> vocab.FilterByTier(cards, 2, 999)) }
-        |]
-
-type MenuState =
-    {
-        Data: LoanaState
-        Vocab: VocabDeck
-        Quizzes: QuizScheduler
-        Verbs: VerbCache
-        SelectionOptions: MenuSelection array
-        mutable Selection: MenuSelection
-        mutable Filter: MenuFilter
-    }
-
-    member this.Words = this.Data.Words
-    member this.Scheduler = this.Data.Scheduler
-
-    static member Create(loana_state: LoanaState) : MenuState =
-        let quizzes = QuizScheduler(loana_state.Scheduler)
-
-        {
-            Data = loana_state
-            Vocab = VocabDeck(loana_state.Scheduler, loana_state.Words)
-            Quizzes = quizzes
-            Verbs = VerbCache(loana_state.Scheduler, loana_state.Words)
-            SelectionOptions =
-                seq {
-                    for group in loana_state.Words.Groups do
-                        yield VocabGroup(List.ofSeq group.WordlistNames)
-                        yield! group.WordlistNames |> Seq.map List.singleton |> Seq.map VocabGroup
-
-                    yield VocabGroup []
-                    yield VerbMode
-
-                    for quiz in quizzes.Quizzes do
-                        yield Quiz quiz
-                }
-                |> Array.ofSeq
-            Selection = VocabGroup []
-            Filter = MenuFilter.Options.[0]
-        }
-
 type MenuView(state: MenuState) =
-
-    let next_selection () : unit =
-        state.Selection <-
-            state.SelectionOptions.[(Array.IndexOf(state.SelectionOptions, state.Selection) + 1) % state.SelectionOptions.Length]
-
-    let previous_selection () : unit =
-        state.Selection <-
-            state.SelectionOptions.[(Array.IndexOf(state.SelectionOptions, state.Selection)
-                                     + state.SelectionOptions.Length
-                                     - 1) % state.SelectionOptions.Length]
-
-    let cycle_filter () : unit =
-        state.Filter <-
-            MenuFilter.Options.[(Array.IndexOf(MenuFilter.Options, state.Filter) + 1) % MenuFilter.Options.Length]
-
-    let get_filtered (word_lists: string list) : Card seq =
-        state.Filter.Apply state.Vocab (state.Vocab.AvailableCards(word_lists))
 
     member private this.RenderVocabDashboard() : unit =
         let BAR_SIZE = (MenuRender.Width - 28 - 21) / 2
@@ -94,7 +19,7 @@ type MenuView(state: MenuState) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
         let card_actions (word_lists: string list, is_group: bool) =
-            let available = get_filtered(word_lists)
+            let available = state.FilteredWords(word_lists)
             let learning = state.Vocab.LearningCards(available)
             let due = state.Vocab.DueReviewCards(available, now)
             let ahead = state.Vocab.AheadReviewCards(available, now)
@@ -148,8 +73,8 @@ type MenuView(state: MenuState) =
         )
 
         MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0xFF_202020))
-        MenuRender.Write($" %3i{state.Vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0xFF_202040))
-        MenuRender.Write($" %3i{state.Vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
+        MenuRender.Write($" %3i{state.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0xFF_202040))
+        MenuRender.Write($" %3i{state.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
 
         MenuRender.Write(
             $" %i{Seq.length(state.Vocab.Chores() |> Seq.filter _.IsUrgent)} chores "
@@ -278,7 +203,7 @@ type MenuView(state: MenuState) =
         let cards =
             state.Vocab.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.ReferenceKey
-            |> Seq.truncate state.Vocab.ReviewBatchSize
+            |> Seq.truncate state.ReviewBatchSize
             |> Array.ofSeq
 
         if cards.Length > 0 then
@@ -307,7 +232,7 @@ type MenuView(state: MenuState) =
         let cards =
             state.Vocab.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.ReferenceKey
-            |> Seq.truncate state.Vocab.ReviewBatchSize
+            |> Seq.truncate state.ReviewBatchSize
             |> Array.ofSeq
 
         if cards.Length > 0 then
@@ -334,7 +259,7 @@ type MenuView(state: MenuState) =
 
     member this.VocabLearn(cards: Card seq) : unit =
         let cards =
-            state.Vocab.LearningCards(cards) |> Seq.truncate state.Vocab.LearnBatchSize |> Array.ofSeq
+            state.Vocab.LearningCards(cards) |> Seq.truncate state.LearnBatchSize |> Array.ofSeq
 
         if cards.Length > 0 then
             let result = LearnSession(cards, state.Scheduler).Start()
@@ -624,19 +549,19 @@ type MenuView(state: MenuState) =
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Escape -> loop <- false
                 | ConsoleKey.UpArrow
-                | ConsoleKey.K -> previous_selection()
+                | ConsoleKey.K -> state.PreviousSelection()
                 | ConsoleKey.DownArrow
-                | ConsoleKey.J -> next_selection()
-                | ConsoleKey.Enter -> this.VocabStats(get_filtered(wordlists))
-                | ConsoleKey.L -> this.VocabLearn(get_filtered(wordlists))
-                | ConsoleKey.R -> this.VocabReview(get_filtered(wordlists))
-                | ConsoleKey.A -> this.VocabReviewAhead(get_filtered(wordlists))
+                | ConsoleKey.J -> state.NextSelection()
+                | ConsoleKey.Enter -> this.VocabStats(state.FilteredWords(wordlists))
+                | ConsoleKey.L -> this.VocabLearn(state.FilteredWords(wordlists))
+                | ConsoleKey.R -> this.VocabReview(state.FilteredWords(wordlists))
+                | ConsoleKey.A -> this.VocabReviewAhead(state.FilteredWords(wordlists))
                 | ConsoleKey.C -> this.VocabChoresList()
-                | ConsoleKey.F -> cycle_filter()
+                | ConsoleKey.F -> state.CycleFilter()
                 | ConsoleKey.OemMinus
-                | ConsoleKey.Subtract -> state.Vocab.DecreaseBatchSize()
+                | ConsoleKey.Subtract -> state.DecreaseBatchSize()
                 | ConsoleKey.OemPlus
-                | ConsoleKey.Add -> state.Vocab.IncreaseBatchSize()
+                | ConsoleKey.Add -> state.IncreaseBatchSize()
                 | ConsoleKey.S ->
                     Sync.host(state.Data)
                     Console.ReadKey(true) |> ignore
@@ -654,9 +579,9 @@ type MenuView(state: MenuState) =
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Escape -> loop <- false
                 | ConsoleKey.UpArrow
-                | ConsoleKey.K -> previous_selection()
+                | ConsoleKey.K -> state.PreviousSelection()
                 | ConsoleKey.DownArrow
-                | ConsoleKey.J -> next_selection()
+                | ConsoleKey.J -> state.NextSelection()
                 | ConsoleKey.L -> this.VerbsLearn(state.Verbs.LearningEntries(state.Verbs.AvailableEntries()))
                 | ConsoleKey.R ->
                     this.VerbsReview(
@@ -679,9 +604,9 @@ type MenuView(state: MenuState) =
                 match Console.ReadKey(true).Key with
                 | ConsoleKey.Escape -> loop <- false
                 | ConsoleKey.UpArrow
-                | ConsoleKey.K -> previous_selection()
+                | ConsoleKey.K -> state.PreviousSelection()
                 | ConsoleKey.DownArrow
-                | ConsoleKey.J -> next_selection()
+                | ConsoleKey.J -> state.NextSelection()
                 | ConsoleKey.Enter -> state.Quizzes.Study(quiz)
                 | ConsoleKey.A -> state.Quizzes.Study(state.Quizzes.Auto())
                 | _ -> ()

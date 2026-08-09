@@ -14,9 +14,6 @@ type Chore =
 
 type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
-    // todo: should not be here
-    static let mutable study_size_multiplier = 3
-
     member this.Scheduler = scheduler
 
     member inline this.LevelOf(card: Card) : int =
@@ -241,13 +238,3 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member inline this.LevelDistribution(cards: Card seq) : (int * int) seq =
         cards |> Seq.map this.LevelOf |> Seq.countBy id |> Seq.sortBy fst
-
-    // todo: move UI state and functions to UI only
-    member this.LearnBatchSize = 4 * study_size_multiplier
-    member this.ReviewBatchSize = 10 * study_size_multiplier
-
-    member this.IncreaseBatchSize() : unit =
-        study_size_multiplier <- study_size_multiplier + 1 |> min 20
-
-    member this.DecreaseBatchSize() : unit =
-        study_size_multiplier <- study_size_multiplier - 1 |> max 1
