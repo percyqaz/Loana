@@ -35,7 +35,13 @@ let mutable waiting_acceptance = true
 while waiting_acceptance do
 
     Console.Clear()
-    Console.WriteLine(MenuRender.Pad("Loading ..."), Color.White, Color.FromArgb(0xFF_303030))
+
+    Console.WriteLine(
+        MenuRender
+            .Pad("Loading ...")
+            .ForeColor(Color.White)
+            .BackColor(Color.FromArgb(0xFF_303030))
+    )
 
     let state = LoanaState.Create(data_path)
 

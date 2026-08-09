@@ -257,18 +257,20 @@ type Menu(state: LoanaState) =
             let result = ReviewSession(cards, scheduler, false).Start()
 
             Console.WriteLine(
-                MenuRender.Pad(
-                    sprintf
-                        "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
-                        (if result.EndEarly then " early" else "")
-                        result.Good
-                        result.Ok
-                        result.Bad
-                        result.NotGood
-                        (100.0f * (float32 result.Good / ((float32 result.Good + float32 result.NotGood) |> max 1.0f)))
-                ),
-                Color.LightGreen,
-                Color.FromArgb(0xFF_303030)
+                MenuRender
+                    .Pad(
+                        sprintf
+                            "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
+                            (if result.EndEarly then " early" else "")
+                            result.Good
+                            result.Ok
+                            result.Bad
+                            result.NotGood
+                            (100.0f
+                             * (float32 result.Good / ((float32 result.Good + float32 result.NotGood) |> max 1.0f)))
+                    )
+                    .ForeColor(Color.LightGreen)
+                    .BackColor(Color.FromArgb(0xFF_303030))
             )
 
             Console.ReadKey(true) |> ignore
@@ -284,18 +286,20 @@ type Menu(state: LoanaState) =
             let result = ReviewSession(cards, scheduler, true).Start()
 
             Console.WriteLine(
-                MenuRender.Pad(
-                    sprintf
-                        "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
-                        (if result.EndEarly then " early" else "")
-                        result.Good
-                        result.Ok
-                        result.Bad
-                        result.NotGood
-                        (100.0f * (float32 result.Good / ((float32 result.Good + float32 result.NotGood) |> max 1.0f)))
-                ),
-                Color.LightGreen,
-                Color.FromArgb(0xFF_303030)
+                MenuRender
+                    .Pad(
+                        sprintf
+                            "Session ended%s! [%i|%i|%i|%i] (%.1f%%)"
+                            (if result.EndEarly then " early" else "")
+                            result.Good
+                            result.Ok
+                            result.Bad
+                            result.NotGood
+                            (100.0f
+                             * (float32 result.Good / ((float32 result.Good + float32 result.NotGood) |> max 1.0f)))
+                    )
+                    .ForeColor(Color.LightGreen)
+                    .BackColor(Color.FromArgb(0xFF_303030))
             )
 
             Console.ReadKey(true) |> ignore
@@ -308,22 +312,29 @@ type Menu(state: LoanaState) =
             let result = LearnSession(cards, scheduler).Start()
 
             Console.WriteLine(
-                MenuRender.Pad(
-                    sprintf
-                        "Session ended%s! [%i|%i] (%.1f)"
-                        (if result.EndEarly then " early" else "")
-                        result.Good
-                        result.NotGood
-                        (1.0f + float32 result.NotGood / (float32 result.Good |> max 1.0f))
-                ),
-                Color.LightGreen,
-                Color.FromArgb(0xFF_303030)
+                MenuRender
+                    .Pad(
+                        sprintf
+                            "Session ended%s! [%i|%i] (%.1f)"
+                            (if result.EndEarly then " early" else "")
+                            result.Good
+                            result.NotGood
+                            (1.0f + float32 result.NotGood / (float32 result.Good |> max 1.0f))
+                    )
+                    .ForeColor(Color.LightGreen)
+                    .BackColor(Color.FromArgb(0xFF_303030))
             )
 
             Console.ReadKey(true) |> ignore
 
     member this.VocabChoresList() : unit =
-        Console.WriteLine(MenuRender.Pad(" Chores list "), Color.White, Color.FromArgb(0xFF_303030))
+        Console.WriteLine(
+            MenuRender
+                .Pad(" Chores list ")
+                .ForeColor(Color.White)
+                .BackColor(Color.FromArgb(0xFF_303030))
+        )
+
         let chores = vocab.Chores() |> Seq.cache
         let urgent = chores |> Seq.filter _.IsUrgent |> Seq.truncate 20 |> Array.ofSeq
 
@@ -331,22 +342,24 @@ type Menu(state: LoanaState) =
             chores |> Seq.filter(_.IsUrgent >> not) |> Seq.truncate 20 |> Array.ofSeq
 
         Console.WriteLine(
-            MenuRender.Pad(sprintf " - %i Urgent - " urgent.Length),
-            Color.LightGray,
-            Color.FromArgb(0xFF_202020)
+            MenuRender
+                .Pad(sprintf " - %i Urgent - " urgent.Length)
+                .ForeColor(Color.LightGray)
+                .BackColor(0xFF_202020)
         )
 
         for chore in urgent do
-            Console.WriteLine(chore.Message, Color.DeepPink)
+            Console.WriteLine(chore.Message.ForeColor(Color.DeepPink))
 
         Console.WriteLine(
-            MenuRender.Pad(sprintf " - %i Non-urgent - " non_urgent.Length),
-            Color.LightGray,
-            Color.FromArgb(0xFF_202020)
+            MenuRender
+                .Pad(sprintf " - %i Non-urgent - " non_urgent.Length)
+                .ForeColor(Color.LightGray)
+                .BackColor(0xFF_202020)
         )
 
         for chore in non_urgent do
-            Console.WriteLine(chore.Message, Color.Yellow)
+            Console.WriteLine(chore.Message.ForeColor(Color.Yellow))
 
         Console.ReadKey(true) |> ignore
 
@@ -512,10 +525,18 @@ type Menu(state: LoanaState) =
             if not result.EndEarly then
                 let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
-                scheduler.Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now).LogTo
+                scheduler
+                    .Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now)
+                    .LogTo
                     session
 
-        Console.WriteLine(MenuRender.Pad("Session ended."), Color.LightGreen, Color.FromArgb(0xFF_303030))
+        Console.WriteLine(
+            MenuRender
+                .Pad("Session ended.")
+                .ForeColor(Color.LightGreen)
+                .BackColor(Color.FromArgb(0xFF_303030))
+        )
+
         Console.ReadKey(true) |> ignore
 
     member this.VerbsReview(entries: VerbCacheEntry seq) : unit =
@@ -542,7 +563,13 @@ type Menu(state: LoanaState) =
             elif result.Forgot > 0 then scheduler.Reschedule(verb.Key, _.Forget).LogTo session
             else scheduler.Reschedule(verb.Key, _.Demote).LogTo session
 
-        Console.WriteLine(MenuRender.Pad("Session ended."), Color.LightGreen, Color.FromArgb(0xFF_303030))
+        Console.WriteLine(
+            MenuRender
+                .Pad("Session ended.")
+                .ForeColor(Color.LightGreen)
+                .BackColor(Color.FromArgb(0xFF_303030))
+        )
+
         Console.ReadKey(true) |> ignore
 
     member this.Run() : unit =

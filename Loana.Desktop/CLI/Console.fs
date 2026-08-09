@@ -2,33 +2,6 @@ namespace Loana.Desktop.CLI
 
 open System.Drawing
 
-type Console =
-    static member ColorText(text: string, fg: Color, bg: Color) : string =
-        if bg.A > 0uy then text.ForeColor(fg).BackColor(bg) else text.ForeColor(fg)
-
-    static member Clear() : unit = System.Console.Clear()
-
-    static member Write(text: string, fg: Color, bg: Color) : unit =
-        System.Console.Write(Console.ColorText(text, fg, bg))
-
-    static member Write(text: string, fg: Color) : unit =
-        Console.Write(text, fg, Color.Transparent)
-
-    static member Write(text: string) : unit =
-        Console.Write(text, Color.White, Color.Transparent)
-
-    static member WriteLine(text: string, color: Color, background: Color) : unit =
-        Console.Write(text + "\n", color, background)
-
-    static member WriteLine(text: string, color: Color) : unit =
-        Console.WriteLine(text, color, Color.Transparent)
-
-    static member WriteLine(text: string) : unit =
-        Console.WriteLine(text, Color.White, Color.Transparent)
-
-    static member WriteLine() : unit =
-        Console.WriteLine("", Color.White, Color.Transparent)
-
 /// Deferred block rendering for UIs
 type MenuRender =
 
@@ -44,7 +17,10 @@ type MenuRender =
         MenuRender.FlushInline()
 
     static member Write(text: string, fg: Color, bg: Color) : unit =
-        buffer.Append(Console.ColorText(text, fg, bg)) |> ignore
+        if bg.A <> 0uy then
+            buffer.Append(text.ForeColor(fg).BackColor(bg)) |> ignore
+        else
+            buffer.Append(text.ForeColor(fg)) |> ignore
 
     static member Write(text: string, fg: Color) : unit =
         MenuRender.Write(text, fg, Color.Transparent)

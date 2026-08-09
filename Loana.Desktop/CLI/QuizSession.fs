@@ -162,9 +162,10 @@ type QuizSession(title: string, questions: Question array) =
                     | _ -> ()
 
         Console.WriteLine(
-            MenuRender.Pad($" Session ended. {mistakes} mistakes! "),
-            Color.LightGreen,
-            Color.FromArgb(0xFF_202020)
+            MenuRender
+                .Pad($" Session ended. {mistakes} mistakes! ")
+                .ForeColor(Color.LightGreen)
+                .BackColor(0xFF_202020)
         )
 
         let mutable result = None
@@ -173,9 +174,10 @@ type QuizSession(title: string, questions: Question array) =
             Console.ReadKey(true) |> ignore
         else
             Console.WriteLine(
-                " [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width),
-                Color.LightGray,
-                Color.FromArgb(0xFF_303030)
+                " [,] -1 Level [.] Keep Level [/] +1 Level "
+                    .PadLeft(MenuRender.Width)
+                    .ForeColor(Color.LightGray)
+                    .BackColor(0xFF_202020)
             )
 
             while result.IsNone do
