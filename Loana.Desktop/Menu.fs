@@ -503,7 +503,7 @@ type Menu(state: LoanaState) =
                 verb_cache.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
                 |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-                |> Seq.map(fun (i, text) -> VerbCard.M_Inflection(verb.Verb, i, text))
+                |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
                 |> Array.ofSeq
 
             let session = VerbSession(verb_cards)
@@ -530,7 +530,7 @@ type Menu(state: LoanaState) =
                 verb_cache.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
                 |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-                |> Seq.map(fun (i, text) -> VerbCard.M_Inflection(verb.Verb, i, text))
+                |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
                 |> Array.ofSeq
 
             let session = VerbSession(verb_cards)

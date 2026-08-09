@@ -4,7 +4,7 @@ open Loana.Language
 
 type VocabCard =
 
-    static member M_Tier1_RecogniseDE(v: Vocab) =
+    static member Tier1RecogniseDE(v: Vocab) : Card =
         {
             Key = $"vocab-recognise-{v.DeutschAsciiIdentifier}"
             Type = RecogniseDE v
@@ -13,7 +13,7 @@ type VocabCard =
             BumpKey = None
         }
 
-    static member M_Tier2_RecallDE(v: Vocab) =
+    static member Tier2RecallDE(v: Vocab) : Card =
         {
             Key = $"vocab-recall-{v.DeutschAsciiIdentifier}"
             Type = RecallDE v
@@ -22,7 +22,7 @@ type VocabCard =
             BumpKey = Some $"vocab-recognise-{v.DeutschAsciiIdentifier}"
         }
 
-    static member M_Tier3_RecogniseArticleDE(n: Noun) =
+    static member Tier3RecogniseArticleDE(n: Noun) : Card =
         {
             Key = $"noun-recognise-{n.AsciiIdentifierWithGender}"
             Type = RecogniseArticleDE n
@@ -31,7 +31,7 @@ type VocabCard =
             BumpKey = None
         }
 
-    static member M_Tier4_RecallArticleDE(n: Noun) =
+    static member Tier4RecallArticleDE(n: Noun) : Card =
         {
             Key = $"noun-recall-{n.AsciiIdentifierWithGender}"
             Type = RecallArticleDE n
@@ -40,16 +40,16 @@ type VocabCard =
             BumpKey = Some $"noun-recognise-{n.AsciiIdentifierWithGender}"
         }
 
-    static member M_Tier5_RecognisePluralDE(n: Noun) =
+    static member Tier5RecognisePluralDE(n: Noun) : Card =
         assert n.Guts.IsPlural
-        { VocabCard.M_Tier3_RecogniseArticleDE(n) with Tier = 5 }
+        { VocabCard.Tier3RecogniseArticleDE(n) with Tier = 5 }
 
-    static member M_Tier6_RecallPluralDE(n: Noun) =
+    static member Tier6RecallPluralDE(n: Noun) : Card =
         assert n.Guts.IsPlural
-        { VocabCard.M_Tier4_RecallArticleDE(n) with Tier = 6 }
+        { VocabCard.Tier4RecallArticleDE(n) with Tier = 6 }
 
-    static member M_Tier3_RecognisePastParticipleDE(v: Vocab) =
-        { VocabCard.M_Tier1_RecogniseDE(v) with Tier = 3 }
+    static member Tier3RecognisePastParticipleDE(v: Vocab) : Card =
+        { VocabCard.Tier1RecogniseDE(v) with Tier = 3 }
 
-    static member M_Tier4_RecallPastParticipleDE(v: Vocab) =
-        { VocabCard.M_Tier2_RecallDE(v) with Tier = 4 }
+    static member Tier4RecallPastParticipleDE(v: Vocab) : Card =
+        { VocabCard.Tier2RecallDE(v) with Tier = 4 }

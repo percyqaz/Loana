@@ -4,7 +4,7 @@ open Loana.Language
 
 type VerbCard =
 
-    static member M_Inflection(v: Verb, i: VerbInflection, inflected_text: string) : Card =
+    static member Inflection(v: Verb, i: VerbInflection, inflected_text: string) : Card =
         {
             Key = $"verb-{v.Infinitive.DeutschAsciiIdentifier}-{i.ToString()}"
             Type = Inflection(v, i, inflected_text)

@@ -26,17 +26,17 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member private this.AvailableCards(vocab: Vocab) : Card seq =
         seq {
-            let tier_1 = VocabCard.M_Tier1_RecogniseDE(vocab)
+            let tier_1 = VocabCard.Tier1RecogniseDE(vocab)
             yield tier_1
 
             if this.LevelOf(tier_1) >= 2 then
-                yield VocabCard.M_Tier2_RecallDE(vocab)
+                yield VocabCard.Tier2RecallDE(vocab)
         }
 
     member private this.AvailableCards(verb: Verb) : Card seq =
         seq {
-            let tier_1 = VocabCard.M_Tier1_RecogniseDE(verb.Infinitive)
-            let tier_2 = VocabCard.M_Tier2_RecallDE(verb.Infinitive)
+            let tier_1 = VocabCard.Tier1RecogniseDE(verb.Infinitive)
+            let tier_2 = VocabCard.Tier2RecallDE(verb.Infinitive)
             yield tier_1
 
             if this.LevelOf(tier_1) >= 2 then
@@ -44,8 +44,8 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
             match verb.PastParticiple with
             | KnownValue past_particle ->
-                let tier_3 = VocabCard.M_Tier3_RecognisePastParticipleDE(past_particle)
-                let tier_4 = VocabCard.M_Tier4_RecallPastParticipleDE(past_particle)
+                let tier_3 = VocabCard.Tier3RecognisePastParticipleDE(past_particle)
+                let tier_4 = VocabCard.Tier4RecallPastParticipleDE(past_particle)
 
                 if this.LevelOf(tier_2) >= 4 then
                     yield tier_3
@@ -57,10 +57,10 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member private this.AvailableCards(noun: Noun) : Card seq =
         seq {
-            let tier_1 = VocabCard.M_Tier1_RecogniseDE(noun.Translation)
-            let tier_2 = VocabCard.M_Tier2_RecallDE(noun.Translation)
-            let tier_3 = VocabCard.M_Tier3_RecogniseArticleDE(noun)
-            let tier_4 = VocabCard.M_Tier4_RecallArticleDE(noun)
+            let tier_1 = VocabCard.Tier1RecogniseDE(noun.Translation)
+            let tier_2 = VocabCard.Tier2RecallDE(noun.Translation)
+            let tier_3 = VocabCard.Tier3RecogniseArticleDE(noun)
+            let tier_4 = VocabCard.Tier4RecallArticleDE(noun)
 
             if this.LevelOf(tier_1) < 2 then
                 yield tier_1
@@ -76,8 +76,8 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
             match noun.PluralForm with
             | Some p ->
-                let tier_5 = VocabCard.M_Tier5_RecognisePluralDE(p)
-                let tier_6 = VocabCard.M_Tier6_RecallPluralDE(p)
+                let tier_5 = VocabCard.Tier5RecognisePluralDE(p)
+                let tier_6 = VocabCard.Tier6RecallPluralDE(p)
 
                 if this.LevelOf(tier_4) >= 2 then
                     yield tier_5
@@ -107,33 +107,33 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member private this.PossibleCards(vocab: Vocab) : Card seq =
         seq {
-            yield VocabCard.M_Tier1_RecogniseDE(vocab)
-            yield VocabCard.M_Tier2_RecallDE(vocab)
+            yield VocabCard.Tier1RecogniseDE(vocab)
+            yield VocabCard.Tier2RecallDE(vocab)
         }
 
     member private this.PossibleCards(verb: Verb) : Card seq =
         seq {
-            yield VocabCard.M_Tier1_RecogniseDE(verb.Infinitive)
-            yield VocabCard.M_Tier2_RecallDE(verb.Infinitive)
+            yield VocabCard.Tier1RecogniseDE(verb.Infinitive)
+            yield VocabCard.Tier2RecallDE(verb.Infinitive)
 
             match verb.PastParticiple with
             | KnownValue past_participle ->
-                yield VocabCard.M_Tier3_RecognisePastParticipleDE(past_participle)
-                yield VocabCard.M_Tier4_RecallPastParticipleDE(past_participle)
+                yield VocabCard.Tier3RecognisePastParticipleDE(past_participle)
+                yield VocabCard.Tier4RecallPastParticipleDE(past_participle)
             | _ -> ()
         }
 
     member private this.PossibleCards(noun: Noun) : Card seq =
         seq {
-            yield VocabCard.M_Tier1_RecogniseDE(noun.Translation)
-            yield VocabCard.M_Tier2_RecallDE(noun.Translation)
-            yield VocabCard.M_Tier3_RecogniseArticleDE(noun)
-            yield VocabCard.M_Tier4_RecallArticleDE(noun)
+            yield VocabCard.Tier1RecogniseDE(noun.Translation)
+            yield VocabCard.Tier2RecallDE(noun.Translation)
+            yield VocabCard.Tier3RecogniseArticleDE(noun)
+            yield VocabCard.Tier4RecallArticleDE(noun)
 
             match noun.PluralForm with
             | Some plural ->
-                yield VocabCard.M_Tier5_RecognisePluralDE(plural)
-                yield VocabCard.M_Tier6_RecallPluralDE(plural)
+                yield VocabCard.Tier5RecognisePluralDE(plural)
+                yield VocabCard.Tier6RecallPluralDE(plural)
             | None -> ()
         }
 
@@ -174,7 +174,7 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
                     let message =
                         sprintf "'%O' in '%s' is missing gender!" vocab.Deutsch word.Source.WordlistName
 
-                    if this.LevelOf(VocabCard.M_Tier2_RecallDE(vocab)) >= 4 then
+                    if this.LevelOf(VocabCard.Tier2RecallDE(vocab)) >= 4 then
                         yield Chore.Urgent(message)
                     else
                         yield Chore.NonUrgent(message)
