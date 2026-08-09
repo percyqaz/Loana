@@ -1,7 +1,5 @@
 ﻿namespace Loana.Desktop
 
-open System
-open System.Runtime.CompilerServices
 open Loana.Language
 open Loana.Data
 open Loana.Vocab
@@ -73,32 +71,3 @@ type MenuState =
 
     member this.LearnBatchSize = this.BatchSize * 4
     member this.ReviewBatchSize = this.BatchSize * 10
-
-    member this.IncreaseBatchSize() : unit =
-        this.BatchSize <- this.BatchSize + 1 |> min 20
-
-    member this.DecreaseBatchSize() : unit =
-        this.BatchSize <- this.BatchSize - 1 |> max 1
-
-type MenuCommands =
-
-    [<Extension>]
-    static member NextSelection(state: MenuState) : unit =
-        let new_index =
-            (Array.IndexOf(state.SelectionOptions, state.Selection) + 1) % state.SelectionOptions.Length
-
-        state.Selection <- state.SelectionOptions.[new_index]
-
-    [<Extension>]
-    static member PreviousSelection(state: MenuState) : unit =
-        let new_index =
-            (Array.IndexOf(state.SelectionOptions, state.Selection) + state.SelectionOptions.Length - 1) % state.SelectionOptions.Length
-
-        state.Selection <- state.SelectionOptions.[new_index]
-
-    [<Extension>]
-    static member CycleFilter(state: MenuState) : unit =
-        let new_index =
-            (Array.IndexOf(MenuFilter.Options, state.Filter) + 1) % MenuFilter.Options.Length
-
-        state.Filter <- MenuFilter.Options.[new_index]
