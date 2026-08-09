@@ -16,48 +16,77 @@ type MenuSelection =
     | VerbMode
     | Quiz of Quiz
 
-type Menu(state: LoanaState) =
+[<ReferenceEquality>]
+type MenuFilter =
+    {
+        Name: string
+        Apply: VocabDeck -> Card seq -> Card seq
+    }
 
-    let vocab: VocabDeck = VocabDeck(state.Scheduler, state.Words)
-    let quizzes: QuizScheduler = QuizScheduler(state.Scheduler)
-    let verbs: VerbCache = VerbCache(state.Scheduler, state.Words)
-
-    let SELECTION_OPTIONS =
-        seq {
-            for group in state.Words.Groups do
-                yield VocabGroup(List.ofSeq group.WordlistNames)
-                yield! group.WordlistNames |> Seq.map List.singleton |> Seq.map VocabGroup
-
-            yield VocabGroup []
-            yield VerbMode
-
-            for quiz in quizzes.Quizzes do
-                yield Quiz quiz
-        }
-        |> Array.ofSeq
-
-    let FILTERS =
+    static member val Options =
         [|
-            id, "None"
-            (fun cards -> vocab.FilterByTier(cards, 1, 1)), "New words only"
-            (fun cards -> vocab.FilterByTier(cards, 2, 999)), "Unlocks only"
+            { Name = "None"; Apply = fun _ cards -> cards }
+            { Name = "New words only"; Apply = (fun vocab cards -> vocab.FilterByTier(cards, 1, 1)) }
+            { Name = "Unlocks only"; Apply = (fun vocab cards -> vocab.FilterByTier(cards, 2, 999)) }
         |]
 
-    let mutable selection = VocabGroup []
-    let mutable current_filter = FILTERS.[0]
+type MenuState =
+    {
+        Data: LoanaState
+        Vocab: VocabDeck
+        Quizzes: QuizScheduler
+        Verbs: VerbCache
+        SelectionOptions: MenuSelection array
+        mutable Selection: MenuSelection
+        mutable Filter: MenuFilter
+    }
 
-    let next_selection () =
-        selection <- SELECTION_OPTIONS.[(Array.IndexOf(SELECTION_OPTIONS, selection) + 1) % SELECTION_OPTIONS.Length]
+    member this.Words = this.Data.Words
+    member this.Scheduler = this.Data.Scheduler
 
-    let previous_selection () =
-        selection <-
-            SELECTION_OPTIONS.[(Array.IndexOf(SELECTION_OPTIONS, selection) + SELECTION_OPTIONS.Length - 1) % SELECTION_OPTIONS.Length]
+    static member Create(loana_state: LoanaState) : MenuState =
+        let quizzes = QuizScheduler(loana_state.Scheduler)
 
-    let cycle_filter () =
-        current_filter <- FILTERS.[(Array.IndexOf(FILTERS, current_filter) + 1) % FILTERS.Length]
+        {
+            Data = loana_state
+            Vocab = VocabDeck(loana_state.Scheduler, loana_state.Words)
+            Quizzes = quizzes
+            Verbs = VerbCache(loana_state.Scheduler, loana_state.Words)
+            SelectionOptions =
+                seq {
+                    for group in loana_state.Words.Groups do
+                        yield VocabGroup(List.ofSeq group.WordlistNames)
+                        yield! group.WordlistNames |> Seq.map List.singleton |> Seq.map VocabGroup
 
-    let get_filtered (wordlists: string list) =
-        vocab.AvailableCards(wordlists) |> fst current_filter
+                    yield VocabGroup []
+                    yield VerbMode
+
+                    for quiz in quizzes.Quizzes do
+                        yield Quiz quiz
+                }
+                |> Array.ofSeq
+            Selection = VocabGroup []
+            Filter = MenuFilter.Options.[0]
+        }
+
+type MenuView(state: MenuState) =
+
+    let next_selection () : unit =
+        state.Selection <-
+            state.SelectionOptions.[(Array.IndexOf(state.SelectionOptions, state.Selection) + 1) % state.SelectionOptions.Length]
+
+    let previous_selection () : unit =
+        state.Selection <-
+            state.SelectionOptions.[(Array.IndexOf(state.SelectionOptions, state.Selection)
+                                     + state.SelectionOptions.Length
+                                     - 1) % state.SelectionOptions.Length]
+
+    let cycle_filter () : unit =
+        state.Filter <-
+            MenuFilter.Options.[(Array.IndexOf(MenuFilter.Options, state.Filter) + 1) % MenuFilter.Options.Length]
+
+    let get_filtered (word_lists: string list) : Card seq =
+        state.Filter.Apply state.Vocab (state.Vocab.AvailableCards(word_lists))
 
     member private this.RenderVocabDashboard() : unit =
         let BAR_SIZE = (MenuRender.Width - 28 - 21) / 2
@@ -65,10 +94,10 @@ type Menu(state: LoanaState) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
         let card_actions (word_lists: string list, is_group: bool) =
-            let available = vocab.AvailableCards(word_lists) |> fst current_filter
-            let learning = vocab.LearningCards(available)
-            let due = vocab.DueReviewCards(available, now)
-            let ahead = vocab.AheadReviewCards(available, now)
+            let available = get_filtered(word_lists)
+            let learning = state.Vocab.LearningCards(available)
+            let due = state.Vocab.DueReviewCards(available, now)
+            let ahead = state.Vocab.AheadReviewCards(available, now)
 
             let m = if is_group then 2 else 1
 
@@ -78,12 +107,14 @@ type Menu(state: LoanaState) =
             MenuRender.Write($" %5i{Seq.length available} ", Color.White, Color.FromArgb(0x01_202020 * m))
 
         let progress_bar (word_lists: string list, is_group: bool) =
-            let all_cards_ever = vocab.PossibleCards(word_lists)
+            let all_cards_ever = state.Vocab.PossibleCards(word_lists)
             let total_cards = Seq.length all_cards_ever
-            let started = total_cards - (vocab.LearningCards(all_cards_ever) |> Seq.length)
+
+            let started =
+                total_cards - (state.Vocab.LearningCards(all_cards_ever) |> Seq.length)
 
             let mature =
-                all_cards_ever |> Seq.map vocab.LevelOf |> Seq.where(fun x -> x >= 4) |> Seq.length
+                all_cards_ever |> Seq.map state.Vocab.LevelOf |> Seq.where(fun x -> x >= 4) |> Seq.length
 
             let mature_percent = float32 mature / float32 total_cards * 100.0f
             let started_percent = float32 started / float32 total_cards * 100.0f
@@ -111,17 +142,18 @@ type Menu(state: LoanaState) =
         MenuRender.Write(" Loana Dashboard :) ".PadRight(BAR_SIZE + 3), Color.White, Color.FromArgb(0xFF_202020))
 
         MenuRender.Write(
-            $"  Filter: {snd current_filter} ".PadRight(28),
-            (if snd current_filter = "None" then Color.LightGray else Color.DeepPink),
+            $"  Filter: {state.Filter.Name} ".PadRight(28),
+            (if state.Filter.Name = "None" then Color.LightGray else Color.DeepPink),
             Color.FromArgb(0xFF_101010)
         )
 
         MenuRender.Write("".PadLeft(BAR_SIZE - 8), Color.White, Color.FromArgb(0xFF_202020))
-        MenuRender.Write($" %3i{vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0xFF_202040))
-        MenuRender.Write($" %3i{vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
+        MenuRender.Write($" %3i{state.Vocab.LearnBatchSize} ", Color.LightBlue, Color.FromArgb(0xFF_202040))
+        MenuRender.Write($" %3i{state.Vocab.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
 
         MenuRender.Write(
-            $" %i{Seq.length(vocab.Chores() |> Seq.filter _.IsUrgent)} chores ".PadLeft(16),
+            $" %i{Seq.length(state.Vocab.Chores() |> Seq.filter _.IsUrgent)} chores "
+                .PadLeft(16),
             Color.Pink,
             Color.FromArgb(0xFF_202020)
         )
@@ -134,7 +166,7 @@ type Menu(state: LoanaState) =
 
             MenuRender.Write(
                 $"@ {group.Name.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
-                (if selection = VocabGroup word_lists then Color.Yellow else Color.White),
+                (if state.Selection = VocabGroup word_lists then Color.Yellow else Color.White),
                 Color.FromArgb(0xFF_303030)
             )
 
@@ -145,7 +177,7 @@ type Menu(state: LoanaState) =
             for wl in group.WordlistNames do
                 MenuRender.Write(
                     $"| {wl.PadRight(BAR_SIZE).Substring(0, BAR_SIZE)} ",
-                    (if selection = VocabGroup [ wl ] then Color.Yellow else Color.LightGreen),
+                    (if state.Selection = VocabGroup [ wl ] then Color.Yellow else Color.LightGreen),
                     Color.FromArgb(0xFF_202020)
                 )
 
@@ -155,7 +187,7 @@ type Menu(state: LoanaState) =
 
         MenuRender.Write(
             "** ALL CARDS ** ".PadRight(BAR_SIZE + 3),
-            (if selection = VocabGroup [] then Color.Yellow else Color.White),
+            (if state.Selection = VocabGroup [] then Color.Yellow else Color.White),
             Color.FromArgb(0xFF_303030)
         )
 
@@ -168,15 +200,15 @@ type Menu(state: LoanaState) =
 
         MenuRender.Write(
             "** VERB MODE ** ".PadRight(BAR_SIZE + 3),
-            (if selection = VerbMode then Color.Yellow else Color.White),
+            (if state.Selection = VerbMode then Color.Yellow else Color.White),
             Color.FromArgb(0xFF_101010)
         )
 
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        let available = verbs.AvailableEntries()
-        let learning = verbs.LearningEntries(available)
-        let due = verbs.DueReviewEntries(available, now)
-        let ahead = verbs.AheadReviewEntries(available, now)
+        let available = state.Verbs.AvailableEntries()
+        let learning = state.Verbs.LearningEntries(available)
+        let due = state.Verbs.DueReviewEntries(available, now)
+        let ahead = state.Verbs.AheadReviewEntries(available, now)
 
         MenuRender.Write($" %5i{Seq.length learning} ", Color.LightBlue, Color.FromArgb(0xFF_101020))
         MenuRender.Write($" %5i{Seq.length due} ", Color.Green, Color.FromArgb(0xFF_102010))
@@ -210,7 +242,7 @@ type Menu(state: LoanaState) =
                 MenuRender.Write(String.replicate e_c " ", Color.White, Color.FromArgb(0xFF_303030))
                 MenuRender.Write("]", Color.FromArgb(0xFF_606060), Color.FromArgb(0xFF_303030))
 
-        for quiz in quizzes.Quizzes do
+        for quiz in state.Quizzes.Quizzes do
             let schedule = state.Scheduler.Get(quiz.Key)
             let level = schedule |> ValueOption.map _.Level |> ValueOption.defaultValue 0
 
@@ -219,7 +251,7 @@ type Menu(state: LoanaState) =
 
             MenuRender.Write(
                 $"| {quiz.Name} ".PadRight(MenuRender.Width - 72),
-                (if selection = Quiz quiz then Color.Yellow else Color.LightGreen),
+                (if state.Selection = Quiz quiz then Color.Yellow else Color.LightGreen),
                 Color.FromArgb(0xFF_202020)
             )
 
@@ -244,9 +276,9 @@ type Menu(state: LoanaState) =
 
     member this.VocabReview(cards: Card seq) : unit =
         let cards =
-            vocab.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            state.Vocab.DueReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.ReferenceKey
-            |> Seq.truncate vocab.ReviewBatchSize
+            |> Seq.truncate state.Vocab.ReviewBatchSize
             |> Array.ofSeq
 
         if cards.Length > 0 then
@@ -273,9 +305,9 @@ type Menu(state: LoanaState) =
 
     member this.VocabReviewAhead(cards: Card seq) : unit =
         let cards =
-            vocab.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            state.Vocab.AheadReviewCards(cards, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             |> Seq.distinctBy _.ReferenceKey
-            |> Seq.truncate vocab.ReviewBatchSize
+            |> Seq.truncate state.Vocab.ReviewBatchSize
             |> Array.ofSeq
 
         if cards.Length > 0 then
@@ -302,7 +334,7 @@ type Menu(state: LoanaState) =
 
     member this.VocabLearn(cards: Card seq) : unit =
         let cards =
-            vocab.LearningCards(cards) |> Seq.truncate vocab.LearnBatchSize |> Array.ofSeq
+            state.Vocab.LearningCards(cards) |> Seq.truncate state.Vocab.LearnBatchSize |> Array.ofSeq
 
         if cards.Length > 0 then
             let result = LearnSession(cards, state.Scheduler).Start()
@@ -331,7 +363,7 @@ type Menu(state: LoanaState) =
                 .BackColor(Color.FromArgb(0xFF_303030))
         )
 
-        let chores = vocab.Chores() |> Seq.cache
+        let chores = state.Vocab.Chores() |> Seq.cache
         let urgent = chores |> Seq.filter _.IsUrgent |> Seq.truncate 20 |> Array.ofSeq
 
         let non_urgent =
@@ -363,14 +395,14 @@ type Menu(state: LoanaState) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
         let by_hour =
-            vocab.AheadReviewCards(all_cards, now)
+            state.Vocab.AheadReviewCards(all_cards, now)
             |> Seq.map(fun c -> state.Scheduler.Get(c.Key).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerHour * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerHour)
             |> Map.ofSeq
 
         let by_day =
-            vocab.AheadReviewCards(all_cards, now)
+            state.Vocab.AheadReviewCards(all_cards, now)
             |> Seq.map(fun c -> state.Scheduler.Get(c.Key).Value.NextReview - now)
             |> Seq.takeWhile(fun c -> c < TimeSpan.SecondsPerDay * int64 MenuRender.Width)
             |> Seq.countBy(fun c -> c / TimeSpan.SecondsPerDay)
@@ -403,7 +435,7 @@ type Menu(state: LoanaState) =
         MenuRender.WriteLine(MenuRender.Pad(" - Distribution - "), Color.LightGray, Color.FromArgb(0xFF_202020))
 
         all_cards
-        |> vocab.LevelDistribution
+        |> state.Vocab.LevelDistribution
         |> Seq.iter(fun (level, count) ->
             MenuRender.Write(
                 sprintf "[%i]" level,
@@ -503,13 +535,13 @@ type Menu(state: LoanaState) =
         Console.ReadKey(true) |> ignore
 
     member this.VerbsLearn(entries: VerbCacheEntry seq) : unit =
-        let to_learn = verbs.LearningEntries(entries) |> Seq.tryHead
+        let to_learn = state.Verbs.LearningEntries(entries) |> Seq.tryHead
 
         match to_learn with
         | None -> ()
         | Some verb ->
             let verb_cards =
-                state.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
+                state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
                 |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
                 |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
@@ -537,14 +569,16 @@ type Menu(state: LoanaState) =
 
     member this.VerbsReview(entries: VerbCacheEntry seq) : unit =
         let session_entries =
-            verbs.DueReviewEntries(entries, DateTimeOffset.UtcNow.ToUnixTimeSeconds()) |> Seq.truncate 5 |> ResizeArray
+            state.Verbs.DueReviewEntries(entries, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            |> Seq.truncate 5
+            |> ResizeArray
 
         while session_entries.Count > 0 do
             let verb = session_entries.[0]
             session_entries.RemoveAt(0)
 
             let verb_cards =
-                state.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
+                state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
                 |> Map.toSeq
                 |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
                 |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
@@ -577,7 +611,7 @@ type Menu(state: LoanaState) =
             this.RenderVerbModeDashboard()
             this.RenderQuizDashboard()
 
-            match selection with
+            match state.Selection with
             | VocabGroup wordlists ->
                 MenuRender.WriteLine(
                     MenuRender.Pad(" [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter "),
@@ -600,11 +634,11 @@ type Menu(state: LoanaState) =
                 | ConsoleKey.C -> this.VocabChoresList()
                 | ConsoleKey.F -> cycle_filter()
                 | ConsoleKey.OemMinus
-                | ConsoleKey.Subtract -> vocab.DecreaseBatchSize()
+                | ConsoleKey.Subtract -> state.Vocab.DecreaseBatchSize()
                 | ConsoleKey.OemPlus
-                | ConsoleKey.Add -> vocab.IncreaseBatchSize()
+                | ConsoleKey.Add -> state.Vocab.IncreaseBatchSize()
                 | ConsoleKey.S ->
-                    Sync.host(state)
+                    Sync.host(state.Data)
                     Console.ReadKey(true) |> ignore
                 | _ -> ()
 
@@ -623,10 +657,13 @@ type Menu(state: LoanaState) =
                 | ConsoleKey.K -> previous_selection()
                 | ConsoleKey.DownArrow
                 | ConsoleKey.J -> next_selection()
-                | ConsoleKey.L -> this.VerbsLearn(verbs.LearningEntries(verbs.AvailableEntries()))
+                | ConsoleKey.L -> this.VerbsLearn(state.Verbs.LearningEntries(state.Verbs.AvailableEntries()))
                 | ConsoleKey.R ->
                     this.VerbsReview(
-                        verbs.DueReviewEntries(verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                        state.Verbs.DueReviewEntries(
+                            state.Verbs.AvailableEntries(),
+                            DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                        )
                     )
                 | _ -> ()
 
@@ -645,6 +682,6 @@ type Menu(state: LoanaState) =
                 | ConsoleKey.K -> previous_selection()
                 | ConsoleKey.DownArrow
                 | ConsoleKey.J -> next_selection()
-                | ConsoleKey.Enter -> quizzes.Study(quiz)
-                | ConsoleKey.A -> quizzes.Study(quizzes.Auto())
+                | ConsoleKey.Enter -> state.Quizzes.Study(quiz)
+                | ConsoleKey.A -> state.Quizzes.Study(state.Quizzes.Auto())
                 | _ -> ()

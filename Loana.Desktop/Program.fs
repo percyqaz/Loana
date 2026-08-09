@@ -92,11 +92,11 @@ while waiting_acceptance do
             System.Threading.Thread.Sleep(20)
             mysterious_flame()
 
-        match System.Console.ReadKey(true).Key with
+        match Console.ReadKey(true).Key with
         | ConsoleKey.Enter ->
             loop <- false
             waiting_acceptance <- false
-            Menu(state).Run()
+            MenuView(MenuState.Create(state)).Run()
         | ConsoleKey.R -> loop <- false
         | ConsoleKey.C ->
             loop <- false
