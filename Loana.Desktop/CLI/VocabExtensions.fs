@@ -11,11 +11,8 @@ type VocabExtensions =
     [<Extension>]
     static member HighlightString(this: Annotation) : string =
         match this.Note with
-        | Some note ->
-            Console.ColorText(this.Text, Color.White, Color.Transparent)
-            + " "
-            + Console.ColorText("[" + note + "]", Color.LightGray, Color.Transparent)
-        | None -> Console.ColorText(this.Text, Color.White, Color.Transparent)
+        | Some note -> this.Text + " " + ("[" + note + "]").ForeColor(Color.LightGray)
+        | None -> this.Text
 
     [<Extension>]
     static member HighlightString(this: Vocab) : string =
@@ -24,31 +21,30 @@ type VocabExtensions =
             elif this.LooksLikeANoun then Color.FromArgb(0xFF_ddffdd)
             else Color.White
 
-        Console.ColorText(this.Deutsch, color, Color.Transparent)
-        + Console.ColorText(" = ", Color.LightGray, Color.Transparent)
+        this.Deutsch.ForeColor(color).Bold()
+        + " = ".ForeColor(Color.LightGray)
         + String.concat ", " (this.English :: this.EnglishAlternatives |> Seq.map _.HighlightString())
 
     [<Extension>]
     static member HighlightString(this: Noun) : string =
         match this.Guts with
-        | Plural ->
-            this.Translation.HighlightString() + Console.ColorText(" :p", Gender.Plural.Color, Color.Transparent)
+        | Plural -> this.Translation.HighlightString() + " :p".ForeColor(Gender.Plural.Color)
         | Masculine p
         | Feminine p
         | Neuter p ->
             let gender_highlight_string =
-                Console.ColorText(" :" + this.Guts.Gender.ToString(), this.Guts.Gender.Color, Color.Transparent)
+                (" :" + this.Guts.Gender.ToString()).ForeColor(this.Guts.Gender.Color)
 
             match p with
             | KnownValue plural ->
                 this.Translation.HighlightString()
                 + gender_highlight_string
-                + Console.ColorText(" plural ", Gender.Plural.Color, Color.Transparent)
+                + " plural ".ForeColor(Gender.Plural.Color)
                 + plural.HighlightString()
             | KnownNothing ->
                 this.Translation.HighlightString()
                 + gender_highlight_string
-                + Console.ColorText(" no_plural", Gender.Plural.Color, Color.Transparent)
+                + " no_plural".ForeColor(Gender.Plural.Color)
             | Unknown -> this.Translation.HighlightString() + gender_highlight_string
 
     [<Extension>]
@@ -57,19 +53,13 @@ type VocabExtensions =
         | Unknown -> this.Infinitive.HighlightString()
         | KnownNothing ->
             this.Infinitive.HighlightString()
-            + Console.ColorText(
-                " :" + (String.concat " " (this.Tenses |> List.map(fun x -> x.ToString()))),
-                Color.FromArgb(0xFF_ffddff),
-                Color.Transparent
-            )
+            + (" :" + String.concat " " (this.Tenses |> List.map(_.ToString())))
+                .ForeColor(0xFF_ffddff)
         | KnownValue pp ->
             this.Infinitive.HighlightString()
-            + Console.ColorText(
-                " :" + (String.concat "" (this.Tenses |> List.map(fun x -> x.ToString() + " "))),
-                Color.FromArgb(0xFF_ffddff),
-                Color.Transparent
-            )
-            + Console.ColorText("pp ", Color.FromArgb(0xFF_ffdddd), Color.Transparent)
+            + (" :" + String.concat "" (this.Tenses |> List.map(fun x -> x.ToString() + " ")))
+                .ForeColor(0xFF_ffddff)
+            + "pp ".ForeColor(0xFF_ffdddd)
             + pp.HighlightString()
 
     [<Extension>]

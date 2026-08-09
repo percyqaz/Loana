@@ -4,10 +4,7 @@ open System.Drawing
 
 type Console =
     static member ColorText(text: string, fg: Color, bg: Color) : string =
-        if bg.A > 0uy then
-            sprintf "\u001b[38;2;%d;%d;%d;48;2;%d;%d;%dm%s\u001b[0m" fg.R fg.G fg.B bg.R bg.G bg.B text
-        else
-            sprintf "\u001b[38;2;%d;%d;%dm%s\u001b[39m" fg.R fg.G fg.B text
+        if bg.A > 0uy then text.ForeColor(fg).BackColor(bg) else text.ForeColor(fg)
 
     static member Clear() : unit = System.Console.Clear()
 
@@ -39,27 +36,12 @@ type MenuRender =
     static let buffer = System.Text.StringBuilder()
 
     static member FlushInline() : unit =
-        System.Console.Write(buffer.ToString())
+        System.Console.Write(buffer.Append(AnsiCodes.ClearRestOfScreen).ToString())
         buffer.Clear() |> ignore
 
     static member Redraw() : unit =
-        let draw_buffer_top () =
-            System.Console.SetCursorPosition(0, 0)
-            MenuRender.FlushInline()
-
-        let fill_screen_blank_lines () =
-            let struct (original_left, original_top) = System.Console.GetCursorPosition()
-
-            let blank_line = String.replicate width " "
-
-            for i = original_top to System.Console.WindowHeight - 1 do
-                System.Console.SetCursorPosition(0, i)
-                System.Console.Write(blank_line)
-
-            System.Console.SetCursorPosition(original_left, original_top)
-
-        draw_buffer_top()
-        fill_screen_blank_lines()
+        System.Console.SetCursorPosition(0, 0)
+        MenuRender.FlushInline()
 
     static member Write(text: string, fg: Color, bg: Color) : unit =
         buffer.Append(Console.ColorText(text, fg, bg)) |> ignore
@@ -71,7 +53,7 @@ type MenuRender =
         MenuRender.Write(text, Color.White, Color.Transparent)
 
     static member WriteLine(text: string, color: Color, background: Color) : unit =
-        MenuRender.Write(text + "\n", color, background)
+        MenuRender.Write(text.ClearRestOfLine() + "\n", color, background)
 
     static member WriteLine(text: string, color: Color) : unit =
         MenuRender.WriteLine(text, color, Color.Transparent)
@@ -95,8 +77,4 @@ type MenuRender =
     static member Width = width
 
     static member UpdateWidth() : unit =
-        let old_width = width
         width <- System.Console.WindowWidth / 2 * 2 - 1
-
-        if old_width <> width then
-            Console.Clear()

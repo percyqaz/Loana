@@ -13,5 +13,5 @@ type VerbSession(cards: Card array) =
 
     override this.Render(card: Card) : CardSide * CardSide =
         match card.Type with
-        | Inflection(verb, inflection, inflected_text) -> VerbCard.Inflection(verb, inflection, inflected_text)
+        | Inflection(verb, inflection, inflected_text) -> VerbCard.RenderInflection(verb, inflection, inflected_text)
         | _ -> failwith "todo: split verb mode off from the rest of the code properly"

@@ -13,7 +13,7 @@ type VerbCard =
     static let QUESTION_NOTE = Color.FromArgb(0xFF_C0C0C0)
     static let ANSWER_NOTE = Color.FromArgb(0xFF_404040)
 
-    static member Inflection(v: Verb, i: VerbInflection, inflected_text: string) : CardSide * CardSide =
+    static member RenderInflection(v: Verb, i: VerbInflection, inflected_text: string) : CardSide * CardSide =
         let en_side =
             seq {
                 yield { Text = v.Infinitive.English.Text; FG = Color.White; BG = QUESTION_BG }

@@ -11,11 +11,10 @@ type LearnSession(cards: Card array, scheduler: ReviewSchedule) =
     override this.Forget(card: Card) : unit =
         scheduler.Bury(card.Key)
 
-        Console.ColorText(
-            (sprintf " [L] %s buried!" card.Key).PadRight(MenuRender.Width),
-            Color.LightBlue,
-            Color.FromArgb(0xFF_202020)
-        )
+        (sprintf " [L] %s buried!" card.Key)
+            .PadRight(MenuRender.Width)
+            .ForeColor(Color.LightBlue)
+            .BackColor(Color.FromArgb(0xFF_202020))
         |> this.Log
 
     override this.Demote(card: Card) : unit = this.ReplaceNear(card)

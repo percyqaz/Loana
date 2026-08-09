@@ -5,7 +5,15 @@ open System.Drawing
 open Loana.Language
 open Loana.Desktop.CLI
 
-type CardFragment = internal { Text: string; FG: Color; BG: Color }
+type CardFragment =
+    internal
+        {
+            Text: string
+            FG: Color
+            BG: Color
+        }
+    override this.ToString() : string =
+        this.Text.ForeColor(this.FG).BackColor(this.BG)
 
 type CardLine =
     private
@@ -18,11 +26,7 @@ type CardLine =
     static member Empty(bg: Color) : CardLine = { Content = ""; BG = bg; Length = 0 }
 
     static member (+)(this: CardLine, extra: CardFragment) : CardLine =
-        {
-            Content = this.Content + Console.ColorText(extra.Text, extra.FG, extra.BG)
-            BG = this.BG
-            Length = this.Length + extra.Text.Length
-        }
+        { Content = this.Content + extra.ToString(); BG = this.BG; Length = this.Length + extra.Text.Length }
 
     static member Create(bg: Color) : _ = List.fold (+) (CardLine.Empty(bg))
 
