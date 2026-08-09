@@ -203,66 +203,32 @@ type MenuView(state: MenuState) =
             this.RenderVerbModeDashboard()
             this.RenderQuizDashboard()
 
-            match state.Selection with
-            | VocabGroup _ ->
-                MenuRender.WriteLine(
-                    MenuRender.Pad(" [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter "),
-                    Color.LightGray,
-                    Color.FromArgb(0xFF_303030)
-                )
+            let guide =
+                match state.Selection with
+                | VocabGroup _ -> " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter "
+                | VerbMode -> " [L] Learn  [R] Review "
+                | Quiz _ -> " [R] Quiz "
 
-                MenuRender.Redraw()
+            MenuRender.WriteLine(MenuRender.Pad(guide), Color.LightGray, Color.FromArgb(0xFF_303030))
+            MenuRender.Redraw()
 
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow
-                | ConsoleKey.K -> state.PreviousSelection()
-                | ConsoleKey.DownArrow
-                | ConsoleKey.J -> state.NextSelection()
-                | ConsoleKey.Enter -> state.VocabStats()
-                | ConsoleKey.L -> state.Learn()
-                | ConsoleKey.R -> state.Review()
-                | ConsoleKey.A -> state.VocabReviewAhead()
-                | ConsoleKey.C -> state.VocabChoresList()
-                | ConsoleKey.F -> state.CycleFilter()
-                | ConsoleKey.OemMinus
-                | ConsoleKey.Subtract -> state.DecreaseBatchSize()
-                | ConsoleKey.OemPlus
-                | ConsoleKey.Add -> state.IncreaseBatchSize()
-                | ConsoleKey.S ->
-                    Sync.host(state.Data)
-                    Console.ReadKey(true) |> ignore
-                | _ -> ()
-
-            | VerbMode ->
-                MenuRender.WriteLine(
-                    MenuRender.Pad(" [L] Learn  [R] Review "),
-                    Color.LightGray,
-                    Color.FromArgb(0xFF_303030)
-                )
-
-                MenuRender.Redraw()
-
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow
-                | ConsoleKey.K -> state.PreviousSelection()
-                | ConsoleKey.DownArrow
-                | ConsoleKey.J -> state.NextSelection()
-                | ConsoleKey.L -> state.Learn()
-                | ConsoleKey.R -> state.Review()
-                | _ -> ()
-
-            | Quiz _ ->
-                MenuRender.WriteLine(MenuRender.Pad(" [R] Quiz "), Color.LightGray, Color.FromArgb(0xFF_303030))
-
-                MenuRender.Redraw()
-
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Escape -> loop <- false
-                | ConsoleKey.UpArrow
-                | ConsoleKey.K -> state.PreviousSelection()
-                | ConsoleKey.DownArrow
-                | ConsoleKey.J -> state.NextSelection()
-                | ConsoleKey.R -> state.Review()
-                | _ -> ()
+            match Console.ReadKey(true).Key with
+            | ConsoleKey.Escape -> loop <- false
+            | ConsoleKey.UpArrow
+            | ConsoleKey.K -> state.PreviousSelection()
+            | ConsoleKey.DownArrow
+            | ConsoleKey.J -> state.NextSelection()
+            | ConsoleKey.Enter -> state.VocabStats()
+            | ConsoleKey.L -> state.Learn()
+            | ConsoleKey.R -> state.Review()
+            | ConsoleKey.A -> state.VocabReviewAhead()
+            | ConsoleKey.C -> state.VocabChoresList()
+            | ConsoleKey.F -> state.CycleFilter()
+            | ConsoleKey.OemMinus
+            | ConsoleKey.Subtract -> state.DecreaseBatchSize()
+            | ConsoleKey.OemPlus
+            | ConsoleKey.Add -> state.IncreaseBatchSize()
+            | ConsoleKey.S ->
+                Sync.host(state.Data)
+                Console.ReadKey(true) |> ignore
+            | _ -> ()
