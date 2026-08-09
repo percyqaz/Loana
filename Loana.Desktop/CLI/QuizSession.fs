@@ -162,10 +162,7 @@ type QuizSession(title: string, questions: Question array) =
                     | _ -> ()
 
         Console.WriteLine(
-            MenuRender
-                .Pad($" Session ended. {mistakes} mistakes! ")
-                .ForeColor(Color.LightGreen)
-                .BackColor(0xFF_202020)
+            MenuRender.Pad($" Session ended. {mistakes} mistakes! ").ForeColor(Color.LightGreen).BackColor(0xFF_202020)
         )
 
         let mutable result = None

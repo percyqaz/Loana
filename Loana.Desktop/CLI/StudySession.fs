@@ -12,6 +12,7 @@ type CardFragment =
             FG: Color
             BG: Color
         }
+
     override this.ToString() : string =
         this.Text.ForeColor(this.FG).BackColor(this.BG)
 

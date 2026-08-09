@@ -14,12 +14,10 @@ type OutputResultExtensions =
             .Substring(0, MenuRender.Width - 52)
             .ForeColor(ReviewData.LevelColors.[result.OldLevel])
         + " -> ".ForeColor(Color.LightGray)
-        + (sprintf " Level %i " result.NewLevel)
-            .ForeColor(ReviewData.LevelColors.[result.NewLevel])
+        + (sprintf " Level %i " result.NewLevel).ForeColor(ReviewData.LevelColors.[result.NewLevel])
         + $" Difficulty {result.Difficulty.ToString().PadRight(2)} "
             .ForeColor(if result.Difficulty >= 5 then Color.Red else Color.LightGray)
-        + $" Next review: {MenuRender.FormatInterval(result.Interval)} "
-            .ForeColor(Color.LightGreen)
+        + $" Next review: {MenuRender.FormatInterval(result.Interval)} ".ForeColor(Color.LightGreen)
         |> _.BackColor(0xFF_202020)
 
     [<Extension>]

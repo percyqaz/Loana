@@ -77,8 +77,7 @@ type MenuView(state: MenuState) =
         MenuRender.Write($" %3i{state.ReviewBatchSize} ", Color.Green, Color.FromArgb(0xFF_204020))
 
         MenuRender.Write(
-            $" %i{Seq.length(state.Vocab.Chores() |> Seq.filter _.IsUrgent)} chores "
-                .PadLeft(16),
+            $" %i{Seq.length(state.Vocab.Chores() |> Seq.filter _.IsUrgent)} chores ".PadLeft(16),
             Color.Pink,
             Color.FromArgb(0xFF_202020)
         )
@@ -281,12 +280,7 @@ type MenuView(state: MenuState) =
             Console.ReadKey(true) |> ignore
 
     member this.VocabChoresList() : unit =
-        Console.WriteLine(
-            MenuRender
-                .Pad(" Chores list ")
-                .ForeColor(Color.White)
-                .BackColor(Color.FromArgb(0xFF_303030))
-        )
+        Console.WriteLine(MenuRender.Pad(" Chores list ").ForeColor(Color.White).BackColor(Color.FromArgb(0xFF_303030)))
 
         let chores = state.Vocab.Chores() |> Seq.cache
         let urgent = chores |> Seq.filter _.IsUrgent |> Seq.truncate 20 |> Array.ofSeq
@@ -295,10 +289,7 @@ type MenuView(state: MenuState) =
             chores |> Seq.filter(_.IsUrgent >> not) |> Seq.truncate 20 |> Array.ofSeq
 
         Console.WriteLine(
-            MenuRender
-                .Pad(sprintf " - %i Urgent - " urgent.Length)
-                .ForeColor(Color.LightGray)
-                .BackColor(0xFF_202020)
+            MenuRender.Pad(sprintf " - %i Urgent - " urgent.Length).ForeColor(Color.LightGray).BackColor(0xFF_202020)
         )
 
         for chore in urgent do
@@ -484,10 +475,7 @@ type MenuView(state: MenuState) =
                     session
 
         Console.WriteLine(
-            MenuRender
-                .Pad("Session ended.")
-                .ForeColor(Color.LightGreen)
-                .BackColor(Color.FromArgb(0xFF_303030))
+            MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
         )
 
         Console.ReadKey(true) |> ignore
@@ -519,10 +507,7 @@ type MenuView(state: MenuState) =
             else state.Scheduler.Reschedule(verb.Key, _.Demote).LogTo session
 
         Console.WriteLine(
-            MenuRender
-                .Pad("Session ended.")
-                .ForeColor(Color.LightGreen)
-                .BackColor(Color.FromArgb(0xFF_303030))
+            MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
         )
 
         Console.ReadKey(true) |> ignore

@@ -53,12 +53,10 @@ type VocabExtensions =
         | Unknown -> this.Infinitive.HighlightString()
         | KnownNothing ->
             this.Infinitive.HighlightString()
-            + (" :" + String.concat " " (this.Tenses |> List.map(_.ToString())))
-                .ForeColor(0xFF_ffddff)
+            + (" :" + String.concat " " (this.Tenses |> List.map(_.ToString()))).ForeColor(0xFF_ffddff)
         | KnownValue pp ->
             this.Infinitive.HighlightString()
-            + (" :" + String.concat "" (this.Tenses |> List.map(fun x -> x.ToString() + " ")))
-                .ForeColor(0xFF_ffddff)
+            + (" :" + String.concat "" (this.Tenses |> List.map(fun x -> x.ToString() + " "))).ForeColor(0xFF_ffddff)
             + "pp ".ForeColor(0xFF_ffdddd)
             + pp.HighlightString()
 
