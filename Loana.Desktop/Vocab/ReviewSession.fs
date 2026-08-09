@@ -21,16 +21,16 @@ type LearnSession(cards: Card array, scheduler: ReviewSchedule) =
 
     override this.Keep(card: Card) : unit = this.ReplaceFar(card)
 
-    override this.Promote(card: Card) : unit = scheduler.Learn(card).LogTo this
+    override this.Promote(card: Card) : unit = scheduler.Learn(card).LogTo(this)
 
     override this.Render(card: Card) : CardSide * CardSide = VocabCard.Render(card)
 
 type ReviewSession(cards: Card array, scheduler: ReviewSchedule, ahead: bool) =
     inherit StudySession((if ahead then "Review session (Ahead)" else "Review session"), cards)
 
-    override this.Forget(card: Card) : unit = scheduler.Forget(card).LogTo this
+    override this.Forget(card: Card) : unit = scheduler.Forget(card).LogTo(this)
 
-    override this.Demote(card: Card) : unit = scheduler.Demote(card).LogTo this
+    override this.Demote(card: Card) : unit = scheduler.Demote(card).LogTo(this)
 
     override this.Keep(card: Card) : unit =
         scheduler.Keep(card) |> Seq.iter _.LogTo(this)

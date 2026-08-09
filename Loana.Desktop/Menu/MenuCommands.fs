@@ -43,7 +43,7 @@ type MenuCommands =
         state.BatchSize <- state.BatchSize - 1 |> max 1
 
     [<Extension>]
-    static member VocabReview(state: MenuState) : unit =
+    static member Review(state: MenuState) : unit =
         match state.Selection with
         | VocabGroup word_lists ->
             let cards =
@@ -73,7 +73,38 @@ type MenuCommands =
                 )
 
                 Console.ReadKey(true) |> ignore
-        | _ -> ()
+        | VerbMode ->
+            let session_entries =
+                state.Verbs.DueReviewEntries(state.Verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                |> Seq.truncate 5
+                |> ResizeArray
+
+            while session_entries.Count > 0 do
+                let verb = session_entries.[0]
+                session_entries.RemoveAt(0)
+
+                let verb_cards =
+                    state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
+                    |> Map.toSeq
+                    |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
+                    |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
+                    |> Array.ofSeq
+
+                let session = VerbSession(verb_cards)
+                let result = session.Start()
+
+                if result.EndEarly then session_entries.Clear()
+                elif result.NotGood = 0 then state.Scheduler.Reschedule(verb.Key, _.Promote).LogTo(session)
+                elif result.NotGood = 1 then state.Scheduler.Reschedule(verb.Key, _.Keep).LogTo(session)
+                elif result.Forgot > 0 then state.Scheduler.Reschedule(verb.Key, _.Forget).LogTo(session)
+                else state.Scheduler.Reschedule(verb.Key, _.Demote).LogTo(session)
+
+            Console.WriteLine(
+                MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
+            )
+
+            Console.ReadKey(true) |> ignore
+        | Quiz quiz -> state.Quizzes.Study(quiz)
 
     [<Extension>]
     static member VocabReviewAhead(state: MenuState) : unit =
@@ -109,12 +140,13 @@ type MenuCommands =
         | _ -> ()
 
     [<Extension>]
-    static member VocabLearn(state: MenuState) : unit =
+    static member Learn(state: MenuState) : unit =
         match state.Selection with
         | VocabGroup word_lists ->
             let cards =
-                state.Vocab.LearningCards(state.FilteredWords(word_lists))
-                |> Seq.truncate state.LearnBatchSize
+                state.FilteredWords(word_lists)
+                |> state.Vocab.LearningCards
+                |> Seq.truncate(state.LearnBatchSize)
                 |> Array.ofSeq
 
             if cards.Length > 0 then
@@ -135,7 +167,36 @@ type MenuCommands =
                 )
 
                 Console.ReadKey(true) |> ignore
-        | _ -> ()
+        | VerbMode ->
+            let to_learn =
+                state.Verbs.AvailableEntries() |> state.Verbs.LearningEntries |> Seq.tryHead
+
+            match to_learn with
+            | None -> ()
+            | Some verb ->
+                let verb_cards =
+                    state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
+                    |> Map.toSeq
+                    |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
+                    |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
+                    |> Array.ofSeq
+
+                let session = VerbSession(verb_cards)
+                let result = session.Start()
+
+                if not result.EndEarly then
+                    let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+
+                    state.Scheduler
+                        .Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now)
+                        .LogTo(session)
+
+            Console.WriteLine(
+                MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
+            )
+
+            Console.ReadKey(true) |> ignore
+        | Quiz quiz -> state.Quizzes.Study(quiz)
 
     [<Extension>]
     static member VocabChoresList(state: MenuState) : unit =
@@ -171,7 +232,6 @@ type MenuCommands =
         match state.Selection with
         | VocabGroup word_lists ->
             let all_cards = state.FilteredWords(word_lists)
-
             let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
             let by_hour =
@@ -314,75 +374,4 @@ type MenuCommands =
             MenuRender.FlushInline()
             Console.ReadKey(true) |> ignore
 
-        | _ -> ()
-
-    [<Extension>]
-    static member VerbsLearn(state: MenuState) : unit =
-        match state.Selection with
-        | VerbMode ->
-            let to_learn =
-                state.Verbs.LearningEntries(state.Verbs.AvailableEntries()) |> Seq.tryHead
-
-            match to_learn with
-            | None -> ()
-            | Some verb ->
-                let verb_cards =
-                    state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
-                    |> Map.toSeq
-                    |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-                    |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
-                    |> Array.ofSeq
-
-                let session = VerbSession(verb_cards)
-                let result = session.Start()
-
-                if not result.EndEarly then
-                    let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-
-                    state.Scheduler
-                        .Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now)
-                        .LogTo
-                        session
-
-            Console.WriteLine(
-                MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
-            )
-
-            Console.ReadKey(true) |> ignore
-        | _ -> ()
-
-    [<Extension>]
-    static member VerbsReview(state: MenuState) : unit =
-        match state.Selection with
-        | VerbMode ->
-            let session_entries =
-                state.Verbs.DueReviewEntries(state.Verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-                |> Seq.truncate 5
-                |> ResizeArray
-
-            while session_entries.Count > 0 do
-                let verb = session_entries.[0]
-                session_entries.RemoveAt(0)
-
-                let verb_cards =
-                    state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
-                    |> Map.toSeq
-                    |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-                    |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
-                    |> Array.ofSeq
-
-                let session = VerbSession(verb_cards)
-                let result = session.Start()
-
-                if result.EndEarly then session_entries.Clear()
-                elif result.NotGood = 0 then state.Scheduler.Reschedule(verb.Key, _.Promote).LogTo session
-                elif result.NotGood = 1 then state.Scheduler.Reschedule(verb.Key, _.Keep).LogTo session
-                elif result.Forgot > 0 then state.Scheduler.Reschedule(verb.Key, _.Forget).LogTo session
-                else state.Scheduler.Reschedule(verb.Key, _.Demote).LogTo session
-
-            Console.WriteLine(
-                MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
-            )
-
-            Console.ReadKey(true) |> ignore
         | _ -> ()

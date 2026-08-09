@@ -220,8 +220,8 @@ type MenuView(state: MenuState) =
                 | ConsoleKey.DownArrow
                 | ConsoleKey.J -> state.NextSelection()
                 | ConsoleKey.Enter -> state.VocabStats()
-                | ConsoleKey.L -> state.VocabLearn()
-                | ConsoleKey.R -> state.VocabReview()
+                | ConsoleKey.L -> state.Learn()
+                | ConsoleKey.R -> state.Review()
                 | ConsoleKey.A -> state.VocabReviewAhead()
                 | ConsoleKey.C -> state.VocabChoresList()
                 | ConsoleKey.F -> state.CycleFilter()
@@ -249,16 +249,12 @@ type MenuView(state: MenuState) =
                 | ConsoleKey.K -> state.PreviousSelection()
                 | ConsoleKey.DownArrow
                 | ConsoleKey.J -> state.NextSelection()
-                | ConsoleKey.L -> state.VerbsLearn()
-                | ConsoleKey.R -> state.VerbsReview()
+                | ConsoleKey.L -> state.Learn()
+                | ConsoleKey.R -> state.Review()
                 | _ -> ()
 
-            | Quiz quiz ->
-                MenuRender.WriteLine(
-                    MenuRender.Pad(" [Enter] Quiz  [A] Auto "),
-                    Color.LightGray,
-                    Color.FromArgb(0xFF_303030)
-                )
+            | Quiz _ ->
+                MenuRender.WriteLine(MenuRender.Pad(" [R] Quiz "), Color.LightGray, Color.FromArgb(0xFF_303030))
 
                 MenuRender.Redraw()
 
@@ -268,6 +264,5 @@ type MenuView(state: MenuState) =
                 | ConsoleKey.K -> state.PreviousSelection()
                 | ConsoleKey.DownArrow
                 | ConsoleKey.J -> state.NextSelection()
-                | ConsoleKey.Enter -> state.Quizzes.Study(quiz)
-                | ConsoleKey.A -> state.Quizzes.Study(state.Quizzes.Auto())
+                | ConsoleKey.R -> state.Review()
                 | _ -> ()
