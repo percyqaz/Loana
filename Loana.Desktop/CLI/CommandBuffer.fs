@@ -10,11 +10,8 @@ type CommandBuffer() =
     static let ARBITRARY_BUFFER_LIMIT = 4096 // For when binds create an infinite loop of expansion
 
     let mutable buffer = ""
-    let keymap = Keymap()
 
     override this.ToString() : string = buffer
-
-    member this.Bind(string: string, target: string) : unit = keymap.Alias(string, target)
 
     member this.AddKey(input: ConsoleKeyInfo) : unit =
 
@@ -62,13 +59,13 @@ type CommandBuffer() =
         elif input.Key <> ConsoleKey.None then
             buffer <- buffer + format_special_key()
 
-    member this.Dispatch(handle_message: string -> unit) : unit =
+    member this.Dispatch(handle_message: string -> unit, keymap: Keymap) : unit =
 
         let inline consume_buffer (shorthand: string, target: string) : unit =
             if buffer.StartsWith(shorthand) then
                 buffer <- target + buffer.Substring(shorthand.Length)
 
-        let inline consume_keymap (keymap: Keymap) =
+        let inline consume_keymap (keymap: Keymap) : unit =
             for bind_source, bind_target in keymap do
                 consume_buffer(bind_source, bind_target)
 

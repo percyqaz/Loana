@@ -195,21 +195,27 @@ type MenuView(state: MenuState) =
             MenuRender.WriteLine()
 
     member this.Run() : unit =
+
+        let inline create_keymap () : Keymap =
+            let keymap = Keymap()
+            keymap.AliasCommand("<Esc>", "exit")
+            keymap.AliasCommand("j", "down")
+            keymap.AliasCommand("k", "up")
+            keymap.AliasCommand("<Enter>", "stats")
+            keymap.AliasCommand("r", "review")
+            keymap.AliasCommand("l", "learn")
+            keymap.AliasCommand("a", "ahead")
+            keymap.AliasCommand("c", "chores")
+            keymap.AliasCommand("f", "filter")
+            keymap.AliasCommand("-", "batch_down")
+            keymap.AliasCommand("=", "batch_up")
+            keymap.AliasCommand("s", "sync")
+            keymap.Alias("<Down>", "j")
+            keymap.Alias("<Up>", "k")
+            keymap
+
+        let keymap = create_keymap()
         let buffer = CommandBuffer()
-        buffer.Bind("<Esc>", ":exit<Enter>")
-        buffer.Bind("j", ":down<Enter>")
-        buffer.Bind("<Down>", "j")
-        buffer.Bind("k", ":up<Enter>")
-        buffer.Bind("<Up>", "k")
-        buffer.Bind("<Enter>", ":stats<Enter>")
-        buffer.Bind("r", ":review<Enter>")
-        buffer.Bind("l", ":learn<Enter>")
-        buffer.Bind("a", ":ahead<Enter>")
-        buffer.Bind("c", ":chores<Enter>")
-        buffer.Bind("f", ":filter<Enter>")
-        buffer.Bind("-", ":batch_down<Enter>")
-        buffer.Bind("=", ":batch_up<Enter>")
-        buffer.Bind("s", ":sync<Enter>")
 
         while state.Running do
             MenuRender.UpdateWidth()
@@ -230,4 +236,4 @@ type MenuView(state: MenuState) =
             Console.Write(buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
 
             buffer.AddKey(Console.ReadKey(true))
-            buffer.Dispatch(state.DispatchMessage)
+            buffer.Dispatch(state.DispatchMessage, keymap)
