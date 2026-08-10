@@ -15,7 +15,10 @@ type MenuCommands =
 
     [<Extension>]
     static member Exit(state: MenuState) : unit = state.Running <- false
-    
+
+    [<Extension>]
+    static member Echo(state: MenuState, text: string) : unit = state.StatusLine <- text
+
     [<Extension>]
     static member Sync(state: MenuState) : unit =
         Sync.host(state.Data)
@@ -383,11 +386,17 @@ type MenuCommands =
             Console.ReadKey(true) |> ignore
 
         | _ -> ()
-        
+
     [<Extension>]
     static member DispatchCommand(state: MenuState, command: string) : unit =
+        let split =
+            command.Split(' ', 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+
+        let command, args = split.[0], if split.Length > 1 then split.[1] else ""
+
         match command with
         | "exit" -> state.Exit()
+        | "echo" -> state.Echo(args)
         | "up" -> state.PreviousSelection()
         | "down" -> state.NextSelection()
         | "stats" -> state.VocabStats()
@@ -399,11 +408,11 @@ type MenuCommands =
         | "batch_down" -> state.DecreaseBatchSize()
         | "batch_up" -> state.IncreaseBatchSize()
         | "sync" -> state.Sync()
-        | _ -> ()
+        | _ -> state.StatusLine <- sprintf "Unrecognised command '%s'" command
 
     [<Extension>]
     static member DispatchMessage(state: MenuState, message: string) : unit =
         if message.StartsWith(':') then
             state.DispatchCommand(message.Substring(1))
         else
-            ()
+            state.StatusLine <- sprintf "Unrecognised message '%s'" message

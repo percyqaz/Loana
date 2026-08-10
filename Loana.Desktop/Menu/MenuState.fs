@@ -36,6 +36,7 @@ type MenuState =
         mutable Selection: MenuSelection
         mutable Filter: MenuFilter
         mutable BatchSize: int
+        mutable StatusLine: string
     }
 
     member this.Words = this.Data.Words
@@ -66,6 +67,7 @@ type MenuState =
             Selection = VocabGroup []
             Filter = MenuFilter.Options.[0]
             BatchSize = 10
+            StatusLine = ""
         }
 
     member this.FilteredWords(word_lists: string list) : Card seq =

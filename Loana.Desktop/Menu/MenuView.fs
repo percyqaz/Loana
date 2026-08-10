@@ -225,8 +225,9 @@ type MenuView(state: MenuState) =
 
             MenuRender.WriteLine(MenuRender.Pad(guide), Color.LightGray, Color.FromArgb(0xFF_303030))
             MenuRender.Redraw()
-            
+
+            Console.WriteLine("Loana ".ForeColor(0x8888FF) + state.StatusLine.ForeColor(0x444444).ClearRestOfLine())
             Console.Write(buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
-            
+
             buffer.AddKey(Console.ReadKey(true))
             buffer.Dispatch(state.DispatchMessage)
