@@ -2,7 +2,6 @@ namespace Loana.Data
 
 open System
 open System.Collections.Generic
-open System.Drawing
 open System.IO
 open Loana.Language
 
@@ -28,6 +27,7 @@ type WordBank() =
 
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
+    let errors = ResizeArray<string>()
 
     let deduplicate_de = Dictionary<string, DuplicateEntry>()
     let deduplicate_en = Dictionary<string, DuplicateEntry>()
@@ -132,14 +132,13 @@ type WordBank() =
             match try_add_line(line_n, line) with
             | Ok() -> ()
             | Error "" -> ()
-            | Error reason ->
-                Console.Write($" {source.WordlistName}: ", Color.LightBlue, Color.FromArgb(0x202020))
-                Console.WriteLine(" " + reason, Color.Red)
+            | Error reason -> errors.Add($" {source.WordlistName}: {reason}")
         )
 
     member this.Clear() : unit =
         groups.Clear()
         entries.Clear()
+        errors.Clear()
         deduplicate_de.Clear()
         deduplicate_en.Clear()
 
@@ -149,7 +148,7 @@ type WordBank() =
             let meta_list = Path.Combine(path, "wordlists.meta")
 
             if File.Exists(meta_list) |> not then
-                Console.WriteLine(sprintf "'%s' doesn't exist!" meta_list, Color.Red)
+                errors.Add(sprintf "'%s' doesn't exist!" meta_list)
                 [||]
             else
                 File.ReadAllLines(meta_list)
@@ -160,10 +159,7 @@ type WordBank() =
             if Path.Exists(wordlist_path) then
                 this.AddWordList(source, File.ReadAllLines(wordlist_path))
             else
-                Console.WriteLine(
-                    sprintf "Could not find wordlist '%s' at %s" source.WordlistName wordlist_path,
-                    Color.Red
-                )
+                errors.Add(sprintf "Could not find wordlist '%s' at %s" source.WordlistName wordlist_path)
 
         this.Clear()
         let mutable current_group: string option = None
@@ -177,7 +173,7 @@ type WordBank() =
 
                 match current_group with
                 | Some group -> load_wordlist_file({ Group = group; WordlistName = wordlist_name })
-                | None -> Console.WriteLine(sprintf "Wordlist '%s' is not part of a group" wordlist_name, Color.Red)
+                | None -> errors.Add(sprintf "Wordlist '%s' is not part of a group" wordlist_name)
 
     static member CreateFromDirectory(path: string) : WordBank =
         let words = WordBank()
@@ -186,6 +182,7 @@ type WordBank() =
 
     member this.Entries: IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
     member this.Groups: IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
+    member this.Errors: IReadOnlyList<string> = errors.AsReadOnly()
 
     member this.WriteToDirectory(path: string) : unit =
 
@@ -261,7 +258,7 @@ type WordBank() =
                     this.TryAddLine({ Group = group_name; WordlistName = wordlist_name }, line_n, br.ReadString())
                 with
                 | Ok() -> ()
-                | Error reason -> Console.WriteLine(reason)
+                | Error reason -> errors.Add(reason)
 
             wordlist_name
 

@@ -40,6 +40,9 @@ while waiting_acceptance do
 
     let state = LoanaState.Create(data_path)
 
+    for error in state.Words.Errors do
+        Console.WriteLine(error)
+
     let mysterious_flame =
         let p = "           "
         let s = 80 * 25
