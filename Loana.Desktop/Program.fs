@@ -4,7 +4,6 @@ open System.Drawing
 open Loana.Data
 open Loana.Desktop
 open Loana.Desktop.CLI
-open Loana.Desktop.Browser
 
 let config_path =
     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".loana")
@@ -30,83 +29,30 @@ let data_path =
 
     config.[0]
 
-let mutable waiting_acceptance = true
+Console.CursorVisible <- false
+Console.Clear()
 
-while waiting_acceptance do
+MenuRender.UpdateWidth()
 
-    Console.Clear()
+Console.WriteLine(
+    MenuRender.Pad($"Loading ({data_path})").ForeColor(Color.White).BackColor(Color.FromArgb(0xFF_303030))
+)
 
-    Console.WriteLine(MenuRender.Pad("Loading ...").ForeColor(Color.White).BackColor(Color.FromArgb(0xFF_303030)))
+let state = LoanaState.Create(data_path)
 
-    let state = LoanaState.Create(data_path)
+for error in state.Words.Errors do
+    Console.WriteLine(error)
 
-    for error in state.Words.Errors do
-        Console.WriteLine(error)
+Console.WriteLine(
+    MenuRender.Pad("Loana has loaded!").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
+)
 
-    let mysterious_flame =
-        let p = "           "
-        let s = 80 * 25
-        let b = Array.zeroCreate(s + 81)
-        let c = " .:*sS#$"
-        let r = Random()
-        let bg = Color.FromArgb(0xFF101010)
-        let struct (x, y) = Console.GetCursorPosition()
+let mysterious_flame = MysteriousFlame()
 
-        fun () ->
-            MenuRender.WriteLine(MenuRender.Pad("Loana has loaded!"), Color.LightGreen, Color.FromArgb(0xFF_303030))
+while not Console.KeyAvailable do
+    System.Threading.Thread.Sleep(20)
+    mysterious_flame.Draw()
 
-            for i = 0 to 3 do
-                b.[int(floor(r.NextDouble() * 60.0)) + 15 + 80 * 24] <- 80.0
+Console.ReadKey(true) |> ignore
 
-            MenuRender.Write(p, Color.White, bg)
-
-            for i = 0 to s - 1 do
-                b.[i] <- floor((b.[i] + b.[i + 1] + b.[i + 80] + b.[i + 81]) / 4.0)
-                let color = Color.FromArgb(255, 255, int(b.[i] * 24.0) |> min 255, 0)
-
-                if i / 80 < 24 then
-                    MenuRender.Write(
-                        c.[min 7 (int b.[i])].ToString(),
-                        color,
-                        Color.FromArgb(255, 16 + int color.G / 2, 16 + int color.G / 4, 16)
-                    )
-
-                    if i % 80 > 78 then
-                        MenuRender.Write(p + " \n" + (if i / 80 < 23 then p else ""), Color.White, bg)
-
-            MenuRender.WriteLine(
-                MenuRender.Pad("[S] Sync  [C] Categorise  [R] Reload  [Enter] Launch"),
-                Color.LightGray,
-                Color.FromArgb(0xFF_202020)
-            )
-
-            Console.SetCursorPosition(x, y)
-            MenuRender.FlushInline()
-
-    let mutable loop = true
-
-    while loop do
-        while not Console.KeyAvailable do
-            System.Threading.Thread.Sleep(20)
-            mysterious_flame()
-
-        match Console.ReadKey(true).Key with
-        | ConsoleKey.Enter ->
-            loop <- false
-            waiting_acceptance <- false
-            MenuView(MenuState.Create(state)).Run()
-        | ConsoleKey.R -> loop <- false
-        | ConsoleKey.C ->
-            loop <- false
-            WordBrowser(state.Words).Run()
-        | ConsoleKey.S ->
-            loop <- false
-            Console.Clear()
-            Console.Write("Enter address (blank to host): ")
-            let address = Console.ReadLine()
-            if address <> "" then Sync.connect_schedule(state, address) else Sync.host(state)
-            Console.ReadLine() |> ignore
-        | ConsoleKey.Escape ->
-            loop <- false
-            waiting_acceptance <- false
-        | _ -> ()
+MenuView(MenuState.Create(state)).Run()

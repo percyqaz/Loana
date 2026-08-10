@@ -30,6 +30,7 @@
     <Compile Include="Menu\MenuState.fs" />
     <Compile Include="Menu\MenuCommands.fs" />
     <Compile Include="Menu\MenuView.fs" />
+    <Compile Include="MysteriousFlame.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

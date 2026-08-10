@@ -210,6 +210,7 @@ type MenuView(state: MenuState) =
             keymap.AliasCommand("-", "batch_down")
             keymap.AliasCommand("=", "batch_up")
             keymap.AliasCommand("s", "sync")
+            keymap.AliasCommand("b", "browse")
             keymap.Alias("<Down>", "j")
             keymap.Alias("<Up>", "k")
             keymap

@@ -3,6 +3,7 @@ namespace Loana.Desktop
 open System
 open System.Drawing
 open System.Runtime.CompilerServices
+open Loana.Desktop.Browser
 open Loana.Language
 open Loana.Data
 open Loana.Vocab
@@ -18,11 +19,16 @@ type MenuCommands =
 
     [<Extension>]
     static member Echo(state: MenuState, text: string) : unit = state.StatusLine <- text
+    
+    // todo: reload command
 
     [<Extension>]
     static member Sync(state: MenuState) : unit =
         Sync.host(state.Data)
         Console.ReadKey(true) |> ignore
+
+    [<Extension>]
+    static member Browse(state: MenuState) : unit = WordBrowser(state.Words).Run()
 
     [<Extension>]
     static member NextSelection(state: MenuState) : unit =
@@ -404,6 +410,7 @@ type MenuCommands =
         | "review" -> state.Review()
         | "ahead" -> state.VocabReviewAhead()
         | "chores" -> state.VocabChoresList()
+        | "browse" -> state.Browse()
         | "filter" -> state.CycleFilter()
         | "batch_down" -> state.DecreaseBatchSize()
         | "batch_up" -> state.IncreaseBatchSize()
