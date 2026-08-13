@@ -57,4 +57,4 @@ Console.ReadKey(true) |> ignore
 
 let ctx = UIContext.Create()
 
-MenuView(MenuState.Create(state)).Run(ctx)
+MenuView(MenuState.Create(state, ctx)).Run()

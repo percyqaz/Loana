@@ -110,11 +110,11 @@ type StudySession(title: string, cards: Card array) =
         MenuRender.Write((sprintf " % 2i cards left " (cards.Count + 1)), Color.LightGreen, Color.FromArgb(0xFF_303030))
         MenuRender.WriteLine()
 
-    member this.Start() : StudySessionResult =
+    member this.Run(ctx: UIContext) : StudySessionResult =
         let buttons = [| 0; 0; 0; 0 |]
         let mutable end_early = false
 
-        while cards.Count > 0 do
+        while cards.Count > 0 && not(end_early) do
             let current = cards.[0]
             cards.RemoveAt(0)
 
@@ -133,13 +133,12 @@ type StudySession(title: string, cards: Card array) =
                 | ConsoleKey.Spacebar -> loop <- false
                 | ConsoleKey.Escape ->
                     loop <- false
-                    cards.Clear()
                     end_early <- true
                 | _ -> ()
 
-            if not end_early then
+            if not(end_early) then
                 draw_title()
-                draw_card back
+                draw_card(back)
                 MenuRender.Write(" [Z] Forgot ", Color.LightGray, Color.FromArgb(0xFF_303030))
 
                 MenuRender.WriteLine(

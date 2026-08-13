@@ -11,13 +11,13 @@
   <ItemGroup>
     <Compile Include="CLI\AnsiCodes.fs" />
     <Compile Include="CLI\Console.fs" />
+    <Compile Include="CLI\Keymap.fs" />
+    <Compile Include="CLI\CommandBuffer.fs" />
+    <Compile Include="CLI\UIContext.fs" />
     <Compile Include="CLI\QuizSession.fs" />
     <Compile Include="CLI\StudySession.fs" />
     <Compile Include="CLI\ScheduleResultExtensions.fs" />
     <Compile Include="CLI\VocabExtensions.fs" />
-    <Compile Include="CLI\Keymap.fs" />
-    <Compile Include="CLI\CommandBuffer.fs" />
-    <Compile Include="CLI\UIContext.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />

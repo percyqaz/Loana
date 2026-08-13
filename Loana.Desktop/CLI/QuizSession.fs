@@ -125,7 +125,7 @@ type QuizSession(title: string, questions: Question array) =
     member this.Start() : int option =
         let mutable quit_early = false
 
-        while questions.Count > 0 do
+        while questions.Count > 0 && not quit_early do
             let current = questions.[0]
             questions.RemoveAt(0)
 
@@ -153,7 +153,6 @@ type QuizSession(title: string, questions: Question array) =
                 while loop do
                     match Console.ReadKey(true).Key with
                     | ConsoleKey.Escape ->
-                        questions.Clear()
                         quit_early <- true
                         loop <- false
                     | ConsoleKey.Enter ->

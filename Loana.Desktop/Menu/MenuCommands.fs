@@ -18,7 +18,7 @@ type MenuCommands =
     static member Exit(state: MenuState) : unit = state.Running <- false
 
     [<Extension>]
-    static member Echo(state: MenuState, text: string) : unit = state.StatusLine <- text
+    static member Echo(state: MenuState, text: string) : unit = state.UIContext.StatusLine <- text
 
     // todo: reload command
 
@@ -70,7 +70,7 @@ type MenuCommands =
                 |> Array.ofSeq
 
             if cards.Length > 0 then
-                let result = ReviewSession(cards, state.Scheduler, false).Start()
+                let result = ReviewSession(cards, state.Scheduler, false).Run(state.UIContext)
 
                 Console.WriteLine(
                     MenuRender
@@ -108,7 +108,7 @@ type MenuCommands =
                     |> Array.ofSeq
 
                 let session = VerbSession(verb_cards)
-                let result = session.Start()
+                let result = session.Run(state.UIContext)
 
                 if result.EndEarly then session_entries.Clear()
                 elif result.NotGood = 0 then state.Scheduler.Reschedule(verb.Key, _.Promote).LogTo(session)
@@ -134,7 +134,7 @@ type MenuCommands =
                 |> Array.ofSeq
 
             if cards.Length > 0 then
-                let result = ReviewSession(cards, state.Scheduler, true).Start()
+                let result = ReviewSession(cards, state.Scheduler, true).Run(state.UIContext)
 
                 Console.WriteLine(
                     MenuRender
@@ -167,7 +167,7 @@ type MenuCommands =
                 |> Array.ofSeq
 
             if cards.Length > 0 then
-                let result = LearnSession(cards, state.Scheduler).Start()
+                let result = LearnSession(cards, state.Scheduler).Run(state.UIContext)
 
                 Console.WriteLine(
                     MenuRender
@@ -199,7 +199,7 @@ type MenuCommands =
                     |> Array.ofSeq
 
                 let session = VerbSession(verb_cards)
-                let result = session.Start()
+                let result = session.Run(state.UIContext)
 
                 if not result.EndEarly then
                     let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
@@ -415,11 +415,11 @@ type MenuCommands =
         | "batch_down" -> state.DecreaseBatchSize()
         | "batch_up" -> state.IncreaseBatchSize()
         | "sync" -> state.Sync()
-        | _ -> state.StatusLine <- sprintf "Unrecognised command '%s'" command
+        | _ -> state.UIContext.StatusLine <- sprintf "Unrecognised command '%s'" command
 
     [<Extension>]
     static member DispatchMessage(state: MenuState, message: string) : unit =
         if message.StartsWith(':') then
             state.DispatchCommand(message.Substring(1))
         else
-            state.StatusLine <- sprintf "Unrecognised message '%s'" message
+            state.UIContext.StatusLine <- sprintf "Unrecognised message '%s'" message

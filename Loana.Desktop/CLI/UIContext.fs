@@ -5,6 +5,7 @@ type UIContext =
         Buffer: CommandBuffer
         GlobalKeymap: Keymap
         MenuKeymap: Keymap
+        mutable StatusLine: string
     // Use stack to store current screen rather than represent it here
     }
 
@@ -28,4 +29,9 @@ type UIContext =
         keymap
 
     static member Create() : UIContext =
-        { Buffer = CommandBuffer(); GlobalKeymap = Keymap(); MenuKeymap = UIContext.DefaultMenuKeymap() }
+        {
+            Buffer = CommandBuffer()
+            GlobalKeymap = Keymap()
+            MenuKeymap = UIContext.DefaultMenuKeymap()
+            StatusLine = ""
+        }

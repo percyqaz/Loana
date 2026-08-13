@@ -4,6 +4,7 @@ open Loana.Language
 open Loana.Data
 open Loana.Vocab
 open Loana.Verbs
+open Loana.Desktop.CLI
 open Loana.Desktop.Quizzes
 
 type MenuSelection =
@@ -28,6 +29,7 @@ type MenuFilter =
 type MenuState =
     {
         mutable Running: bool
+        UIContext: UIContext
         Data: LoanaState
         Vocab: VocabDeck
         Quizzes: QuizScheduler
@@ -36,17 +38,17 @@ type MenuState =
         mutable Selection: MenuSelection
         mutable Filter: MenuFilter
         mutable BatchSize: int
-        mutable StatusLine: string
     }
 
     member this.Words = this.Data.Words
     member this.Scheduler = this.Data.Scheduler
 
-    static member Create(loana_state: LoanaState) : MenuState =
+    static member Create(loana_state: LoanaState, ui_ctx: UIContext) : MenuState =
         let quizzes = QuizScheduler(loana_state.Scheduler)
 
         {
             Running = true
+            UIContext = ui_ctx
             Data = loana_state
             Vocab = VocabDeck(loana_state.Scheduler, loana_state.Words)
             Quizzes = quizzes
@@ -67,7 +69,6 @@ type MenuState =
             Selection = VocabGroup []
             Filter = MenuFilter.Options.[0]
             BatchSize = 10
-            StatusLine = ""
         }
 
     member this.FilteredWords(word_lists: string list) : Card seq =

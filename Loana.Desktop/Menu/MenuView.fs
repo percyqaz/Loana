@@ -194,7 +194,7 @@ type MenuView(state: MenuState) =
 
             MenuRender.WriteLine()
 
-    member this.Run(ctx: UIContext) : unit =
+    member this.Run() : unit =
 
         while state.Running do
             MenuRender.UpdateWidth()
@@ -203,8 +203,11 @@ type MenuView(state: MenuState) =
             this.RenderQuizDashboard()
             MenuRender.Redraw()
 
-            Console.WriteLine("Loana ".ForeColor(0x8888FF) + state.StatusLine.ForeColor(0x444444).ClearRestOfLine())
-            Console.Write(ctx.Buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
+            Console.WriteLine(
+                "Loana ".ForeColor(0x8888FF) + state.UIContext.StatusLine.ForeColor(0x444444).ClearRestOfLine()
+            )
 
-            ctx.Buffer.AddKey(Console.ReadKey(true))
-            ctx.Buffer.Dispatch(state.DispatchMessage, ctx.MenuKeymap)
+            Console.Write(state.UIContext.Buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
+
+            state.UIContext.Buffer.AddKey(Console.ReadKey(true))
+            state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.MenuKeymap)
