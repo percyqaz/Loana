@@ -223,14 +223,6 @@ type MenuView(state: MenuState) =
             this.RenderVocabDashboard()
             this.RenderVerbModeDashboard()
             this.RenderQuizDashboard()
-
-            let guide =
-                match state.Selection with
-                | VocabGroup _ -> " [Enter] Stats  [L] Learn  [R] Review  [A] Review ahead  [C] Chores  [F] Filter "
-                | VerbMode -> " [L] Learn  [R] Review "
-                | Quiz _ -> " [R] Quiz "
-
-            MenuRender.WriteLine(MenuRender.Pad(guide), Color.LightGray, Color.FromArgb(0xFF_303030))
             MenuRender.Redraw()
 
             Console.WriteLine("Loana ".ForeColor(0x8888FF) + state.StatusLine.ForeColor(0x444444).ClearRestOfLine())
