@@ -8,8 +8,6 @@ open Loana.Language
 open Loana.Data
 open Loana.Vocab
 open Loana.Verbs
-open Loana.Desktop.Vocab
-open Loana.Desktop.Verbs
 open Loana.Desktop.CLI
 open Loana.Desktop.Study
 
@@ -72,7 +70,7 @@ type MenuCommands =
 
             if cards.Length > 0 then
                 let result =
-                    ReviewSession(StudySessionState.Review(cards, state.UIContext), state.Scheduler).Run()
+                    StudySession(StudySessionState.Review(cards, state.Scheduler, state.UIContext)).Run()
 
                 Console.WriteLine(
                     MenuRender
@@ -109,14 +107,14 @@ type MenuCommands =
                     |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
                     |> Array.ofSeq
 
-                let session = VerbSession(StudySessionState.VerbMode(verb_cards, state.UIContext))
+                let session = StudySession(StudySessionState.VerbMode(verb_cards, state.UIContext))
                 let result = session.Run()
 
                 if result.EndEarly then session_entries.Clear()
-                elif result.NotGood = 0 then state.Scheduler.Reschedule(verb.Key, _.Promote).LogTo(session)
-                elif result.NotGood = 1 then state.Scheduler.Reschedule(verb.Key, _.Keep).LogTo(session)
-                elif result.Forgot > 0 then state.Scheduler.Reschedule(verb.Key, _.Forget).LogTo(session)
-                else state.Scheduler.Reschedule(verb.Key, _.Demote).LogTo(session)
+                elif result.NotGood = 0 then session.Log(state.Scheduler.Reschedule(verb.Key, _.Promote))
+                elif result.NotGood = 1 then session.Log(state.Scheduler.Reschedule(verb.Key, _.Keep))
+                elif result.Forgot > 0 then session.Log(state.Scheduler.Reschedule(verb.Key, _.Forget))
+                else session.Log(state.Scheduler.Reschedule(verb.Key, _.Demote))
 
             Console.WriteLine(
                 MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
@@ -137,7 +135,7 @@ type MenuCommands =
 
             if cards.Length > 0 then
                 let result =
-                    ReviewSession(StudySessionState.Review(cards, state.UIContext), state.Scheduler).Run()
+                    StudySession(StudySessionState.Review(cards, state.Scheduler, state.UIContext)).Run()
 
                 Console.WriteLine(
                     MenuRender
@@ -171,7 +169,7 @@ type MenuCommands =
 
             if cards.Length > 0 then
                 let result =
-                    LearnSession(StudySessionState.Learn(cards, state.UIContext), state.Scheduler).Run()
+                    StudySession(StudySessionState.Learn(cards, state.Scheduler, state.UIContext)).Run()
 
                 Console.WriteLine(
                     MenuRender
@@ -202,15 +200,19 @@ type MenuCommands =
                     |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
                     |> Array.ofSeq
 
-                let session = VerbSession(StudySessionState.VerbMode(verb_cards, state.UIContext))
+                let session = StudySession(StudySessionState.VerbMode(verb_cards, state.UIContext))
                 let result = session.Run()
 
                 if not result.EndEarly then
                     let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
 
-                    state.Scheduler
-                        .Schedule(verb.Key, ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1), now)
-                        .LogTo(session)
+                    session.Log(
+                        state.Scheduler.Schedule(
+                            verb.Key,
+                            ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1),
+                            now
+                        )
+                    )
 
             Console.WriteLine(
                 MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))

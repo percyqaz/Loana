@@ -1,5 +1,6 @@
 namespace Loana.Desktop.Study
 
+open Loana.Data
 open Loana.Language
 open Loana.Desktop.CLI
 
@@ -8,7 +9,7 @@ type StudySessionState =
         mutable Running: bool
         UIContext: UIContext
         Title: string
-        Cards: ResizeArray<Card>
+        Cards: StudyCardSource
         Log: ResizeArray<string>
         mutable Forgot: int
         mutable Bad: int
@@ -18,12 +19,12 @@ type StudySessionState =
 
     static member val private SharedLog = ResizeArray<string>()
 
-    static member Create(title: string, cards: Card array, ui_ctx: UIContext) : StudySessionState =
+    static member Create(title: string, source: StudyCardSource, ui_ctx: UIContext) : StudySessionState =
         {
-            Running = cards.Length > 0
+            Running = source.Remaining() > 0
             UIContext = ui_ctx
             Title = title
-            Cards = ResizeArray(cards |> Seq.randomShuffle)
+            Cards = source
             Log = StudySessionState.SharedLog
             Forgot = 0
             Bad = 0
@@ -32,10 +33,10 @@ type StudySessionState =
         }
 
     static member VerbMode(cards: Card array, ui_ctx: UIContext) : StudySessionState =
-        StudySessionState.Create("Verb practice", cards, ui_ctx)
+        StudySessionState.Create("Verb practice", VerbCardSource(cards), ui_ctx)
 
-    static member Review(cards: Card array, ui_ctx: UIContext) : StudySessionState =
-        StudySessionState.Create("Review session", cards, ui_ctx)
+    static member Review(cards: Card array, scheduler: ReviewSchedule, ui_ctx: UIContext) : StudySessionState =
+        StudySessionState.Create("Review session", ReviewCardSource(cards, scheduler), ui_ctx)
 
-    static member Learn(cards: Card array, ui_ctx: UIContext) : StudySessionState =
-        StudySessionState.Create("Learn session", cards, ui_ctx)
+    static member Learn(cards: Card array, scheduler: ReviewSchedule, ui_ctx: UIContext) : StudySessionState =
+        StudySessionState.Create("Learn session", LearnCardSource(cards, scheduler), ui_ctx)

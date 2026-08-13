@@ -1,6 +1,7 @@
 namespace Loana.Desktop.Vocab
 
 open System.Drawing
+open Loana.Desktop.Verbs
 open Loana.Language
 open Loana.Desktop.Study
 
@@ -212,4 +213,4 @@ type VocabCard =
         | RecallDE v -> VocabCard.RecallDE(v)
         | RecogniseArticleDE n -> VocabCard.RecogniseArticleDE(n)
         | RecallArticleDE n -> VocabCard.RecallArticleDE(n)
-        | Inflection _ -> failwith "todo: split verb mode into separate code instead of the hack it is now"
+        | Inflection(verb, inflection, inflected_text) -> VerbCard.RenderInflection(verb, inflection, inflected_text)

@@ -2,7 +2,8 @@ namespace Loana.Desktop.Study
 
 open System
 open System.Drawing
-open Loana.Language
+open Loana.Data
+open Loana.Desktop.Vocab
 open Loana.Desktop.CLI
 
 type StudySessionResult =
@@ -16,7 +17,6 @@ type StudySessionResult =
 
     member this.NotGood = this.Ok + this.Bad + this.Forgot
 
-[<AbstractClass>]
 type StudySession(state: StudySessionState) =
 
     [<Literal>]
@@ -74,7 +74,7 @@ type StudySession(state: StudySessionState) =
         )
 
         MenuRender.Write(
-            (sprintf " % 2i cards left " (state.Cards.Count + 1)),
+            (sprintf " % 2i cards left " (state.Cards.Remaining() + 1)),
             Color.LightGreen,
             Color.FromArgb(0xFF_303030)
         )
@@ -82,17 +82,17 @@ type StudySession(state: StudySessionState) =
         MenuRender.WriteLine()
 
     member this.Run() : StudySessionResult =
-        let buttons = [| 0; 0; 0; 0 |]
         let mutable end_early = false
 
-        while state.Cards.Count > 0 && not(end_early) do
-            let current = state.Cards.[0]
-            state.Cards.RemoveAt(0)
+        while state.Running && not(end_early) do
+            match state.Cards.Next() with
+            | None -> state.Running <- false
+            | Some current ->
 
-            let front, back = this.Render(current)
+            let front, back = VocabCard.Render(current)
 
             draw_title()
-            draw_card front
+            draw_card(front)
             MenuRender.WriteLine(MenuRender.Pad("[Space] Reveal"), Color.LightGray, Color.FromArgb(0xFF_303030))
             draw_log()
             MenuRender.Redraw()
@@ -126,50 +126,43 @@ type StudySession(state: StudySessionState) =
                 while loop do
                     match Console.ReadKey(true).Key with
                     | ConsoleKey.Escape ->
-                        state.Cards.Clear()
                         end_early <- true
                         loop <- false
                     | ConsoleKey.Z ->
-                        buttons.[3] <- buttons.[3] + 1
-                        this.Forget(current)
+                        state.Forgot <- state.Forgot + 1
+                        state.Cards.Forgot(current) |> Seq.iter this.Log
                         loop <- false
                     | ConsoleKey.OemComma ->
-                        buttons.[2] <- buttons.[2] + 1
-                        this.Demote(current)
+                        state.Bad <- state.Bad + 1
+                        state.Cards.Bad(current) |> Seq.iter this.Log
                         loop <- false
                     | ConsoleKey.OemPeriod ->
-                        buttons.[1] <- buttons.[1] + 1
-                        this.Keep(current)
+                        state.Ok <- state.Ok + 1
+                        state.Cards.Ok(current) |> Seq.iter this.Log
                         loop <- false
                     | ConsoleKey.Oem2
                     | ConsoleKey.Divide ->
-                        buttons.[0] <- buttons.[0] + 1
-                        this.Promote(current)
+                        state.Good <- state.Good + 1
+                        state.Cards.Good(current) |> Seq.iter this.Log
                         loop <- false
                     | _ -> ()
 
         {
             EndEarly = end_early
-            Good = buttons.[0]
-            Ok = buttons.[1]
-            Bad = buttons.[2]
-            Forgot = buttons.[3]
+            Good = state.Good
+            Ok = state.Ok
+            Bad = state.Bad
+            Forgot = state.Forgot
         }
 
-    member this.ReplaceNear(card: Card) : unit =
-        state.Cards.Insert(min 4 state.Cards.Count, card)
-
-    member this.ReplaceFar(card: Card) : unit = state.Cards.Add(card)
-
     member this.Log(message: string) : unit =
+        let message =
+            message.PadRight(MenuRender.Width).BackColor(Color.FromArgb(0xFF_202020))
+
         Console.WriteLine(message)
         state.Log.Add(message)
 
         if state.Log.Count > LOG_SIZE then
             state.Log.RemoveAt(0)
 
-    abstract member Forget: Card -> unit
-    abstract member Demote: Card -> unit
-    abstract member Keep: Card -> unit
-    abstract member Promote: Card -> unit
-    abstract member Render: Card -> CardSide * CardSide
+    member this.Log(result: ScheduleResult) : unit = this.Log(result.HighlightString())

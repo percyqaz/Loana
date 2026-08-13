@@ -19,6 +19,3 @@ type OutputResultExtensions =
             .ForeColor(if result.Difficulty >= 5 then Color.Red else Color.LightGray)
         + $" Next review: {MenuRender.FormatInterval(result.Interval)} ".ForeColor(Color.LightGreen)
         |> _.BackColor(0xFF_202020)
-
-    [<Extension>]
-    static member LogTo(result: ScheduleResult, this: StudySession) : unit = result.HighlightString() |> this.Log
