@@ -11,6 +11,7 @@ open Loana.Verbs
 open Loana.Desktop.Vocab
 open Loana.Desktop.Verbs
 open Loana.Desktop.CLI
+open Loana.Desktop.Study
 
 type MenuCommands =
 
@@ -70,7 +71,8 @@ type MenuCommands =
                 |> Array.ofSeq
 
             if cards.Length > 0 then
-                let result = ReviewSession(cards, state.Scheduler, false).Run(state.UIContext)
+                let result =
+                    ReviewSession(StudySessionState.Review(cards, state.UIContext), state.Scheduler).Run()
 
                 Console.WriteLine(
                     MenuRender
@@ -107,8 +109,8 @@ type MenuCommands =
                     |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
                     |> Array.ofSeq
 
-                let session = VerbSession(verb_cards)
-                let result = session.Run(state.UIContext)
+                let session = VerbSession(StudySessionState.VerbMode(verb_cards, state.UIContext))
+                let result = session.Run()
 
                 if result.EndEarly then session_entries.Clear()
                 elif result.NotGood = 0 then state.Scheduler.Reschedule(verb.Key, _.Promote).LogTo(session)
@@ -134,7 +136,8 @@ type MenuCommands =
                 |> Array.ofSeq
 
             if cards.Length > 0 then
-                let result = ReviewSession(cards, state.Scheduler, true).Run(state.UIContext)
+                let result =
+                    ReviewSession(StudySessionState.Review(cards, state.UIContext), state.Scheduler).Run()
 
                 Console.WriteLine(
                     MenuRender
@@ -167,7 +170,8 @@ type MenuCommands =
                 |> Array.ofSeq
 
             if cards.Length > 0 then
-                let result = LearnSession(cards, state.Scheduler).Run(state.UIContext)
+                let result =
+                    LearnSession(StudySessionState.Learn(cards, state.UIContext), state.Scheduler).Run()
 
                 Console.WriteLine(
                     MenuRender
@@ -198,8 +202,8 @@ type MenuCommands =
                     |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
                     |> Array.ofSeq
 
-                let session = VerbSession(verb_cards)
-                let result = session.Run(state.UIContext)
+                let session = VerbSession(StudySessionState.VerbMode(verb_cards, state.UIContext))
+                let result = session.Run()
 
                 if not result.EndEarly then
                     let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()

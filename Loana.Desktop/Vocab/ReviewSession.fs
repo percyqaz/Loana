@@ -4,9 +4,10 @@ open System.Drawing
 open Loana.Language
 open Loana.Data
 open Loana.Desktop.CLI
+open Loana.Desktop.Study
 
-type LearnSession(cards: Card array, scheduler: ReviewSchedule) =
-    inherit StudySession("Learning session", cards)
+type LearnSession(state: StudySessionState, scheduler: ReviewSchedule) =
+    inherit StudySession(state)
 
     override this.Forget(card: Card) : unit =
         scheduler.Bury(card.Key)
@@ -25,8 +26,8 @@ type LearnSession(cards: Card array, scheduler: ReviewSchedule) =
 
     override this.Render(card: Card) : CardSide * CardSide = VocabCard.Render(card)
 
-type ReviewSession(cards: Card array, scheduler: ReviewSchedule, ahead: bool) =
-    inherit StudySession((if ahead then "Review session (Ahead)" else "Review session"), cards)
+type ReviewSession(state: StudySessionState, scheduler: ReviewSchedule) =
+    inherit StudySession(state)
 
     override this.Forget(card: Card) : unit = scheduler.Forget(card).LogTo(this)
 

@@ -1,10 +1,10 @@
 namespace Loana.Desktop.Verbs
 
 open Loana.Language
-open Loana.Desktop.CLI
+open Loana.Desktop.Study
 
-type VerbSession(cards: Card array) =
-    inherit StudySession("Verb practice", cards)
+type VerbSession(state: StudySessionState) =
+    inherit StudySession(state)
 
     override this.Forget(card: Card) : unit = this.ReplaceNear(card)
     override this.Demote(card: Card) : unit = this.ReplaceNear(card)

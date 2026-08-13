@@ -2,7 +2,7 @@ namespace Loana.Desktop.Vocab
 
 open System.Drawing
 open Loana.Language
-open Loana.Desktop.CLI
+open Loana.Desktop.Study
 
 type VocabCard =
 

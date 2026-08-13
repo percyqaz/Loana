@@ -1,4 +1,4 @@
-namespace Loana.Desktop.CLI
+namespace Loana.Desktop.Study
 
 open System.Drawing
 open System.Runtime.CompilerServices

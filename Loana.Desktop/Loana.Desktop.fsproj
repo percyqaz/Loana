@@ -15,9 +15,11 @@
     <Compile Include="CLI\CommandBuffer.fs" />
     <Compile Include="CLI\UIContext.fs" />
     <Compile Include="CLI\QuizSession.fs" />
-    <Compile Include="CLI\StudySession.fs" />
-    <Compile Include="CLI\ScheduleResultExtensions.fs" />
     <Compile Include="CLI\VocabExtensions.fs" />
+    <Compile Include="Study\CardSide.fs" />
+    <Compile Include="Study\StudySessionState.fs" />
+    <Compile Include="Study\StudySession.fs" />
+    <Compile Include="Study\ScheduleResultExtensions.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />
