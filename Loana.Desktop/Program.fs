@@ -55,4 +55,6 @@ while not Console.KeyAvailable do
 
 Console.ReadKey(true) |> ignore
 
-MenuView(MenuState.Create(state)).Run()
+let ctx = UIContext.Create()
+
+MenuView(MenuState.Create(state)).Run(ctx)

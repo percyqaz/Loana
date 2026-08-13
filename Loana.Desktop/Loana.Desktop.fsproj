@@ -17,6 +17,7 @@
     <Compile Include="CLI\VocabExtensions.fs" />
     <Compile Include="CLI\Keymap.fs" />
     <Compile Include="CLI\CommandBuffer.fs" />
+    <Compile Include="CLI\UIContext.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
     <Compile Include="Vocab\VocabCards.fs" />
     <Compile Include="Vocab\ReviewSession.fs" />

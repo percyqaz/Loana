@@ -19,7 +19,7 @@ type MenuCommands =
 
     [<Extension>]
     static member Echo(state: MenuState, text: string) : unit = state.StatusLine <- text
-    
+
     // todo: reload command
 
     [<Extension>]

@@ -194,29 +194,7 @@ type MenuView(state: MenuState) =
 
             MenuRender.WriteLine()
 
-    member this.Run() : unit =
-
-        let inline create_keymap () : Keymap =
-            let keymap = Keymap()
-            keymap.AliasCommand("<Esc>", "exit")
-            keymap.AliasCommand("j", "down")
-            keymap.AliasCommand("k", "up")
-            keymap.AliasCommand("<Enter>", "stats")
-            keymap.AliasCommand("r", "review")
-            keymap.AliasCommand("l", "learn")
-            keymap.AliasCommand("a", "ahead")
-            keymap.AliasCommand("c", "chores")
-            keymap.AliasCommand("f", "filter")
-            keymap.AliasCommand("-", "batch_down")
-            keymap.AliasCommand("=", "batch_up")
-            keymap.AliasCommand("s", "sync")
-            keymap.AliasCommand("b", "browse")
-            keymap.Alias("<Down>", "j")
-            keymap.Alias("<Up>", "k")
-            keymap
-
-        let keymap = create_keymap()
-        let buffer = CommandBuffer()
+    member this.Run(ctx: UIContext) : unit =
 
         while state.Running do
             MenuRender.UpdateWidth()
@@ -226,7 +204,7 @@ type MenuView(state: MenuState) =
             MenuRender.Redraw()
 
             Console.WriteLine("Loana ".ForeColor(0x8888FF) + state.StatusLine.ForeColor(0x444444).ClearRestOfLine())
-            Console.Write(buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
+            Console.Write(ctx.Buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
 
-            buffer.AddKey(Console.ReadKey(true))
-            buffer.Dispatch(state.DispatchMessage, keymap)
+            ctx.Buffer.AddKey(Console.ReadKey(true))
+            ctx.Buffer.Dispatch(state.DispatchMessage, ctx.MenuKeymap)
