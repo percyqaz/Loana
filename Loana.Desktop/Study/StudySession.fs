@@ -74,8 +74,7 @@ type StudySession(state: StudySessionState) =
 
     member this.Display() : unit =
         match state.CardState with
-        | Front current ->
-            let front, _ = Cards.Render(current)
+        | Front(_, front, _) ->
             draw_title()
             draw_card(front)
 
@@ -87,8 +86,7 @@ type StudySession(state: StudySessionState) =
 
             draw_log()
             MenuRender.Redraw()
-        | Back current ->
-            let _, back = Cards.Render(current)
+        | Back(_, back) ->
             draw_title()
             draw_card(back)
 

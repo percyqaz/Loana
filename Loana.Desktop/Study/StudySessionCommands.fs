@@ -7,7 +7,7 @@ type StudySessionCommands =
 
     static let next (state: StudySessionState) : unit =
         match state.Cards.Next() with
-        | Some new_card -> state.CardState <- Front new_card
+        | Some new_card -> state.CardState <- StudySessionCardState.FromCard(new_card)
         | None -> state.Running <- false
 
     [<Extension>]
@@ -19,13 +19,13 @@ type StudySessionCommands =
     [<Extension>]
     static member Reveal(state: StudySessionState) : unit =
         match state.CardState with
-        | Front card -> state.CardState <- Back card
+        | Front(card, _, back) -> state.CardState <- Back(card, back)
         | Back _ -> ()
 
     [<Extension>]
     static member Forgot(state: StudySessionState) : unit =
         match state.CardState with
-        | Back card ->
+        | Back(card, _) ->
             state.ForgotCount <- state.ForgotCount + 1
             state.Cards.Forgot(card) |> Seq.iter state.LogMessage
             next(state)
@@ -34,7 +34,7 @@ type StudySessionCommands =
     [<Extension>]
     static member Bad(state: StudySessionState) : unit =
         match state.CardState with
-        | Back card ->
+        | Back(card, _) ->
             state.BadCount <- state.BadCount + 1
             state.Cards.Bad(card) |> Seq.iter state.LogMessage
             next(state)
@@ -43,7 +43,7 @@ type StudySessionCommands =
     [<Extension>]
     static member Ok(state: StudySessionState) : unit =
         match state.CardState with
-        | Back card ->
+        | Back(card, _) ->
             state.OkCount <- state.OkCount + 1
             state.Cards.Ok(card) |> Seq.iter state.LogMessage
             next(state)
@@ -52,7 +52,7 @@ type StudySessionCommands =
     [<Extension>]
     static member Good(state: StudySessionState) : unit =
         match state.CardState with
-        | Back card ->
+        | Back(card, _) ->
             state.GoodCount <- state.GoodCount + 1
             state.Cards.Good(card) |> Seq.iter state.LogMessage
             next(state)

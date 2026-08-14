@@ -7,8 +7,12 @@ open Loana.Desktop.CLI
 open Loana.Verbs
 
 type StudySessionCardState =
-    | Front of Card
-    | Back of Card
+    | Front of Card * front: CardSide * back: CardSide
+    | Back of Card * back: CardSide
+
+    static member FromCard(card: Card) : StudySessionCardState =
+        let front, back = Cards.Render(card)
+        Front(card, front, back)
 
 type StudySessionState =
     {
@@ -46,7 +50,7 @@ type StudySessionState =
             UIContext = ui_ctx
             Title = title
             Cards = source
-            CardState = Front(source.Next().Value)
+            CardState = StudySessionCardState.FromCard(source.Next().Value)
             Log = StudySessionState.SharedLog
             ForgotCount = 0
             BadCount = 0
