@@ -1,8 +1,13 @@
 namespace Loana.Desktop.Study
 
+open System.Drawing
 open Loana.Data
 open Loana.Language
 open Loana.Desktop.CLI
+
+type StudySessionCardState =
+    | Front of Card
+    | Back of Card
 
 type StudySessionState =
     {
@@ -10,12 +15,27 @@ type StudySessionState =
         UIContext: UIContext
         Title: string
         Cards: StudyCardSource
+        mutable CardState: StudySessionCardState
         Log: ResizeArray<string>
-        mutable Forgot: int
-        mutable Bad: int
-        mutable Ok: int
-        mutable Good: int
+        mutable ForgotCount: int
+        mutable BadCount: int
+        mutable OkCount: int
+        mutable GoodCount: int
     }
+
+    member this.LogMessage(message: string) : unit =
+        let LOG_SIZE = 16
+
+        let message =
+            message.PadRight(MenuRender.Width).BackColor(Color.FromArgb(0xFF_202020))
+
+        this.Log.Add(message)
+
+        if this.Log.Count > LOG_SIZE then
+            this.Log.RemoveAt(0)
+
+    member this.LogMessage(result: ScheduleResult) : unit =
+        this.LogMessage(result.HighlightString())
 
     static member val private SharedLog = ResizeArray<string>()
 
@@ -25,11 +45,12 @@ type StudySessionState =
             UIContext = ui_ctx
             Title = title
             Cards = source
+            CardState = Front(source.Next().Value)
             Log = StudySessionState.SharedLog
-            Forgot = 0
-            Bad = 0
-            Ok = 0
-            Good = 0
+            ForgotCount = 0
+            BadCount = 0
+            OkCount = 0
+            GoodCount = 0
         }
 
     static member VerbMode(cards: Card array, ui_ctx: UIContext) : StudySessionState =

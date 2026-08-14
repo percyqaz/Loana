@@ -203,11 +203,12 @@ type MenuView(state: MenuState) =
             this.RenderQuizDashboard()
             MenuRender.Redraw()
 
-            Console.WriteLine(
-                "Loana ".ForeColor(0x8888FF) + state.UIContext.StatusLine.ForeColor(0x444444).ClearRestOfLine()
-            )
+            let displayed_line =
+                match state.UIContext.Buffer.ToString() with
+                | "" -> state.UIContext.StatusLine
+                | buffer -> buffer.ForeColor(Color.LightGreen).Bold()
 
-            Console.Write(state.UIContext.Buffer.ToString().ForeColor(Color.LightGreen).Bold().ClearRestOfLine())
+            Console.Write(("@@@ ".ForeColor(0x8888FF) + displayed_line.ClearRestOfLine() + "\n").BackColor(0xFF_303030))
 
             state.UIContext.Buffer.AddKey(Console.ReadKey(true))
             state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.MenuKeymap)

@@ -78,8 +78,8 @@ type CommandBuffer() =
             elif buffer.Contains(Keymap.ENTER) then
                 let end_of_message = buffer.IndexOf(Keymap.ENTER)
                 let command = buffer.Substring(0, end_of_message)
-                handle_message(command)
                 buffer <- buffer.Substring(end_of_message + Keymap.ENTER.Length)
+                handle_message(command)
 
         let mutable previous_buffer = buffer
         handle_keymap_and_messages()

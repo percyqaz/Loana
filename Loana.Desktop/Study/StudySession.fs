@@ -22,9 +22,6 @@ type StudySession(state: StudySessionState) =
     [<Literal>]
     let CARD_AREA = 20
 
-    [<Literal>]
-    let LOG_SIZE = 16
-
     let draw_card (side: CardSide) =
         let edges_width = MenuRender.Width - 12
         let inner_width = edges_width - 4
@@ -81,88 +78,49 @@ type StudySession(state: StudySessionState) =
 
         MenuRender.WriteLine()
 
-    member this.Run() : StudySessionResult =
-        let mutable end_early = false
-
-        while state.Running && not(end_early) do
-            match state.Cards.Next() with
-            | None -> state.Running <- false
-            | Some current ->
-
+    member this.Display() : unit =
+        match state.CardState with
+        | Front current ->
             let front, back = VocabCard.Render(current)
-
             draw_title()
             draw_card(front)
-            MenuRender.WriteLine(MenuRender.Pad("[Space] Reveal"), Color.LightGray, Color.FromArgb(0xFF_303030))
+
+            MenuRender.WriteLine(
+                MenuRender.Pad(state.UIContext.Buffer.ToString()),
+                Color.LightGray,
+                Color.FromArgb(0xFF_303030)
+            )
+
+            draw_log()
+            MenuRender.Redraw()
+        | Back current ->
+            let front, back = VocabCard.Render(current)
+            draw_title()
+            draw_card(back)
+
+            MenuRender.WriteLine(
+                MenuRender.Pad(state.UIContext.Buffer.ToString()),
+                Color.LightGray,
+                Color.FromArgb(0xFF_303030)
+            )
+
             draw_log()
             MenuRender.Redraw()
 
-            let mutable loop = true
 
-            while loop do
-                match Console.ReadKey(true).Key with
-                | ConsoleKey.Spacebar -> loop <- false
-                | ConsoleKey.Escape ->
-                    loop <- false
-                    end_early <- true
-                | _ -> ()
+    member this.Run() : StudySessionResult =
 
-            if not(end_early) then
-                draw_title()
-                draw_card(back)
-                MenuRender.Write(" [Z] Forgot ", Color.LightGray, Color.FromArgb(0xFF_303030))
-
-                MenuRender.WriteLine(
-                    " [,] -1 Level [.] Keep Level [/] +1 Level ".PadLeft(MenuRender.Width - 12),
-                    Color.LightGray,
-                    Color.FromArgb(0xFF_303030)
-                )
-
-                draw_log()
-                MenuRender.Redraw()
-
-                let mutable loop = true
-
-                while loop do
-                    match Console.ReadKey(true).Key with
-                    | ConsoleKey.Escape ->
-                        end_early <- true
-                        loop <- false
-                    | ConsoleKey.Z ->
-                        state.Forgot <- state.Forgot + 1
-                        state.Cards.Forgot(current) |> Seq.iter this.Log
-                        loop <- false
-                    | ConsoleKey.OemComma ->
-                        state.Bad <- state.Bad + 1
-                        state.Cards.Bad(current) |> Seq.iter this.Log
-                        loop <- false
-                    | ConsoleKey.OemPeriod ->
-                        state.Ok <- state.Ok + 1
-                        state.Cards.Ok(current) |> Seq.iter this.Log
-                        loop <- false
-                    | ConsoleKey.Oem2
-                    | ConsoleKey.Divide ->
-                        state.Good <- state.Good + 1
-                        state.Cards.Good(current) |> Seq.iter this.Log
-                        loop <- false
-                    | _ -> ()
+        while state.Running do
+            this.Display()
+            state.UIContext.Buffer.AddKey(Console.ReadKey(true))
+            state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.StudyKeymap)
 
         {
-            EndEarly = end_early
-            Good = state.Good
-            Ok = state.Ok
-            Bad = state.Bad
-            Forgot = state.Forgot
+            EndEarly = state.Cards.Remaining() > 0
+            Good = state.GoodCount
+            Ok = state.OkCount
+            Bad = state.BadCount
+            Forgot = state.ForgotCount
         }
 
-    member this.Log(message: string) : unit =
-        let message =
-            message.PadRight(MenuRender.Width).BackColor(Color.FromArgb(0xFF_202020))
-
-        Console.WriteLine(message)
-        state.Log.Add(message)
-
-        if state.Log.Count > LOG_SIZE then
-            state.Log.RemoveAt(0)
-
-    member this.Log(result: ScheduleResult) : unit = this.Log(result.HighlightString())
+    member this.Log(message: ScheduleResult) : unit = state.LogMessage(message)
