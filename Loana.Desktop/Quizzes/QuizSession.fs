@@ -1,4 +1,4 @@
-namespace Loana.Desktop.CLI
+namespace Loana.Desktop.Quizzes
 
 open System
 open System.Drawing

@@ -2,7 +2,6 @@ namespace Loana.Desktop.Quizzes
 
 open System.Drawing
 open Loana.Language
-open Loana.Desktop.CLI
 
 type internal ConsoleAnnotationFragment =
     {

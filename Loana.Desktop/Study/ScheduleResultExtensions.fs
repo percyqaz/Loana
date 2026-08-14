@@ -18,4 +18,3 @@ type OutputResultExtensions =
         + $" Difficulty {result.Difficulty.ToString().PadRight(2)} "
             .ForeColor(if result.Difficulty >= 5 then Color.Red else Color.LightGray)
         + $" Next review: {MenuRender.FormatInterval(result.Interval)} ".ForeColor(Color.LightGreen)
-        |> _.BackColor(0xFF_202020)

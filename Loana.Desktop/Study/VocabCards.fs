@@ -207,6 +207,7 @@ type VocabCard =
             ]
         )
 
+    // todo: split into front and back
     static member Render(card: Card) : CardSide * CardSide =
         match card.Type with
         | RecogniseDE v -> VocabCard.RecogniseDE(v)

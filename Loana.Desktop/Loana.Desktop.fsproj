@@ -14,8 +14,6 @@
     <Compile Include="CLI\Keymap.fs" />
     <Compile Include="CLI\CommandBuffer.fs" />
     <Compile Include="CLI\UIContext.fs" />
-    <Compile Include="CLI\QuizSession.fs" />
-    <Compile Include="CLI\VocabExtensions.fs" />
     <Compile Include="Study\CardSide.fs" />
     <Compile Include="Study\VerbCards.fs" />
     <Compile Include="Study\VocabCards.fs" />
@@ -24,7 +22,9 @@
     <Compile Include="Study\StudySessionState.fs" />
     <Compile Include="Study\StudySessionCommands.fs" />
     <Compile Include="Study\StudySession.fs" />
+    <Compile Include="Browser\VocabExtensions.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
+    <Compile Include="Quizzes\QuizSession.fs" />
     <Compile Include="Quizzes\AnnotationTreeRenderer.fs" />
     <Compile Include="Quizzes\Shared.fs" />
     <Compile Include="Quizzes\Articles.fs" />
