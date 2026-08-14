@@ -3,7 +3,6 @@ namespace Loana.Desktop.Study
 open System
 open System.Drawing
 open Loana.Data
-open Loana.Desktop.Vocab
 open Loana.Desktop.CLI
 
 type StudySessionResult =
@@ -77,7 +76,7 @@ type StudySession(state: StudySessionState) =
     member this.Display() : unit =
         match state.CardState with
         | Front current ->
-            let front, _ = VocabCard.Render(current)
+            let front, _ = Cards.Render(current)
             draw_title()
             draw_card(front)
 
@@ -90,7 +89,7 @@ type StudySession(state: StudySessionState) =
             draw_log()
             MenuRender.Redraw()
         | Back current ->
-            let _, back = VocabCard.Render(current)
+            let _, back = Cards.Render(current)
             draw_title()
             draw_card(back)
 

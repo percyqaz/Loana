@@ -15,8 +15,7 @@
     <Compile Include="CLI\CommandBuffer.fs" />
     <Compile Include="CLI\UIContext.fs" />
     <Compile Include="Study\CardSide.fs" />
-    <Compile Include="Study\VerbCards.fs" />
-    <Compile Include="Study\VocabCards.fs" />
+    <Compile Include="Study\Cards.fs" />
     <Compile Include="Study\ScheduleResultExtensions.fs" />
     <Compile Include="Study\StudyCardSource.fs" />
     <Compile Include="Study\StudySessionState.fs" />
