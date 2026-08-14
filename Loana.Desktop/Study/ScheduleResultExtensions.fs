@@ -5,7 +5,7 @@ open System.Runtime.CompilerServices
 open Loana.Desktop.CLI
 open Loana.Data
 
-type OutputResultExtensions =
+type ScheduleResultExtensions =
 
     [<Extension>]
     static member HighlightString(result: ScheduleResult) : string =

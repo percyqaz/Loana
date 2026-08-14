@@ -4,6 +4,7 @@ open System.Drawing
 open Loana.Data
 open Loana.Language
 open Loana.Desktop.CLI
+open Loana.Verbs
 
 type StudySessionCardState =
     | Front of Card
@@ -53,8 +54,15 @@ type StudySessionState =
             GoodCount = 0
         }
 
-    static member VerbMode(cards: Card array, ui_ctx: UIContext) : StudySessionState =
-        StudySessionState.Create("Verb practice", VerbCardSource(cards), ui_ctx)
+    static member VerbReview
+        (verbs: VerbCacheEntry array, verb_bank: VerbBank, scheduler: ReviewSchedule, ui_ctx: UIContext)
+        : StudySessionState =
+        StudySessionState.Create("Verb practice", VerbReviewCardSource(verbs, verb_bank, scheduler), ui_ctx)
+
+    static member VerbLearn
+        (verb: VerbCacheEntry, verb_bank: VerbBank, scheduler: ReviewSchedule, ui_ctx: UIContext)
+        : StudySessionState =
+        StudySessionState.Create("Verb practice", VerbLearnCardSource([| verb |], verb_bank, scheduler), ui_ctx)
 
     static member Review(cards: Card array, scheduler: ReviewSchedule, ui_ctx: UIContext) : StudySessionState =
         StudySessionState.Create("Review session", ReviewCardSource(cards, scheduler), ui_ctx)

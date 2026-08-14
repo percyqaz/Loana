@@ -7,7 +7,6 @@ open Loana.Desktop.Browser
 open Loana.Language
 open Loana.Data
 open Loana.Vocab
-open Loana.Verbs
 open Loana.Desktop.CLI
 open Loana.Desktop.Study
 
@@ -91,36 +90,30 @@ type MenuCommands =
 
                 Console.ReadKey(true) |> ignore
         | VerbMode ->
-            let session_entries =
+            let verbs_to_review =
                 state.Verbs.DueReviewEntries(state.Verbs.AvailableEntries(), DateTimeOffset.UtcNow.ToUnixTimeSeconds())
-                |> Seq.truncate 5
-                |> ResizeArray
+                |> Seq.truncate(5)
+                |> Array.ofSeq
 
-            while session_entries.Count > 0 do
-                let verb = session_entries.[0]
-                session_entries.RemoveAt(0)
 
-                let verb_cards =
-                    state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
-                    |> Map.toSeq
-                    |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-                    |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
-                    |> Array.ofSeq
+            if verbs_to_review.Length > 0 then
+                let session =
+                    StudySession(
+                        StudySessionState.VerbReview(
+                            verbs_to_review,
+                            state.Data.Verbs,
+                            state.Scheduler,
+                            state.UIContext
+                        )
+                    )
 
-                let session = StudySession(StudySessionState.VerbMode(verb_cards, state.UIContext))
-                let result = session.Run()
+                ignore(session.Run())
 
-                if result.EndEarly then session_entries.Clear()
-                elif result.NotGood = 0 then session.Log(state.Scheduler.Reschedule(verb.Key, _.Promote))
-                elif result.NotGood = 1 then session.Log(state.Scheduler.Reschedule(verb.Key, _.Keep))
-                elif result.Forgot > 0 then session.Log(state.Scheduler.Reschedule(verb.Key, _.Forget))
-                else session.Log(state.Scheduler.Reschedule(verb.Key, _.Demote))
+                Console.WriteLine(
+                    MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
+                )
 
-            Console.WriteLine(
-                MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
-            )
-
-            Console.ReadKey(true) |> ignore
+                Console.ReadKey(true) |> ignore
         | Quiz quiz -> state.Quizzes.Study(quiz)
 
     [<Extension>]
@@ -193,32 +186,17 @@ type MenuCommands =
             match to_learn with
             | None -> ()
             | Some verb ->
-                let verb_cards =
-                    state.Data.Verbs.EnsureAllInflectionsAvailable(verb.Verb)
-                    |> Map.toSeq
-                    |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-                    |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
-                    |> Array.ofSeq
 
-                let session = StudySession(StudySessionState.VerbMode(verb_cards, state.UIContext))
-                let result = session.Run()
+                let session =
+                    StudySession(StudySessionState.VerbLearn(verb, state.Data.Verbs, state.Scheduler, state.UIContext))
 
-                if not result.EndEarly then
-                    let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                ignore(session.Run())
 
-                    session.Log(
-                        state.Scheduler.Schedule(
-                            verb.Key,
-                            ReviewData.Level1(now, (1 + result.NotGood) |> min 10 |> max 1),
-                            now
-                        )
-                    )
+                Console.WriteLine(
+                    MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
+                )
 
-            Console.WriteLine(
-                MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
-            )
-
-            Console.ReadKey(true) |> ignore
+                Console.ReadKey(true) |> ignore
         | Quiz quiz -> state.Quizzes.Study(quiz)
 
     [<Extension>]
