@@ -1,6 +1,7 @@
 namespace Loana.Desktop.Vocab
 
 open System.Drawing
+open Loana.Desktop.CLI
 open Loana.Desktop.Verbs
 open Loana.Language
 open Loana.Desktop.Study
@@ -12,198 +13,112 @@ type VocabCard =
     static let GERMAN_NOTE = Color.FromArgb(0xFF_C0C0C0)
 
     static member RecogniseDE(v: Vocab) : CardSide * CardSide =
-        let en_side =
-            seq {
-                yield { Text = v.English.Text; FG = Color.Black; BG = Color.White }
-
-                match v.English.Note with
-                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                | None -> ()
-
-                for alt in v.EnglishAlternatives do
-                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
-                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
-
-                    match alt.Note with
-                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                    | None -> ()
-            }
-            |> List.ofSeq
-            |> CardLine.Create(Color.White)
+        let de_line = VerbCard.GermanVocab(v, Color.White)
+        let en_line = VerbCard.EnglishVocab(v, Color.Black, ENGLISH_NOTE)
+        let question_line = CardLine.Append("???", _.ForeColor(Color.Black))
 
         CardSide.Create(
             [
-                CardLine.Create GERMAN_BG []
-                CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
-                CardLine.Create GERMAN_BG []
-                CardLine.Create Color.White []
-                CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
-                CardLine.Create Color.White []
+                CardSection.Create(GERMAN_BG, de_line)
+                CardSection.Create(Color.White, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardLine.Create GERMAN_BG []
-                CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
-                CardLine.Create GERMAN_BG []
-                CardLine.Create Color.White []
-                en_side
-                CardLine.Create Color.White []
+                CardSection.Create(GERMAN_BG, de_line)
+                CardSection.Create(Color.White, en_line)
             ]
         )
 
     static member RecallDE(v: Vocab) : CardSide * CardSide =
-        let en_side =
-            seq {
-                yield { Text = v.English.Text; FG = Color.Black; BG = Color.White }
-
-                match v.English.Note with
-                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                | None -> ()
-
-                for alt in v.EnglishAlternatives do
-                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
-                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
-
-                    match alt.Note with
-                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                    | None -> ()
-            }
-            |> List.ofSeq
-            |> CardLine.Create(Color.White)
+        let de_line = VerbCard.GermanVocab(v, Color.White)
+        let en_line = VerbCard.EnglishVocab(v, Color.Black, ENGLISH_NOTE)
+        let question_line = CardLine.Append("???", _.ForeColor(Color.White))
 
         CardSide.Create(
             [
-                CardLine.Create Color.White []
-                en_side
-                CardLine.Create Color.White []
-                CardLine.Create GERMAN_BG []
-                CardLine.Create GERMAN_BG [ { Text = "???"; FG = Color.White; BG = GERMAN_BG } ]
-                CardLine.Create GERMAN_BG []
+                CardSection.Create(Color.White, en_line)
+                CardSection.Create(GERMAN_BG, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardLine.Create Color.White []
-                en_side
-                CardLine.Create Color.White []
-                CardLine.Create GERMAN_BG []
-                CardLine.Create GERMAN_BG [ { Text = v.Deutsch; FG = Color.White; BG = GERMAN_BG } ]
-                CardLine.Create GERMAN_BG []
+                CardSection.Create(Color.White, en_line)
+                CardSection.Create(GERMAN_BG, de_line)
             ]
         )
 
-    static member RecogniseArticleDE(n: Noun) : CardSide * CardSide =
-        let en_side =
-            seq {
-                yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
-                yield { Text = n.English.Text; FG = Color.Black; BG = Color.White }
+    static member EnglishNoun(noun: Noun, text_color: Color, note_color: Color) : CardLine =
+        let mutable line = CardLine.Empty
 
-                match n.English.Note with
-                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                | None -> ()
+        let inline write (text: string, format: string -> string) : unit = line <- line.Append(text, format)
 
-                for alt in n.EnglishAlternatives do
-                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
-                    yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
-                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
+        write("the ", _.ForeColor(note_color))
+        write(noun.Translation.English.Text, _.ForeColor(text_color))
 
-                    match alt.Note with
-                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                    | None -> ()
-            }
-            |> List.ofSeq
-            |> CardLine.Create(Color.White)
+        match noun.Translation.English.Note with
+        | Some n -> write($" [{n}]", _.ForeColor(note_color))
+        | None -> ()
 
-        let de_side_white, de_side_colored =
-            let article =
-                AnnotationTree.flatten_tree(Deutsch.definite_article n.Guts.Gender Case.Nominative)
+        for alt in noun.Translation.EnglishAlternatives do
+            write(", ", _.ForeColor(text_color))
+            write("the ", _.ForeColor(note_color))
+            write(alt.Text, _.ForeColor(text_color))
 
-            CardLine.Create
-                GERMAN_BG
-                [
-                    { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
-                    { Text = n.Deutsch; FG = Color.White; BG = GERMAN_BG }
-                ],
-            CardLine.Create
-                GERMAN_BG
-                [
-                    { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
-                    { Text = n.Deutsch; FG = n.Guts.Gender.Color; BG = GERMAN_BG }
-                ]
+            match alt.Note with
+            | Some n -> write($" [{n}]", _.ForeColor(note_color))
+            | None -> ()
+
+        line
+
+    static member GermanNounRevealed(noun: Noun, note_color: Color) : CardLine =
+        let article =
+            AnnotationTree.flatten_tree(Deutsch.definite_article noun.Guts.Gender Case.Nominative)
+
+        CardLine
+            .Append(article + " ", _.ForeColor(note_color))
+            .Append(noun.Deutsch, _.ForeColor(noun.Guts.Gender.Color))
+
+    static member GermanNoun(noun: Noun, text_color: Color, note_color: Color) : CardLine =
+        let article =
+            AnnotationTree.flatten_tree(Deutsch.definite_article noun.Guts.Gender Case.Nominative)
+
+        CardLine.Append(article + " ", _.ForeColor(note_color)).Append(noun.Deutsch, _.ForeColor(text_color))
+
+    static member RecogniseArticleDE(noun: Noun) : CardSide * CardSide =
+        let en_line = VocabCard.EnglishNoun(noun, Color.Black, ENGLISH_NOTE)
+        let de_white = VocabCard.GermanNoun(noun, Color.White, GERMAN_NOTE)
+        let de_revealed = VocabCard.GermanNounRevealed(noun, GERMAN_NOTE)
+        let question_line = CardLine.Append("???", _.ForeColor(Color.Black))
 
         CardSide.Create(
             [
-                CardLine.Create GERMAN_BG []
-                de_side_white
-                CardLine.Create GERMAN_BG []
-                CardLine.Create Color.White []
-                CardLine.Create Color.White [ { Text = "???"; FG = Color.Black; BG = Color.White } ]
-                CardLine.Create Color.White []
+                CardSection.Create(GERMAN_BG, de_white)
+                CardSection.Create(Color.White, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardLine.Create GERMAN_BG []
-                de_side_colored
-                CardLine.Create GERMAN_BG []
-                CardLine.Create Color.White []
-                en_side
-                CardLine.Create Color.White []
+                CardSection.Create(GERMAN_BG, de_revealed)
+                CardSection.Create(Color.White, en_line)
             ]
         )
 
-    static member RecallArticleDE(n: Noun) : CardSide * CardSide =
-        let en_side =
-            seq {
-                yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
-                yield { Text = n.English.Text; FG = Color.Black; BG = Color.White }
-
-                match n.English.Note with
-                | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                | None -> ()
-
-                for alt in n.EnglishAlternatives do
-                    yield { Text = ", "; FG = Color.Black; BG = Color.White }
-                    yield { Text = "the "; FG = ENGLISH_NOTE; BG = Color.White }
-                    yield { Text = alt.Text; FG = Color.Black; BG = Color.White }
-
-                    match alt.Note with
-                    | Some n -> yield { Text = $" [{n}]"; FG = ENGLISH_NOTE; BG = Color.White }
-                    | None -> ()
-            }
-            |> List.ofSeq
-            |> CardLine.Create(Color.White)
-
-        let de_side =
-            let article =
-                AnnotationTree.flatten_tree(Deutsch.definite_article n.Guts.Gender Case.Nominative)
-
-            CardLine.Create
-                GERMAN_BG
-                [
-                    { Text = article + " "; FG = GERMAN_NOTE; BG = GERMAN_BG }
-                    { Text = n.Deutsch; FG = n.Guts.Gender.Color; BG = GERMAN_BG }
-                ]
+    static member RecallArticleDE(noun: Noun) : CardSide * CardSide =
+        let en_line = VocabCard.EnglishNoun(noun, Color.Black, ENGLISH_NOTE)
+        let de_revealed = VocabCard.GermanNounRevealed(noun, GERMAN_NOTE)
+        let question_line = CardLine.Append("???", _.ForeColor(Color.White))
 
         CardSide.Create(
             [
-                CardLine.Create Color.White []
-                en_side
-                CardLine.Create Color.White []
-                CardLine.Create GERMAN_BG []
-                CardLine.Create GERMAN_BG [ { Text = "???"; FG = Color.White; BG = GERMAN_BG } ]
-                CardLine.Create GERMAN_BG []
+                CardSection.Create(Color.White, en_line)
+                CardSection.Create(GERMAN_BG, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardLine.Create Color.White []
-                en_side
-                CardLine.Create Color.White []
-                CardLine.Create GERMAN_BG []
-                de_side
-                CardLine.Create GERMAN_BG []
+                CardSection.Create(Color.White, en_line)
+                CardSection.Create(GERMAN_BG, de_revealed)
             ]
         )
 

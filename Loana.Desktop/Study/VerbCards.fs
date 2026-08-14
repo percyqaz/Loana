@@ -1,6 +1,7 @@
 namespace Loana.Desktop.Verbs
 
 open System.Drawing
+open Loana.Desktop.CLI
 open Loana.Language
 open Loana.Desktop.Study
 
@@ -13,25 +14,31 @@ type VerbCard =
     static let QUESTION_NOTE = Color.FromArgb(0xFF_C0C0C0)
     static let ANSWER_NOTE = Color.FromArgb(0xFF_404040)
 
+    static member EnglishVocab(vocab: Vocab, text_color: Color, note_color: Color) : CardLine =
+        let mutable line = CardLine.Empty
+
+        let inline write (text: string, format: string -> string) : unit = line <- line.Append(text, format)
+
+        write(vocab.English.Text, _.ForeColor(text_color))
+
+        match vocab.English.Note with
+        | Some n -> write($" [{n}]", _.ForeColor(note_color))
+        | None -> ()
+
+        for alt in vocab.EnglishAlternatives do
+            write(", ", _.ForeColor(text_color))
+            write(alt.Text, _.ForeColor(text_color))
+
+            match alt.Note with
+            | Some n -> write($" [{n}]", _.ForeColor(note_color))
+            | None -> ()
+
+        line
+
+    static member GermanVocab(vocab: Vocab, text_color: Color) : CardLine =
+        CardLine.Append(vocab.Deutsch, _.ForeColor(text_color))
+
     static member RenderInflection(v: Verb, i: VerbInflection, inflected_text: string) : CardSide * CardSide =
-        let en_side =
-            seq {
-                yield { Text = v.Infinitive.English.Text; FG = Color.White; BG = QUESTION_BG }
-
-                match v.Infinitive.English.Note with
-                | Some n -> yield { Text = $" [{n}]"; FG = QUESTION_NOTE; BG = QUESTION_BG }
-                | None -> ()
-
-                for alt in v.Infinitive.EnglishAlternatives do
-                    yield { Text = ", "; FG = Color.White; BG = QUESTION_BG }
-                    yield { Text = alt.Text; FG = Color.White; BG = QUESTION_BG }
-
-                    match alt.Note with
-                    | Some n -> yield { Text = $" [{n}]"; FG = QUESTION_NOTE; BG = QUESTION_BG }
-                    | None -> ()
-            }
-            |> List.ofSeq
-            |> CardLine.Create(QUESTION_BG)
 
         let answer_bg, quiz_hint =
             match i with
@@ -45,47 +52,49 @@ type VerbCard =
             | SimplePast p ->
                 match p with
                 | FirstSingular -> "ich"
-                | FirstThirdPluralFormal -> List.randomChoice [ "wir"; "sie [p]"; "Sie" ]
+                | FirstThirdPluralFormal -> List.randomChoice [ "wir"; "Sie" ]
                 | SecondSingular -> "du"
                 | SecondPlural -> "ihr"
-                | ThirdSingular -> List.randomChoice [ "er"; "sie [f]"; "es" ] // todo: tag verbs that use only es
+                | ThirdSingular -> List.randomChoice [ "er"; "es" ] // todo: tag verbs that use only es
             | Imperative p ->
                 match p with
                 | ImperativePerson.SecondPlural -> "(ihr)"
                 | ImperativePerson.SecondSingular -> "(du)"
                 | ImperativePerson.ThirdPluralFormal -> List.randomChoice [ "wir"; "Sie" ]
 
+        let question_line =
+            CardLine
+                .Append((if i.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
+                .Append(quiz_hint, _.ForeColor(Color.Black))
+                .Append((if i.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
+
+        let reveal_line =
+            CardLine
+                .Append((if i.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
+                .Append(" " + inflected_text + " ", _.ForeColor(Color.Black))
+                .Append((if i.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
+
         CardSide.Create(
             [
-                CardLine.Create QUESTION_BG []
-                CardLine.Create QUESTION_BG [ { Text = v.Infinitive.Deutsch; FG = Color.White; BG = QUESTION_BG } ]
-                en_side
-                CardLine.Create QUESTION_BG []
-                CardLine.Create answer_bg []
-                CardLine.Create
-                    answer_bg
+                CardSection.Create(
+                    QUESTION_BG,
                     [
-                        { Text = (if i.IsImperative then "" else pronoun); FG = ANSWER_NOTE; BG = answer_bg }
-                        { Text = quiz_hint; FG = Color.Black; BG = answer_bg }
-                        { Text = (if i.IsImperative then pronoun else ""); FG = ANSWER_NOTE; BG = answer_bg }
+                        VerbCard.GermanVocab(v.Infinitive, Color.White)
+                        VerbCard.EnglishVocab(v.Infinitive, Color.White, QUESTION_NOTE)
                     ]
-                CardLine.Create answer_bg []
+                )
+                CardSection.Create(answer_bg, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardLine.Create QUESTION_BG []
-                CardLine.Create QUESTION_BG [ { Text = v.Infinitive.Deutsch; FG = Color.White; BG = QUESTION_BG } ]
-                en_side
-                CardLine.Create QUESTION_BG []
-                CardLine.Create answer_bg []
-                CardLine.Create
-                    answer_bg
+                CardSection.Create(
+                    QUESTION_BG,
                     [
-                        { Text = (if i.IsImperative then "" else pronoun); FG = ANSWER_NOTE; BG = answer_bg }
-                        { Text = " " + inflected_text + " "; FG = Color.Black; BG = answer_bg }
-                        { Text = (if i.IsImperative then pronoun else ""); FG = ANSWER_NOTE; BG = answer_bg }
+                        VerbCard.GermanVocab(v.Infinitive, Color.White)
+                        VerbCard.EnglishVocab(v.Infinitive, Color.White, QUESTION_NOTE)
                     ]
-                CardLine.Create answer_bg []
+                )
+                CardSection.Create(answer_bg, reveal_line)
             ]
         )

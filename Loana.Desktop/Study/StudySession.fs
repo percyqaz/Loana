@@ -22,41 +22,37 @@ type StudySession(state: StudySessionState) =
     [<Literal>]
     let CARD_AREA = 20
 
-    let draw_card (side: CardSide) =
+    let draw_card (side: CardSide) : unit =
+
+        let BG_COLOR = 0xFF_101010
         let edges_width = MenuRender.Width - 12
-        let inner_width = edges_width - 4
 
-        let empty () =
-            MenuRender.WriteLine(MenuRender.Pad(""), Color.White, Color.FromArgb(0xFF_101010))
+        let inline empty () : unit =
+            MenuRender.Write(("".ClearRestOfLine() + "\n").BackColor(BG_COLOR))
 
-        let horizontal_edge () =
-            MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
-            MenuRender.Write("".PadRight(edges_width), Color.White, Color.FromArgb(0xFF_303030))
-            MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
-            MenuRender.WriteLine()
+        let inline add_margins (line: string) : string =
+            let missing_space = MenuRender.Width - edges_width
 
-        let mutable i = 5
+            if missing_space <= 0 then
+                line
+            else
 
-        let line (line: CardLine) =
-            MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
-            MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
+            (String.replicate (missing_space / 2) " ").BackColor(BG_COLOR)
+            + line
+            + (String.replicate ((missing_space + 1) / 2) " ").BackColor(BG_COLOR)
 
-            MenuRender.Write(" ", Color.White, line.BG)
-            MenuRender.Write(line.Content)
-            MenuRender.Write("".PadLeft(inner_width - 1 - line.Length |> max 0), Color.White, line.BG)
-
-            MenuRender.Write("  ", Color.White, Color.FromArgb(0xFF_303030))
-            MenuRender.Write("      ", Color.White, Color.FromArgb(0xFF_101010))
-            MenuRender.WriteLine()
-            i <- i + 1
+        let inline line (line: string) : unit =
+            MenuRender.Write(add_margins(line).ClearRestOfLine() + "\n".BackColor(BG_COLOR))
 
         empty()
         empty()
-        horizontal_edge()
-        side.Lines |> List.iter line
-        horizontal_edge()
+        let mutable lines_displayed = 2
 
-        for _ = i to CARD_AREA do
+        for l in side.Render(edges_width) do
+            line(l)
+            lines_displayed <- lines_displayed + 1
+
+        for _ = lines_displayed to CARD_AREA do
             empty()
 
     let draw_log () =
