@@ -7,6 +7,22 @@ open Loana.Desktop.Study
 
 type Cards =
 
+    // Verb mode
+    static let QUESTION_BG = Color.FromArgb(0xFF_403030)
+    static let QUESTION_NOTE = Color.FromArgb(0xFF_C0C0C0)
+    static let PRESENT_BG = Color.FromArgb(0xFF_AAFFAA)
+    static let SIMPLE_PAST_BG = Color.FromArgb(0xFF_AAAAFF)
+    static let IMPERATIVE_BG = Color.FromArgb(0xFF_FFFFAA)
+    static let ANSWER_NOTE = Color.FromArgb(0xFF_404040)
+
+    // Vocab mode
+    static let GERMAN_BG = Color.FromArgb(0xFF_400000)
+    static let GERMAN_TEXT = Color.FromArgb(0xFF_FFFFFF)
+    static let GERMAN_NOTE = Color.FromArgb(0xFF_C0C0C0)
+    static let ENGLISH_BG = Color.FromArgb(0xFF_FFFFFF)
+    static let ENGLISH_TEXT = Color.FromArgb(0xFF_000000)
+    static let ENGLISH_NOTE = Color.FromArgb(0xFF_808080)
+
     static member EnglishVocab(vocab: Vocab, text_color: Color, note_color: Color) : CardLine =
         let mutable line = CardLine.Empty
 
@@ -68,16 +84,6 @@ type Cards =
 
         CardLine.Append(article + " ", _.ForeColor(note_color)).Append(noun.Deutsch, _.ForeColor(text_color))
 
-    static let QUESTION_BG = Color.FromArgb(0xFF_403030)
-    static let PRESENT_BG = Color.FromArgb(0xFF_AAFFAA)
-    static let SIMPLE_PAST_BG = Color.FromArgb(0xFF_AAAAFF)
-    static let IMPERATIVE_BG = Color.FromArgb(0xFF_FFFFAA)
-    static let QUESTION_NOTE = Color.FromArgb(0xFF_C0C0C0)
-    static let ANSWER_NOTE = Color.FromArgb(0xFF_404040)
-    static let GERMAN_BG = Color.FromArgb(0xFF_400000)
-    static let ENGLISH_NOTE = Color.FromArgb(0xFF_808080)
-    static let GERMAN_NOTE = Color.FromArgb(0xFF_C0C0C0)
-
     static member RenderInflection(v: Verb, i: VerbInflection, inflected_text: string) : CardSide * CardSide =
 
         let answer_bg, quiz_hint =
@@ -105,13 +111,13 @@ type Cards =
         let question_line =
             CardLine
                 .Append((if i.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
-                .Append(quiz_hint, _.ForeColor(Color.Black))
+                .Append(quiz_hint, _.ForeColor(ENGLISH_TEXT))
                 .Append((if i.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
 
         let reveal_line =
             CardLine
                 .Append((if i.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
-                .Append(" " + inflected_text + " ", _.ForeColor(Color.Black))
+                .Append(" " + inflected_text + " ", _.ForeColor(ENGLISH_TEXT))
                 .Append((if i.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
 
         CardSide.Create(
@@ -119,8 +125,8 @@ type Cards =
                 CardSection.Create(
                     QUESTION_BG,
                     [
-                        Cards.GermanVocab(v.Infinitive, Color.White)
-                        Cards.EnglishVocab(v.Infinitive, Color.White, QUESTION_NOTE)
+                        Cards.GermanVocab(v.Infinitive, GERMAN_TEXT)
+                        Cards.EnglishVocab(v.Infinitive, GERMAN_TEXT, QUESTION_NOTE)
                     ]
                 )
                 CardSection.Create(answer_bg, question_line)
@@ -131,8 +137,8 @@ type Cards =
                 CardSection.Create(
                     QUESTION_BG,
                     [
-                        Cards.GermanVocab(v.Infinitive, Color.White)
-                        Cards.EnglishVocab(v.Infinitive, Color.White, QUESTION_NOTE)
+                        Cards.GermanVocab(v.Infinitive, GERMAN_TEXT)
+                        Cards.EnglishVocab(v.Infinitive, GERMAN_TEXT, QUESTION_NOTE)
                     ]
                 )
                 CardSection.Create(answer_bg, reveal_line)
@@ -140,74 +146,74 @@ type Cards =
         )
 
     static member RecogniseDE(v: Vocab) : CardSide * CardSide =
-        let de_line = Cards.GermanVocab(v, Color.White)
-        let en_line = Cards.EnglishVocab(v, Color.Black, ENGLISH_NOTE)
-        let question_line = CardLine.Append("???", _.ForeColor(Color.Black))
+        let de_line = Cards.GermanVocab(v, GERMAN_TEXT)
+        let en_line = Cards.EnglishVocab(v, ENGLISH_TEXT, ENGLISH_NOTE)
+        let question_line = CardLine.Append("???", _.ForeColor(ENGLISH_TEXT))
 
         CardSide.Create(
             [
                 CardSection.Create(GERMAN_BG, de_line)
-                CardSection.Create(Color.White, question_line)
+                CardSection.Create(ENGLISH_BG, question_line)
             ]
         ),
         CardSide.Create(
             [
                 CardSection.Create(GERMAN_BG, de_line)
-                CardSection.Create(Color.White, en_line)
+                CardSection.Create(ENGLISH_BG, en_line)
             ]
         )
 
     static member RecallDE(v: Vocab) : CardSide * CardSide =
-        let de_line = Cards.GermanVocab(v, Color.White)
-        let en_line = Cards.EnglishVocab(v, Color.Black, ENGLISH_NOTE)
-        let question_line = CardLine.Append("???", _.ForeColor(Color.White))
+        let de_line = Cards.GermanVocab(v, GERMAN_TEXT)
+        let en_line = Cards.EnglishVocab(v, ENGLISH_TEXT, ENGLISH_NOTE)
+        let question_line = CardLine.Append("???", _.ForeColor(GERMAN_TEXT))
 
         CardSide.Create(
             [
-                CardSection.Create(Color.White, en_line)
+                CardSection.Create(ENGLISH_BG, en_line)
                 CardSection.Create(GERMAN_BG, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardSection.Create(Color.White, en_line)
+                CardSection.Create(ENGLISH_BG, en_line)
                 CardSection.Create(GERMAN_BG, de_line)
             ]
         )
 
     static member RecogniseArticleDE(noun: Noun) : CardSide * CardSide =
-        let en_line = Cards.EnglishNoun(noun, Color.Black, ENGLISH_NOTE)
-        let de_white = Cards.GermanNoun(noun, Color.White, GERMAN_NOTE)
+        let en_line = Cards.EnglishNoun(noun, ENGLISH_TEXT, ENGLISH_NOTE)
+        let de_white = Cards.GermanNoun(noun, GERMAN_TEXT, GERMAN_NOTE)
         let de_revealed = Cards.GermanNounRevealed(noun, GERMAN_NOTE)
-        let question_line = CardLine.Append("???", _.ForeColor(Color.Black))
+        let question_line = CardLine.Append("???", _.ForeColor(ENGLISH_TEXT))
 
         CardSide.Create(
             [
                 CardSection.Create(GERMAN_BG, de_white)
-                CardSection.Create(Color.White, question_line)
+                CardSection.Create(ENGLISH_BG, question_line)
             ]
         ),
         CardSide.Create(
             [
                 CardSection.Create(GERMAN_BG, de_revealed)
-                CardSection.Create(Color.White, en_line)
+                CardSection.Create(ENGLISH_BG, en_line)
             ]
         )
 
     static member RecallArticleDE(noun: Noun) : CardSide * CardSide =
-        let en_line = Cards.EnglishNoun(noun, Color.Black, ENGLISH_NOTE)
+        let en_line = Cards.EnglishNoun(noun, ENGLISH_TEXT, ENGLISH_NOTE)
         let de_revealed = Cards.GermanNounRevealed(noun, GERMAN_NOTE)
-        let question_line = CardLine.Append("???", _.ForeColor(Color.White))
+        let question_line = CardLine.Append("???", _.ForeColor(GERMAN_TEXT))
 
         CardSide.Create(
             [
-                CardSection.Create(Color.White, en_line)
+                CardSection.Create(ENGLISH_BG, en_line)
                 CardSection.Create(GERMAN_BG, question_line)
             ]
         ),
         CardSide.Create(
             [
-                CardSection.Create(Color.White, en_line)
+                CardSection.Create(ENGLISH_BG, en_line)
                 CardSection.Create(GERMAN_BG, de_revealed)
             ]
         )

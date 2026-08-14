@@ -2,7 +2,6 @@ namespace Loana.Desktop.Study
 
 open System
 open System.Drawing
-open Loana.Data
 open Loana.Desktop.CLI
 
 type StudySessionResult =
@@ -102,7 +101,6 @@ type StudySession(state: StudySessionState) =
             draw_log()
             MenuRender.Redraw()
 
-
     member this.Run() : StudySessionResult =
 
         while state.Running do
@@ -117,5 +115,3 @@ type StudySession(state: StudySessionState) =
             Bad = state.BadCount
             Forgot = state.ForgotCount
         }
-
-    member this.Log(message: ScheduleResult) : unit = state.LogMessage(message)
