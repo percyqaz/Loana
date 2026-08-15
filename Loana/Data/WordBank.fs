@@ -20,7 +20,7 @@ type WordlistItem =
 type Source = { Group: string; WordlistName: string }
 
 type WordlistEntry = { Source: Source; Item: WordlistItem }
-type WordlistGroup = { Name: string; WordlistNames: HashSet<string> }
+type WordlistGroup = { Name: string; WordlistNames: ResizeArray<string> }
 type DuplicateEntry = { WordlistName: string; Line: int; Item: WordlistItem }
 
 type WordBank() =
@@ -106,13 +106,18 @@ type WordBank() =
         let inline get_or_create_group () : WordlistGroup =
             match groups |> Seq.tryFind(fun g -> g.Name = source.Group) with
             | None ->
-                let group = { Name = source.Group; WordlistNames = HashSet() }
+                let group = { Name = source.Group; WordlistNames = ResizeArray() }
                 groups.Add(group)
                 group
             | Some existing_group -> existing_group
 
         let inline ensure_wordlist_added_to_group () : unit =
-            get_or_create_group().WordlistNames.Add(source.WordlistName) |> ignore
+            let group = get_or_create_group()
+
+            if group.WordlistNames.Contains(source.WordlistName) then
+                failwithf "duplicate word list '%s'" source.WordlistName
+
+            group.WordlistNames.Add(source.WordlistName)
 
         let inline try_add_line (line_n: int, line: string) : Result<unit, string> =
             try
@@ -265,11 +270,15 @@ type WordBank() =
         let inline read_group () : WordlistGroup =
             let group_name = br.ReadString()
             let group_list_count = br.ReadInt32()
-            let group_lists = HashSet<string>(group_list_count)
+            let group_lists = ResizeArray<string>(group_list_count)
 
             for _ = 1 to group_list_count do
                 let wordlist_name = read_wordlist(group_name)
-                group_lists.Add(wordlist_name) |> ignore
+
+                if group_lists.Contains(wordlist_name) then
+                    failwithf "duplicate word list '%s'" group_name
+
+                group_lists.Add(wordlist_name)
 
             { Name = group_name; WordlistNames = group_lists }
 
