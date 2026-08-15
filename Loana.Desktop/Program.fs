@@ -41,7 +41,8 @@ Console.WriteLine(
 let state = LoanaState.Create(data_path)
 
 for error in state.Words.Errors do
-    Console.WriteLine(error)
+    Console.WriteLine($" {error.WordlistName}:{error.LineNumber} ".BackColor(0x101010) + " " + error.Reason)
+    Console.WriteLine(error.Line.ForeColor(0xFF8888))
 
 Console.WriteLine(
     MenuRender.Pad("Loana has loaded!").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))

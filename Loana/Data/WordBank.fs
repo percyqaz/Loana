@@ -21,13 +21,22 @@ type Source = { Group: string; WordlistName: string }
 
 type WordlistEntry = { Source: Source; Item: WordlistItem }
 type WordlistGroup = { Name: string; WordlistNames: ResizeArray<string> }
-type DuplicateEntry = { WordlistName: string; Line: int; Item: WordlistItem }
+type DuplicateEntry = { WordlistName: string; LineNumber: int; Item: WordlistItem }
+
+type WordlistError =
+    {
+        WordlistName: string
+        LineNumber: int
+        Line: string
+        Reason: string
+    }
 
 type WordBank() =
 
     let groups = ResizeArray<WordlistGroup>()
     let entries = ResizeArray<WordlistEntry>()
-    let errors = ResizeArray<string>()
+    let errors = ResizeArray<WordlistError>()
+    let meta_errors = ResizeArray<string>()
 
     let deduplicate_de = Dictionary<string, DuplicateEntry>()
     let deduplicate_en = Dictionary<string, DuplicateEntry>()
@@ -37,23 +46,23 @@ type WordBank() =
         let report_duplicate (language: string, existing_conflict: DuplicateEntry) : unit =
             let is_identical = item = existing_conflict.Item
 
-            if existing_conflict.WordlistName <> source.WordlistName || existing_conflict.Line <> line_n then
+            if existing_conflict.WordlistName <> source.WordlistName || existing_conflict.LineNumber <> line_n then
                 failwithf
-                    "%s %s definition! \n %s (%s:%i)\n %s (%s:%i)"
-                    (if is_identical then "Duplicate" else "Conflict with")
+                    "%s %s definition! %s (%s:%i)"
+                    (if is_identical then "Duplicate" else "Conflicting")
                     language
-                    (item.ToString())
-                    source.WordlistName
-                    line_n
                     (existing_conflict.Item.ToString())
                     existing_conflict.WordlistName
-                    existing_conflict.Line
+                    existing_conflict.LineNumber
 
         let check_language_duplicate (language: string, already_seen: Dictionary<string, _>, ascii_identifier: string) =
             match already_seen.TryGetValue(ascii_identifier) with
             | true, existing_conflict -> report_duplicate(language, existing_conflict)
             | false, _ ->
-                already_seen.Add(ascii_identifier, { WordlistName = source.WordlistName; Line = line_n; Item = item })
+                already_seen.Add(
+                    ascii_identifier,
+                    { WordlistName = source.WordlistName; LineNumber = line_n; Item = item }
+                )
 
         check_language_duplicate("German", deduplicate_de, vocab.DeutschAsciiIdentifier)
         check_language_duplicate("English", deduplicate_en, vocab.EnglishAsciiIdentifier)
@@ -128,7 +137,7 @@ type WordBank() =
 
                 Ok()
             with err ->
-                Error err.Message
+                Error(err.Message)
 
         ensure_wordlist_added_to_group()
 
@@ -136,8 +145,15 @@ type WordBank() =
         |> Seq.iteri(fun line_n line ->
             match try_add_line(line_n, line) with
             | Ok() -> ()
-            | Error "" -> ()
-            | Error reason -> errors.Add($" {source.WordlistName}: {reason}")
+            | Error reason ->
+                errors.Add(
+                    {
+                        WordlistName = source.WordlistName
+                        LineNumber = line_n
+                        Line = line
+                        Reason = reason
+                    }
+                )
         )
 
     member this.Clear() : unit =
@@ -153,7 +169,7 @@ type WordBank() =
             let meta_list = Path.Combine(path, "wordlists.meta")
 
             if File.Exists(meta_list) |> not then
-                errors.Add(sprintf "'%s' doesn't exist!" meta_list)
+                meta_errors.Add(sprintf "'%s' doesn't exist!" meta_list)
                 [||]
             else
                 File.ReadAllLines(meta_list)
@@ -164,7 +180,7 @@ type WordBank() =
             if Path.Exists(wordlist_path) then
                 this.AddWordList(source, File.ReadAllLines(wordlist_path))
             else
-                errors.Add(sprintf "Could not find wordlist '%s' at %s" source.WordlistName wordlist_path)
+                meta_errors.Add(sprintf "could not find wordlist '%s' at %s" source.WordlistName wordlist_path)
 
         this.Clear()
         let mutable current_group: string option = None
@@ -178,7 +194,7 @@ type WordBank() =
 
                 match current_group with
                 | Some group -> load_wordlist_file({ Group = group; WordlistName = wordlist_name })
-                | None -> errors.Add(sprintf "Wordlist '%s' is not part of a group" wordlist_name)
+                | None -> meta_errors.Add(sprintf "wordlist '%s' is not part of a group" wordlist_name)
 
     static member CreateFromDirectory(path: string) : WordBank =
         let words = WordBank()
@@ -187,7 +203,8 @@ type WordBank() =
 
     member this.Entries: IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
     member this.Groups: IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
-    member this.Errors: IReadOnlyList<string> = errors.AsReadOnly()
+    member this.Errors: IReadOnlyList<WordlistError> = errors.AsReadOnly()
+    member this.MetaErrors: IReadOnlyList<string> = meta_errors.AsReadOnly()
 
     member this.WriteToDirectory(path: string) : unit =
 
@@ -201,7 +218,11 @@ type WordBank() =
         let inline write_wordlist (wordlist_name: string, entries: WordlistEntry seq) : unit =
             let wordlist_path = Path.Combine(path, wordlist_name + ".wordlist")
             let entries_as_strings = entries |> Seq.map _.Item.ToString()
-            File.WriteAllLines(wordlist_path, entries_as_strings)
+
+            let errors =
+                this.Errors |> Seq.filter(fun error -> error.WordlistName = wordlist_name) |> Seq.map _.Line
+
+            File.WriteAllLines(wordlist_path, Seq.concat [ entries_as_strings; errors ])
 
         let inline write_wordlist_meta () : unit =
             let wordlist_meta_lines =
@@ -230,20 +251,31 @@ type WordBank() =
             |> Seq.map(fun (wordlist_name, entries) -> (wordlist_name, Array.ofSeq entries))
             |> Map.ofSeq
 
-        let inline write_wordlist (wordlist_name: string, entries: WordlistEntry array) : unit =
+        let wordlist_to_errors =
+            this.Errors
+            |> Seq.groupBy _.WordlistName
+            |> Seq.map(fun (wordlist_name, errors) -> (wordlist_name, Array.ofSeq errors))
+            |> Map.ofSeq
+
+        let inline write_wordlist (wordlist_name: string) : unit =
+            let entries = wordlist_to_entries.[wordlist_name]
+            let errors = wordlist_to_errors.[wordlist_name]
             bw.Write(wordlist_name)
-            bw.Write(entries.Length)
+            bw.Write(entries.Length + errors.Length)
 
             for entry in entries do
                 bw.Write(entry.Item.ToString())
+
+            for error in errors do
+                bw.Write(error.Line)
+
 
         let inline write_group (group: WordlistGroup) : unit =
             bw.Write(group.Name)
             bw.Write(group.WordlistNames.Count)
 
             for wordlist_name in group.WordlistNames do
-                let entries = wordlist_to_entries.[wordlist_name]
-                write_wordlist(wordlist_name, entries)
+                write_wordlist(wordlist_name)
 
         bw.Write(groups.Count)
 
@@ -259,11 +291,19 @@ type WordBank() =
             let entry_count = br.ReadInt32()
 
             for line_n = 0 to entry_count - 1 do
-                match
-                    this.TryAddLine({ Group = group_name; WordlistName = wordlist_name }, line_n, br.ReadString())
-                with
+                let line = br.ReadString()
+
+                match this.TryAddLine({ Group = group_name; WordlistName = wordlist_name }, line_n, line) with
                 | Ok() -> ()
-                | Error reason -> errors.Add(reason)
+                | Error reason ->
+                    errors.Add(
+                        {
+                            WordlistName = wordlist_name
+                            LineNumber = line_n
+                            Line = line
+                            Reason = reason
+                        }
+                    )
 
             wordlist_name
 
