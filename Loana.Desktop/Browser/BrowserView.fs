@@ -7,19 +7,44 @@ open Loana.Desktop.CLI
 
 type BrowserView(state: BrowserState) =
 
-    member this.DrawSearchTab(tab: SearchTab, panel: PanelRender) : unit =
+    static let pad_to_width (text: string, plain_text: string, target_width: int) : string =
+        (if plain_text.Length > target_width then plain_text.Substring(0, target_width) else text)
+        + String.replicate (target_width - plain_text.Length |> max 0) " "
 
-        let inline pad_to_width (text: string, plain_text: string, target_width: int) : string =
-            (if plain_text.Length > target_width then plain_text.Substring(0, target_width) else text)
-            + String.replicate (target_width - plain_text.Length |> max 0) " "
+    member this.DrawWordlistTab(tab: WordlistTab, panel: PanelRender, active: bool) : unit =
 
-        let DISPLAY_RESULTS_COUNT = Console.BufferHeight - 2
+        let DISPLAY_COUNT = Console.BufferHeight - 2
 
         let start_index =
-            min (tab.Results.Count - DISPLAY_RESULTS_COUNT) (tab.Position - DISPLAY_RESULTS_COUNT / 2) |> max 0
+            min (tab.Items.Count - DISPLAY_COUNT) (tab.Position - DISPLAY_COUNT / 2) |> max 0
 
-        let end_index = min tab.Results.Count (start_index + DISPLAY_RESULTS_COUNT) - 1
+        let end_index = min tab.Items.Count (start_index + DISPLAY_COUNT) - 1
+        let panel_width = MenuRender.Width / 2
 
+        panel.Write(
+            ((sprintf "%s - %i items" tab.Wordlist tab.Items.Count).PadRight(panel_width) + "\n")
+                .BackColor(if active then 0xFF_204020 else 0xFF_202020)
+        )
+
+        for i = start_index to end_index do
+            let result = tab.Items.[i]
+
+            let line =
+                pad_to_width(result.Item.HighlightString(), result.Item.ToString(), panel_width) + "\n"
+
+            panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
+
+        for i = end_index + 1 to DISPLAY_COUNT - 1 do
+            panel.Write("\n")
+
+    member this.DrawSearchTab(tab: SearchTab, panel: PanelRender, active: bool) : unit =
+
+        let DISPLAY_COUNT = Console.BufferHeight - 2
+
+        let start_index =
+            min (tab.Results.Count - DISPLAY_COUNT) (tab.Position - DISPLAY_COUNT / 2) |> max 0
+
+        let end_index = min tab.Results.Count (start_index + DISPLAY_COUNT) - 1
         let panel_width = MenuRender.Width / 2
         let type_to_search = " -- TYPE TO SEARCH -- "
 
@@ -31,7 +56,7 @@ type BrowserView(state: BrowserState) =
                 else
                     String.replicate type_to_search.Length " ")
              + "\n")
-                .BackColor(0xFF_202020)
+                .BackColor(if active then 0xFF_204020 else 0xFF_202020)
         )
 
         for i = start_index to end_index do
@@ -50,23 +75,34 @@ type BrowserView(state: BrowserState) =
             let line =
                 pad_to_width(result.Item.HighlightString(), result.Item.ToString(), panel_width - tags_width)
 
-            panel.Write(if tab.Position = i then line.BackColor(0xFF_404020) else line)
+            panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
             panel.Write($" {result.Source.WordlistName} ".ForeColor(Color.LightBlue).BackColor(Color.DarkBlue))
             panel.Write((tag + "\n").ForeColor(tag_color).BackColor(0xFF_303030))
 
-        for i = end_index + 1 to DISPLAY_RESULTS_COUNT - 1 do
+        for i = end_index + 1 to DISPLAY_COUNT - 1 do
             panel.Write("\n")
-
-        Console.Write(panel.ToString())
 
     member this.Run() : unit =
         while state.Running do
             MenuRender.UpdateWidth()
+            let left = PanelRender.Left()
+
+            match state.LeftTab with
+            | Wordlist tab -> this.DrawWordlistTab(tab, left, not state.RightFocused)
+            | _ -> ()
+
             let right = PanelRender.Right()
 
             match state.RightPopup with
-            | Search tab -> this.DrawSearchTab(tab, right)
-            | _ -> ()
+            | Search tab -> this.DrawSearchTab(tab, right, state.RightFocused)
+            | Errors _ -> ()
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist tab -> this.DrawWordlistTab(tab, right, state.RightFocused)
+                | _ -> ()
+
+            Console.Write(left.ToString())
+            Console.Write(right.ToString())
 
             let displayed_line =
                 match state.UIContext.Buffer.ToString() with

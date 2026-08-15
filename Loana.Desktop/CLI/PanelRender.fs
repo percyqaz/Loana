@@ -12,10 +12,9 @@ type PanelRender(initial: string, line_prefix: string, line_suffix: string) =
             is_empty_line <- false
             sb.Append(line_prefix) |> ignore
 
-        sb.Append(text) |> ignore
+        sb.Append(text.Replace("\n", line_suffix + "\n")) |> ignore
 
         if text.Contains('\n') then
-            this.Write(line_suffix)
             is_empty_line <- true
 
     override this.ToString() : string = sb.ToString()
