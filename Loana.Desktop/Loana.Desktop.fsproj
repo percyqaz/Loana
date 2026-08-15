@@ -10,7 +10,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CLI\AnsiCodes.fs" />
-    <Compile Include="CLI\Console.fs" />
+    <Compile Include="CLI\MenuRender.fs" />
+    <Compile Include="CLI\PanelRender.fs" />
     <Compile Include="CLI\Keymap.fs" />
     <Compile Include="CLI\CommandBuffer.fs" />
     <Compile Include="CLI\TextBuffer.fs" />

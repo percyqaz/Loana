@@ -7,7 +7,8 @@ open Loana.Desktop.CLI
 
 type BrowserView(state: BrowserState) =
 
-    member this.DrawSearchTab(tab: SearchTab) : unit =
+    member this.DrawSearchTab(tab: SearchTab, panel: PanelRender) : unit =
+
         let inline pad_to_width (text: string, plain_text: string, target_width: int) : string =
             (if plain_text.Length > target_width then plain_text.Substring(0, target_width) else text)
             + String.replicate (target_width - plain_text.Length |> max 0) " "
@@ -19,16 +20,16 @@ type BrowserView(state: BrowserState) =
 
         let end_index = min tab.Results.Count (start_index + DISPLAY_RESULTS_COUNT) - 1
 
-        MenuRender.UpdateWidth()
+        let panel_width = MenuRender.Width / 2
+        let type_to_search = " -- TYPE TO SEARCH -- "
 
-        MenuRender.Write(
-            ((sprintf
-                "'%s' - %i search results %s"
-                tab.Query
-                tab.Results.Count
-                (if tab.SearchFocused then " -- TYPE TO SEARCH --".ForeColor(0xFF8888) else ""))
-                 .PadRight(MenuRender.Width - 14)
-                 .ClearRestOfLine()
+        panel.Write(
+            ((sprintf "'%s' - %i search results" tab.Query tab.Results.Count)
+                .PadRight(panel_width - type_to_search.Length + 1)
+             + (if tab.SearchFocused then
+                    type_to_search.ForeColor(0xFF8888)
+                else
+                    String.replicate type_to_search.Length " ")
              + "\n")
                 .BackColor(0xFF_202020)
         )
@@ -47,21 +48,24 @@ type BrowserView(state: BrowserState) =
             let tags_width = tag.Length + result.Source.WordlistName.Length + 1
 
             let line =
-                pad_to_width(result.Item.HighlightString(), result.Item.ToString(), MenuRender.Width - tags_width)
+                pad_to_width(result.Item.HighlightString(), result.Item.ToString(), panel_width - tags_width)
 
-            MenuRender.Write(if tab.Position = i then line.BackColor(0xFF_404020) else line)
-            MenuRender.Write($" {result.Source.WordlistName} ".ForeColor(Color.LightBlue).BackColor(Color.DarkBlue))
-            MenuRender.Write((tag.ClearRestOfLine() + "\n").ForeColor(tag_color).BackColor(0xFF_303030))
+            panel.Write(if tab.Position = i then line.BackColor(0xFF_404020) else line)
+            panel.Write($" {result.Source.WordlistName} ".ForeColor(Color.LightBlue).BackColor(Color.DarkBlue))
+            panel.Write((tag + "\n").ForeColor(tag_color).BackColor(0xFF_303030))
 
         for i = end_index + 1 to DISPLAY_RESULTS_COUNT - 1 do
-            MenuRender.WriteLine()
+            panel.Write("\n")
 
-        MenuRender.Redraw()
+        Console.Write(panel.ToString())
 
     member this.Run() : unit =
         while state.Running do
+            MenuRender.UpdateWidth()
+            let right = PanelRender.Right()
+
             match state.RightPopup with
-            | Search tab -> this.DrawSearchTab(tab)
+            | Search tab -> this.DrawSearchTab(tab, right)
             | _ -> ()
 
             let displayed_line =
@@ -69,7 +73,7 @@ type BrowserView(state: BrowserState) =
                 | "" -> state.UIContext.StatusLine
                 | buffer -> buffer.ForeColor(Color.LightGreen).Bold()
 
-            Console.Write(displayed_line)
+            Console.Write(displayed_line.ClearRestOfLine())
 
             state.AddKey(Console.ReadKey(true))
             state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.BrowserKeymap)
