@@ -6,7 +6,19 @@ open System.Runtime.CompilerServices
 type BrowserCommands =
 
     [<Extension>]
-    static member Exit(state: BrowserState) : unit = state.Running <- false
+    static member Exit(state: BrowserState) : unit =
+        if state.RightFocused then
+            match state.RightPopup with
+            | Search _
+            | Errors _ -> state.RightPopup <- NoPopup
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist _ -> state.RightTab <- Wordlists(WordlistGroupsTab.Create(state.Words))
+                | Wordlists _ -> state.Running <- false
+        else
+            match state.LeftTab with
+            | Wordlist _ -> state.LeftTab <- Wordlists(WordlistGroupsTab.Create(state.Words))
+            | Wordlists _ -> state.Running <- false
 
     [<Extension>]
     static member Echo(state: BrowserState, text: string) : unit = state.UIContext.StatusLine <- text
@@ -20,11 +32,11 @@ type BrowserCommands =
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Up()
-                | _ -> ()
+                | Wordlists tab -> tab.Up()
         else
             match state.LeftTab with
             | Wordlist tab -> tab.Up()
-            | _ -> ()
+            | Wordlists tab -> tab.Up()
 
     [<Extension>]
     static member Down(state: BrowserState) : unit =
@@ -35,11 +47,11 @@ type BrowserCommands =
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Down()
-                | _ -> ()
+                | Wordlists tab -> tab.Down()
         else
             match state.LeftTab with
             | Wordlist tab -> tab.Down()
-            | _ -> ()
+            | Wordlists tab -> tab.Down()
 
     [<Extension>]
     static member Left(state: BrowserState) : unit = state.RightFocused <- false

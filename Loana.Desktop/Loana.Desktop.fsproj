@@ -31,6 +31,7 @@
     <Compile Include="Browser\BrowserState.fs" />
     <Compile Include="Browser\SearchTabCommands.fs" />
     <Compile Include="Browser\WordlistTabCommands.fs" />
+    <Compile Include="Browser\WordlistGroupsTabCommands.fs" />
     <Compile Include="Browser\BrowserCommands.fs" />
     <Compile Include="Browser\BrowserView.fs" />
     <Compile Include="Quizzes\QuizSession.fs" />

@@ -9,7 +9,7 @@ type SearchTab =
     {
         mutable SearchFocused: bool
         Buffer: TextBuffer
-        mutable Results: IReadOnlyList<WordlistEntry>
+        mutable Items: IReadOnlyList<WordlistEntry>
         mutable Position: int
     }
 
@@ -17,9 +17,9 @@ type SearchTab =
 
     member this.Refresh(words: WordBank) : unit =
         let current_item =
-            if this.Position < this.Results.Count then Some this.Results.[this.Position] else None
+            if this.Position < this.Items.Count then Some this.Items.[this.Position] else None
 
-        this.Results <-
+        this.Items <-
             words.Entries
             |> Seq.where(fun x ->
                 let t =
@@ -35,7 +35,7 @@ type SearchTab =
 
         this.Position <-
             match current_item with
-            | Some i -> Seq.tryFindIndex ((=) i) this.Results |> Option.defaultValue 0
+            | Some i -> Seq.tryFindIndex ((=) i) this.Items |> Option.defaultValue 0
             | None -> 0
 
     static member Create(words: WordBank) : SearchTab =
@@ -43,7 +43,7 @@ type SearchTab =
             {
                 SearchFocused = true
                 Buffer = TextBuffer()
-                Results = []
+                Items = []
                 Position = 0
             }
 

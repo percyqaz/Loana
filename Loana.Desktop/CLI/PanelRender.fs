@@ -23,4 +23,4 @@ type PanelRender(initial: string, line_prefix: string, line_suffix: string) =
         PanelRender(AnsiCodes.CursorToOrigin, "", "")
 
     static member Right() : PanelRender =
-        PanelRender(AnsiCodes.CursorToOrigin, AnsiCodes.CursorRight((MenuRender.Width + 1) / 2), "".ClearRestOfLine())
+        PanelRender(AnsiCodes.CursorToOrigin, AnsiCodes.CursorRight((MenuRender.Width + 1) / 2), "")

@@ -29,9 +29,9 @@ type BrowserState =
             Running = true
             UIContext = ui_ctx
             Words = words
-            LeftTab = Wordlist(WordlistTab.Create("uncategorised", words))
+            LeftTab = Wordlists(WordlistGroupsTab.Create(words))
             RightTab = Wordlists(WordlistGroupsTab.Create(words))
-            RightPopup = Search(SearchTab.Create(words))
+            RightPopup = NoPopup
             RightFocused = false
         }
 

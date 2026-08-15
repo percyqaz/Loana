@@ -11,14 +11,33 @@ type BrowserView(state: BrowserState) =
         (if plain_text.Length > target_width then plain_text.Substring(0, target_width) else text)
         + String.replicate (target_width - plain_text.Length |> max 0) " "
 
+    member this.DrawWordlistGroupsTab(tab: WordlistGroupsTab, panel: PanelRender, active: bool) : unit =
+
+        let HEIGHT = Console.BufferHeight - 2
+        let start_index = max 0 (min (tab.Items.Count - HEIGHT) (tab.Position - HEIGHT / 2))
+        let end_index = min tab.Items.Count (start_index + HEIGHT) - 1
+        let panel_width = MenuRender.Width / 2
+
+        panel.Write(
+            ("All word lists".PadRight(panel_width) + "\n").BackColor(if active then 0xFF_204020 else 0xFF_202020)
+        )
+
+        for i = start_index to end_index do
+            let result = tab.Items.[i]
+
+            let line =
+                pad_to_width(result.HighlightString(), result.ToString(), panel_width) + "\n"
+
+            panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
+
+        for i = end_index + 1 to HEIGHT - 1 do
+            panel.Write("".PadLeft(panel_width) + "\n")
+
     member this.DrawWordlistTab(tab: WordlistTab, panel: PanelRender, active: bool) : unit =
 
-        let DISPLAY_COUNT = Console.BufferHeight - 2
-
-        let start_index =
-            min (tab.Items.Count - DISPLAY_COUNT) (tab.Position - DISPLAY_COUNT / 2) |> max 0
-
-        let end_index = min tab.Items.Count (start_index + DISPLAY_COUNT) - 1
+        let HEIGHT = Console.BufferHeight - 2
+        let start_index = max 0 (min (tab.Items.Count - HEIGHT) (tab.Position - HEIGHT / 2))
+        let end_index = min tab.Items.Count (start_index + HEIGHT) - 1
         let panel_width = MenuRender.Width / 2
 
         panel.Write(
@@ -34,22 +53,19 @@ type BrowserView(state: BrowserState) =
 
             panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
 
-        for i = end_index + 1 to DISPLAY_COUNT - 1 do
-            panel.Write("\n")
+        for i = end_index + 1 to HEIGHT - 1 do
+            panel.Write("".PadLeft(panel_width) + "\n")
 
     member this.DrawSearchTab(tab: SearchTab, panel: PanelRender, active: bool) : unit =
 
-        let DISPLAY_COUNT = Console.BufferHeight - 2
-
-        let start_index =
-            min (tab.Results.Count - DISPLAY_COUNT) (tab.Position - DISPLAY_COUNT / 2) |> max 0
-
-        let end_index = min tab.Results.Count (start_index + DISPLAY_COUNT) - 1
+        let HEIGHT = Console.BufferHeight - 2
+        let start_index = max 0 (min (tab.Items.Count - HEIGHT) (tab.Position - HEIGHT / 2))
+        let end_index = min tab.Items.Count (start_index + HEIGHT) - 1
         let panel_width = MenuRender.Width / 2
         let type_to_search = " -- TYPE TO SEARCH -- "
 
         panel.Write(
-            ((sprintf "'%s' - %i search results" tab.Query tab.Results.Count)
+            ((sprintf "'%s' - %i search results" tab.Query tab.Items.Count)
                 .PadRight(panel_width - type_to_search.Length + 1)
              + (if tab.SearchFocused then
                     type_to_search.ForeColor(0xFF8888)
@@ -60,7 +76,7 @@ type BrowserView(state: BrowserState) =
         )
 
         for i = start_index to end_index do
-            let result = tab.Results.[i]
+            let result = tab.Items.[i]
 
             let tag, tag_color =
                 match result.Item with
@@ -79,8 +95,8 @@ type BrowserView(state: BrowserState) =
             panel.Write($" {result.Source.WordlistName} ".ForeColor(Color.LightBlue).BackColor(Color.DarkBlue))
             panel.Write((tag + "\n").ForeColor(tag_color).BackColor(0xFF_303030))
 
-        for i = end_index + 1 to DISPLAY_COUNT - 1 do
-            panel.Write("\n")
+        for i = end_index + 1 to HEIGHT - 1 do
+            panel.Write("".PadLeft(panel_width) + "\n")
 
     member this.Run() : unit =
         while state.Running do
@@ -89,7 +105,7 @@ type BrowserView(state: BrowserState) =
 
             match state.LeftTab with
             | Wordlist tab -> this.DrawWordlistTab(tab, left, not state.RightFocused)
-            | _ -> ()
+            | Wordlists tab -> this.DrawWordlistGroupsTab(tab, left, not state.RightFocused)
 
             let right = PanelRender.Right()
 
@@ -99,7 +115,7 @@ type BrowserView(state: BrowserState) =
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> this.DrawWordlistTab(tab, right, state.RightFocused)
-                | _ -> ()
+                | Wordlists tab -> this.DrawWordlistGroupsTab(tab, right, state.RightFocused)
 
             Console.Write(left.ToString())
             Console.Write(right.ToString())
