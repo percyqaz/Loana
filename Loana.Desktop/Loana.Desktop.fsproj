@@ -13,6 +13,7 @@
     <Compile Include="CLI\Console.fs" />
     <Compile Include="CLI\Keymap.fs" />
     <Compile Include="CLI\CommandBuffer.fs" />
+    <Compile Include="CLI\TextBuffer.fs" />
     <Compile Include="CLI\UIContext.fs" />
     <Compile Include="Study\CardSide.fs" />
     <Compile Include="Study\Cards.fs" />
@@ -25,9 +26,10 @@
     <Compile Include="Browser\Tabs\WordlistTab.fs" />
     <Compile Include="Browser\Tabs\WordlistGroupsTab.fs" />
     <Compile Include="Browser\Tabs\ErrorsTab.fs" />
+    <Compile Include="Browser\BrowserState.fs" />
+    <Compile Include="Browser\SearchTabCommands.fs" />
     <Compile Include="Browser\VocabExtensions.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
-    <Compile Include="Browser\BrowserState.fs" />
     <Compile Include="Quizzes\QuizSession.fs" />
     <Compile Include="Quizzes\AnnotationTreeRenderer.fs" />
     <Compile Include="Quizzes\Shared.fs" />
