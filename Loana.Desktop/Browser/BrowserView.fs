@@ -5,7 +5,7 @@ open System.Drawing
 open Loana.Data
 open Loana.Desktop.CLI
 
-type BrowserView(words: WordBank) =
+type BrowserView(state: BrowserState) =
 
     member this.DrawSearchTab(tab: SearchTab) : unit =
         let inline pad_to_width (text: string, plain_text: string, target_width: int) : string =
@@ -22,9 +22,13 @@ type BrowserView(words: WordBank) =
         MenuRender.UpdateWidth()
 
         MenuRender.Write(
-            ((sprintf "'%s' - %i search results " tab.Query tab.Results.Count)
-                .PadRight(MenuRender.Width - 14)
-                .ClearRestOfLine()
+            ((sprintf
+                "'%s' - %i search results %s"
+                tab.Query
+                tab.Results.Count
+                (if tab.SearchFocused then " -- TYPE TO SEARCH --".ForeColor(0xFF8888) else ""))
+                 .PadRight(MenuRender.Width - 14)
+                 .ClearRestOfLine()
              + "\n")
                 .BackColor(0xFF_202020)
         )
@@ -55,19 +59,17 @@ type BrowserView(words: WordBank) =
         MenuRender.Redraw()
 
     member this.Run() : unit =
-        let mutable loop = true
+        while state.Running do
+            match state.RightTab with
+            | Search tab -> this.DrawSearchTab(tab)
+            | _ -> ()
 
-        let tab = SearchTab.Create(words)
+            let displayed_line =
+                match state.UIContext.Buffer.ToString() with
+                | "" -> state.UIContext.StatusLine
+                | buffer -> buffer.ForeColor(Color.LightGreen).Bold()
 
-        while loop do
-            this.DrawSearchTab(tab)
+            Console.Write(displayed_line)
 
-            let next_key = Console.ReadKey(true)
-
-            match next_key.Key with
-            | ConsoleKey.Escape -> loop <- false
-            | ConsoleKey.UpArrow -> tab.Up()
-            | ConsoleKey.DownArrow -> tab.Down()
-            | _ ->
-                if tab.Buffer.TryAddKey(next_key) then
-                    tab.UpdateSearchResults(words)
+            state.AddKey(Console.ReadKey(true))
+            state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.BrowserKeymap)

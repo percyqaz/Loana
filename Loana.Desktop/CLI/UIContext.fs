@@ -6,6 +6,7 @@ type UIContext =
         GlobalKeymap: Keymap
         MenuKeymap: Keymap
         StudyKeymap: Keymap
+        BrowserKeymap: Keymap
         mutable StatusLine: string
     // Use stack to store current screen rather than represent it here
     }
@@ -39,11 +40,26 @@ type UIContext =
         keymap.AliasCommand("/", "good")
         keymap
 
+    static member DefaultBrowserKeymap() : Keymap =
+        let keymap = Keymap()
+        keymap.AliasCommand("<Esc>", "exit")
+        keymap.AliasCommand("h", "left")
+        keymap.AliasCommand("j", "down")
+        keymap.AliasCommand("k", "up")
+        keymap.AliasCommand("l", "right")
+        keymap.AliasCommand("<Tab>", "search")
+        keymap.Alias("<Left>", "h")
+        keymap.Alias("<Down>", "j")
+        keymap.Alias("<Up>", "k")
+        keymap.Alias("<Right>", "l")
+        keymap
+
     static member Create() : UIContext =
         {
             Buffer = CommandBuffer()
             GlobalKeymap = Keymap()
             MenuKeymap = UIContext.DefaultMenuKeymap()
             StudyKeymap = UIContext.DefaultStudyKeymap()
+            BrowserKeymap = UIContext.DefaultBrowserKeymap()
             StatusLine = ""
         }

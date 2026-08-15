@@ -26,9 +26,10 @@
     <Compile Include="Browser\Tabs\WordlistTab.fs" />
     <Compile Include="Browser\Tabs\WordlistGroupsTab.fs" />
     <Compile Include="Browser\Tabs\ErrorsTab.fs" />
+    <Compile Include="Browser\VocabExtensions.fs" />
     <Compile Include="Browser\BrowserState.fs" />
     <Compile Include="Browser\SearchTabCommands.fs" />
-    <Compile Include="Browser\VocabExtensions.fs" />
+    <Compile Include="Browser\BrowserCommands.fs" />
     <Compile Include="Browser\BrowserView.fs" />
     <Compile Include="Quizzes\QuizSession.fs" />
     <Compile Include="Quizzes\AnnotationTreeRenderer.fs" />
