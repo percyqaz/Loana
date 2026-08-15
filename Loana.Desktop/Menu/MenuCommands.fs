@@ -26,7 +26,7 @@ type MenuCommands =
         Console.ReadKey(true) |> ignore
 
     [<Extension>]
-    static member Browse(state: MenuState) : unit = WordBrowser(state.Words).Run()
+    static member Browse(state: MenuState) : unit = BrowserView(state.Words).Run()
 
     [<Extension>]
     static member NextSelection(state: MenuState) : unit =

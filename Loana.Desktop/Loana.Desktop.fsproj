@@ -29,7 +29,7 @@
     <Compile Include="Browser\BrowserState.fs" />
     <Compile Include="Browser\SearchTabCommands.fs" />
     <Compile Include="Browser\VocabExtensions.fs" />
-    <Compile Include="Browser\WordBrowser.fs" />
+    <Compile Include="Browser\BrowserView.fs" />
     <Compile Include="Quizzes\QuizSession.fs" />
     <Compile Include="Quizzes\AnnotationTreeRenderer.fs" />
     <Compile Include="Quizzes\Shared.fs" />
