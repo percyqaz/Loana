@@ -241,13 +241,16 @@ type ReviewSchedule(path: string) =
     let schedule_data = db.ReadFromFile()
 
     let mutable buried: Set<string> = Set.empty
+    let mutable last_save = 0L
 
     member this.Save() : unit = db.WriteToFile(schedule_data)
 
     member this.SaveDebounced() : unit =
-        // todo: save if not saved in 30s
-        // todo: ignore errors
-        this.Save()
+        let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+
+        if now - last_save > 30L then
+            last_save <- now
+            this.Save()
 
     member this.Get(key: string) : ReviewData voption =
         match schedule_data.TryGetValue(key) with
