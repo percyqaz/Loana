@@ -21,8 +21,13 @@
     <Compile Include="Study\StudySessionState.fs" />
     <Compile Include="Study\StudySessionCommands.fs" />
     <Compile Include="Study\StudySession.fs" />
+    <Compile Include="Browser\Tabs\SearchTab.fs" />
+    <Compile Include="Browser\Tabs\WordlistTab.fs" />
+    <Compile Include="Browser\Tabs\WordlistGroupsTab.fs" />
+    <Compile Include="Browser\Tabs\ErrorsTab.fs" />
     <Compile Include="Browser\VocabExtensions.fs" />
     <Compile Include="Browser\WordBrowser.fs" />
+    <Compile Include="Browser\BrowserState.fs" />
     <Compile Include="Quizzes\QuizSession.fs" />
     <Compile Include="Quizzes\AnnotationTreeRenderer.fs" />
     <Compile Include="Quizzes\Shared.fs" />
