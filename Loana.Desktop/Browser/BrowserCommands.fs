@@ -14,9 +14,12 @@ type BrowserCommands =
     [<Extension>]
     static member Up(state: BrowserState) : unit =
         if state.RightFocused then
-            match state.RightTab with
+            match state.RightPopup with
             | Search tab -> tab.Up()
-            | _ -> ()
+            | Errors tab -> ()
+            | NoPopup ->
+                match state.RightTab with
+                | _ -> ()
         else
             match state.LeftTab with
             | _ -> ()
@@ -24,9 +27,12 @@ type BrowserCommands =
     [<Extension>]
     static member Down(state: BrowserState) : unit =
         if state.RightFocused then
-            match state.RightTab with
+            match state.RightPopup with
             | Search tab -> tab.Down()
-            | _ -> ()
+            | Errors tab -> ()
+            | NoPopup ->
+                match state.RightTab with
+                | _ -> ()
         else
             match state.LeftTab with
             | _ -> ()
@@ -41,9 +47,9 @@ type BrowserCommands =
     static member Search(state: BrowserState) : unit =
         state.RightFocused <- true
 
-        match state.RightTab with
+        match state.RightPopup with
         | Search tab -> tab.SearchFocused <- true
-        | _ -> state.RightTab <- Search(SearchTab.Create(state.Words))
+        | _ -> state.RightPopup <- Search(SearchTab.Create(state.Words))
 
     [<Extension>]
     static member DispatchCommand(state: BrowserState, command: string) : unit =

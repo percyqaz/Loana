@@ -15,7 +15,7 @@ type SearchTab =
 
     member this.Query = this.Buffer.ToString()
 
-    member this.UpdateSearchResults(words: WordBank) : unit =
+    member this.Refresh(words: WordBank) : unit =
         let current_item =
             if this.Position < this.Results.Count then Some this.Results.[this.Position] else None
 
@@ -47,5 +47,5 @@ type SearchTab =
                 Position = 0
             }
 
-        tab.UpdateSearchResults(words)
+        tab.Refresh(words)
         tab

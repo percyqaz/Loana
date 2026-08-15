@@ -4,23 +4,23 @@ open System
 open Loana.Data
 open Loana.Desktop.CLI
 
-type LeftTab =
+type Tab =
     | Wordlists of WordlistGroupsTab
     | Wordlist of WordlistTab
 
-type RightTab =
-    | RWordlists of WordlistGroupsTab
-    | RWordlist of WordlistTab
+type PopupTab =
     | Search of SearchTab
     | Errors of ErrorsTab
+    | NoPopup
 
 type BrowserState =
     {
         mutable Running: bool
         UIContext: UIContext
         Words: WordBank
-        mutable LeftTab: LeftTab
-        mutable RightTab: RightTab
+        mutable LeftTab: Tab
+        mutable RightTab: Tab
+        mutable RightPopup: PopupTab
         mutable RightFocused: bool
     }
 
@@ -30,12 +30,13 @@ type BrowserState =
             UIContext = ui_ctx
             Words = words
             LeftTab = Wordlists(WordlistGroupsTab.Create(words))
-            RightTab = Search(SearchTab.Create(words))
+            RightTab = Wordlists(WordlistGroupsTab.Create(words))
+            RightPopup = Search(SearchTab.Create(words))
             RightFocused = false
         }
 
     member this.AddKey(key: ConsoleKeyInfo) : unit =
-        match this.RightTab with
+        match this.RightPopup with
         | Search tab when this.RightFocused && tab.SearchFocused ->
-            if tab.Buffer.TryAddKey(key) then tab.UpdateSearchResults(this.Words) else tab.SearchFocused <- false
+            if tab.Buffer.TryAddKey(key) then tab.Refresh(this.Words) else tab.SearchFocused <- false
         | _ -> this.UIContext.Buffer.AddKey(key)

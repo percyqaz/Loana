@@ -60,7 +60,7 @@ type BrowserView(state: BrowserState) =
 
     member this.Run() : unit =
         while state.Running do
-            match state.RightTab with
+            match state.RightPopup with
             | Search tab -> this.DrawSearchTab(tab)
             | _ -> ()
 
