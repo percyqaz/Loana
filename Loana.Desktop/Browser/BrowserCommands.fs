@@ -19,9 +19,11 @@ type BrowserCommands =
             | Errors tab -> ()
             | NoPopup ->
                 match state.RightTab with
+                | Wordlist tab -> tab.Up()
                 | _ -> ()
         else
             match state.LeftTab with
+            | Wordlist tab -> tab.Up()
             | _ -> ()
 
     [<Extension>]
@@ -32,9 +34,11 @@ type BrowserCommands =
             | Errors tab -> ()
             | NoPopup ->
                 match state.RightTab with
+                | Wordlist tab -> tab.Down()
                 | _ -> ()
         else
             match state.LeftTab with
+            | Wordlist tab -> tab.Down()
             | _ -> ()
 
     [<Extension>]
