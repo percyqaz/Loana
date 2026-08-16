@@ -95,32 +95,45 @@ type BrowserCommands =
 
     [<Extension>]
     static member MoveLeft(state: BrowserState) : unit =
-        let left_target =
-            match state.LeftTab with
-            | Wordlist tab -> tab.Selected
-            | Wordlists _ -> None
+        let last_in_wordlist (selection: WordlistGroupsSelection option) =
+            match selection with
+            | Some(WordlistGroupsSelection.Wordlist(_, wordlist)) ->
+                state.Words.Entries |> Seq.where(fun x -> x.Source.WordlistName = wordlist) |> Seq.tryLast
+            | _ -> None
 
-        let right_target =
+        let left_target, lwl =
+            match state.LeftTab with
+            | Wordlist tab -> tab.Selected, false
+            | Wordlists tab ->
+                last_in_wordlist(tab.Selected), true
+
+        let right_target, rwl =
             match state.RightPopup with
-            | Search tab -> tab.Selected
+            | Search tab -> tab.Selected, false
             | Errors _
             | NoPopup ->
                 match state.RightTab with
-                | Wordlist tab -> tab.Selected
-                | Wordlists _ -> None
+                | Wordlist tab -> tab.Selected, false
+                | Wordlists tab -> last_in_wordlist(tab.Selected), true
 
         match left_target, right_target with
-        | Some left, Some right ->
+        | Some left, Some right when not(lwl && rwl)->
             state.Words.MoveAfter(right, left)
             state.Refresh()
         | _ -> state.UIContext.StatusLine <- "Not supported"
 
     [<Extension>]
     static member MoveRight(state: BrowserState) : unit =
+        let last_in_wordlist (selection: WordlistGroupsSelection option) =
+            match selection with
+            | Some(WordlistGroupsSelection.Wordlist(_, wordlist)) ->
+                state.Words.Entries |> Seq.where(fun x -> x.Source.WordlistName = wordlist) |> Seq.tryLast
+            | _ -> None
+
         let left_target =
             match state.LeftTab with
             | Wordlist tab -> tab.Selected
-            | Wordlists _ -> None
+            | Wordlists tab -> last_in_wordlist(tab.Selected)
 
         let right_target =
             match state.RightPopup with
@@ -129,7 +142,7 @@ type BrowserCommands =
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Selected
-                | Wordlists _ -> None
+                | Wordlists tab -> last_in_wordlist(tab.Selected)
 
         match left_target, right_target with
         | Some left, Some right ->
