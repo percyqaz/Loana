@@ -17,20 +17,22 @@ type BrowserState =
     {
         mutable Running: bool
         UIContext: UIContext
-        Words: WordBank
+        Data: LoanaState
         mutable LeftTab: Tab
         mutable RightTab: Tab
         mutable RightPopup: PopupTab
         mutable RightFocused: bool
     }
 
-    static member Create(words: WordBank, ui_ctx: UIContext) : BrowserState =
+    member this.Words = this.Data.Words
+
+    static member Create(data: LoanaState, ui_ctx: UIContext) : BrowserState =
         {
             Running = true
             UIContext = ui_ctx
-            Words = words
-            LeftTab = Wordlists(WordlistGroupsTab.Create(words))
-            RightTab = Wordlists(WordlistGroupsTab.Create(words))
+            Data = data
+            LeftTab = Wordlists(WordlistGroupsTab.Create(data.Words))
+            RightTab = Wordlists(WordlistGroupsTab.Create(data.Words))
             RightPopup = NoPopup
             RightFocused = false
         }

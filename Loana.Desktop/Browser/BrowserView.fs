@@ -129,3 +129,5 @@ type BrowserView(state: BrowserState) =
 
             state.AddKey(Console.ReadKey(true))
             state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.BrowserKeymap)
+
+        state.Save()

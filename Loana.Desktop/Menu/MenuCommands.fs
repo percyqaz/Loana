@@ -27,7 +27,7 @@ type MenuCommands =
 
     [<Extension>]
     static member Browse(state: MenuState) : unit =
-        BrowserView(BrowserState.Create(state.Words, state.UIContext)).Run()
+        BrowserView(BrowserState.Create(state.Data, state.UIContext)).Run()
 
     [<Extension>]
     static member NextSelection(state: MenuState) : unit =

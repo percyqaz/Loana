@@ -94,6 +94,50 @@ type BrowserCommands =
         state.Refresh()
 
     [<Extension>]
+    static member MoveLeft(state: BrowserState) : unit =
+        let left_target =
+            match state.LeftTab with
+            | Wordlist tab -> tab.Selected
+            | Wordlists _ -> None
+
+        let right_target =
+            match state.RightPopup with
+            | Search tab -> tab.Selected
+            | Errors _
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist tab -> tab.Selected
+                | Wordlists _ -> None
+
+        match left_target, right_target with
+        | Some left, Some right ->
+            state.Words.MoveAfter(right, left)
+            state.Refresh()
+        | _ -> state.UIContext.StatusLine <- "Not supported"
+
+    [<Extension>]
+    static member MoveRight(state: BrowserState) : unit =
+        let left_target =
+            match state.LeftTab with
+            | Wordlist tab -> tab.Selected
+            | Wordlists _ -> None
+
+        let right_target =
+            match state.RightPopup with
+            | Search tab -> tab.Selected
+            | Errors _
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist tab -> tab.Selected
+                | Wordlists _ -> None
+
+        match left_target, right_target with
+        | Some left, Some right ->
+            state.Words.MoveAfter(left, right)
+            state.Refresh()
+        | _ -> state.UIContext.StatusLine <- "Not supported"
+
+    [<Extension>]
     static member Refresh(state: BrowserState) : unit =
         match state.RightPopup with
         | Search tab -> tab.Refresh(state.Words)
@@ -142,6 +186,11 @@ type BrowserCommands =
         | _ -> state.RightPopup <- Search(SearchTab.Create(state.Words))
 
     [<Extension>]
+    static member Save(state: BrowserState) : unit =
+        state.Words.WriteToDirectory(state.Data.Path)
+        state.UIContext.StatusLine <- sprintf "Saved (%s)" (DateTime.Now.ToShortTimeString())
+
+    [<Extension>]
     static member DispatchCommand(state: BrowserState, command: string) : unit =
         let split =
             command.Split(' ', 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
@@ -153,12 +202,15 @@ type BrowserCommands =
         | "echo" -> state.Echo(args)
         | "up" -> state.Up()
         | "down" -> state.Down()
-        | "move_up" -> state.MoveUp()
-        | "move_down" -> state.MoveDown()
         | "left" -> state.Left()
         | "right" -> state.Right()
+        | "move_up" -> state.MoveUp()
+        | "move_down" -> state.MoveDown()
+        | "move_left" -> state.MoveLeft()
+        | "move_right" -> state.MoveRight()
         | "search" -> state.Search()
         | "select" -> state.Select()
+        | "save" -> state.Save()
         | _ -> state.UIContext.StatusLine <- sprintf "Unrecognised command '%s'" command
 
     [<Extension>]

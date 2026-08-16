@@ -47,16 +47,20 @@ type UIContext =
         keymap.AliasCommand("j", "down")
         keymap.AliasCommand("k", "up")
         keymap.AliasCommand("l", "right")
+        keymap.AliasCommand("<A-h>", "move_left")
         keymap.AliasCommand("<A-j>", "move_down")
         keymap.AliasCommand("<A-k>", "move_up")
+        keymap.AliasCommand("<A-l>", "move_right")
         keymap.AliasCommand("<Tab>", "search")
         keymap.AliasCommand("<Enter>", "select")
         keymap.Alias("<Left>", "h")
         keymap.Alias("<Down>", "j")
         keymap.Alias("<Up>", "k")
         keymap.Alias("<Right>", "l")
+        keymap.Alias("<A-Left>", "<A-h>")
         keymap.Alias("<A-Down>", "<A-j>")
         keymap.Alias("<A-Up>", "<A-k>")
+        keymap.Alias("<A-Right>", "<A-l>")
         keymap
 
     static member Create() : UIContext =
