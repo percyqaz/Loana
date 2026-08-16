@@ -144,6 +144,17 @@ type WordBank() =
 
         lines |> Seq.iteri(fun line_n line -> try_add_line(line_n, line))
 
+    member this.MoveAfter(entry_to_move: WordlistEntry, relative_to: WordlistEntry) : unit =
+        let target_index = entries.IndexOf(relative_to)
+        let source_index = entries.IndexOf(entry_to_move)
+
+        let insert_index =
+            if target_index > source_index then target_index else target_index + 1
+
+        if target_index >= 0 && entries.Remove(entry_to_move) then
+            entries.Insert(insert_index, entry_to_move)
+            entry_to_move.Source <- relative_to.Source
+
     member this.Clear() : unit =
         groups.Clear()
         entries.Clear()

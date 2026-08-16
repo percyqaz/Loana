@@ -28,7 +28,7 @@ type BrowserCommands =
         if state.RightFocused then
             match state.RightPopup with
             | Search tab -> tab.Up()
-            | Errors tab -> ()
+            | Errors _ -> ()
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Up()
@@ -43,7 +43,7 @@ type BrowserCommands =
         if state.RightFocused then
             match state.RightPopup with
             | Search tab -> tab.Down()
-            | Errors tab -> ()
+            | Errors _ -> ()
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Down()
@@ -58,6 +58,80 @@ type BrowserCommands =
 
     [<Extension>]
     static member Right(state: BrowserState) : unit = state.RightFocused <- true
+
+    [<Extension>]
+    static member MoveUp(state: BrowserState) : unit =
+        if state.RightFocused then
+            match state.RightPopup with
+            | Search tab -> tab.MoveUp(state.Words)
+            | Errors _ -> ()
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist tab -> tab.MoveUp(state.Words)
+                | Wordlists _ -> state.UIContext.StatusLine <- "Not supported"
+        else
+            match state.LeftTab with
+            | Wordlist tab -> tab.MoveUp(state.Words)
+            | Wordlists _ -> state.UIContext.StatusLine <- "Not supported"
+
+        state.Refresh()
+
+    [<Extension>]
+    static member MoveDown(state: BrowserState) : unit =
+        if state.RightFocused then
+            match state.RightPopup with
+            | Search tab -> tab.MoveDown(state.Words)
+            | Errors _ -> ()
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist tab -> tab.MoveDown(state.Words)
+                | Wordlists _ -> state.UIContext.StatusLine <- "Not supported"
+        else
+            match state.LeftTab with
+            | Wordlist tab -> tab.MoveDown(state.Words)
+            | Wordlists _ -> state.UIContext.StatusLine <- "Not supported"
+
+        state.Refresh()
+
+    [<Extension>]
+    static member Refresh(state: BrowserState) : unit =
+        match state.RightPopup with
+        | Search tab -> tab.Refresh(state.Words)
+        | Errors _ -> ()
+        | NoPopup -> ()
+
+        match state.RightTab with
+        | Wordlists tab -> tab.Refresh(state.Words)
+        | Wordlist tab -> tab.Refresh(state.Words)
+
+        match state.LeftTab with
+        | Wordlists tab -> tab.Refresh(state.Words)
+        | Wordlist tab -> tab.Refresh(state.Words)
+
+    [<Extension>]
+    static member Select(state: BrowserState) : unit =
+        if state.RightFocused then
+            match state.RightPopup with
+            | Search _ -> state.UIContext.StatusLine <- "Not supported"
+            | Errors _ -> state.UIContext.StatusLine <- "Not supported"
+            | NoPopup ->
+                match state.RightTab with
+                | Wordlist _ -> state.UIContext.StatusLine <- "Not supported"
+                | Wordlists tab ->
+                    match tab.Selected with
+                    | Some(WordlistGroupsSelection.Wordlist(_, wordlist)) ->
+                        state.RightTab <- Wordlist(WordlistTab.Create(wordlist, state.Words))
+                    | _ -> ()
+        else
+            match state.LeftTab with
+            | Wordlist _ -> state.UIContext.StatusLine <- "Not supported"
+            | Wordlists tab ->
+                match tab.Selected with
+                | Some(WordlistGroupsSelection.Wordlist(_, wordlist)) ->
+                    state.LeftTab <- Wordlist(WordlistTab.Create(wordlist, state.Words))
+                | _ -> ()
+
+        state.Refresh()
 
     [<Extension>]
     static member Search(state: BrowserState) : unit =
@@ -79,9 +153,12 @@ type BrowserCommands =
         | "echo" -> state.Echo(args)
         | "up" -> state.Up()
         | "down" -> state.Down()
+        | "move_up" -> state.MoveUp()
+        | "move_down" -> state.MoveDown()
         | "left" -> state.Left()
         | "right" -> state.Right()
         | "search" -> state.Search()
+        | "select" -> state.Select()
         | _ -> state.UIContext.StatusLine <- sprintf "Unrecognised command '%s'" command
 
     [<Extension>]
