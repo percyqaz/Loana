@@ -13,3 +13,6 @@ type WordlistTabCommands =
     static member Down(tab: WordlistTab) : unit =
         if tab.Items.Count > 0 then
             tab.Position <- if tab.Position + 1 = tab.Items.Count then 0 else tab.Position + 1
+
+    [<Extension>]
+    static member MoveDown(tab: WordlistTab) : unit = ()

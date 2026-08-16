@@ -15,9 +15,11 @@ type SearchTab =
 
     member this.Query = this.Buffer.ToString()
 
+    member this.Selected: WordlistEntry option =
+        if this.Position < this.Items.Count then Some this.Items.[this.Position] else None
+
     member this.Refresh(words: WordBank) : unit =
-        let current_item =
-            if this.Position < this.Items.Count then Some this.Items.[this.Position] else None
+        let current_selected = this.Selected
 
         this.Items <-
             words.Entries
@@ -34,7 +36,7 @@ type SearchTab =
             |> ResizeArray
 
         this.Position <-
-            match current_item with
+            match current_selected with
             | Some i -> Seq.tryFindIndex ((=) i) this.Items |> Option.defaultValue 0
             | None -> 0
 

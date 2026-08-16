@@ -26,11 +26,11 @@ type WordlistGroupsTab =
         mutable Position: int
     }
 
-    member this.Selection = this.Items.[this.Position]
+    member this.Selected: WordlistGroupsSelection option =
+        if this.Position < this.Items.Count then Some this.Items.[this.Position] else None
 
     member this.Refresh(words: WordBank) : unit =
-        let current_item =
-            if this.Position < this.Items.Count then Some this.Selection else None
+        let current_selected = this.Selected
 
         let available =
             seq {
@@ -44,7 +44,7 @@ type WordlistGroupsTab =
         this.Items <- ResizeArray(available)
 
         this.Position <-
-            match current_item with
+            match current_selected with
             | Some item ->
                 match Seq.tryFindIndex ((=) item) this.Items with
                 | None -> 0

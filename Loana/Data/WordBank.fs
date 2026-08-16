@@ -19,7 +19,7 @@ type WordlistItem =
 [<Struct>]
 type Source = { Group: string; WordlistName: string }
 
-type WordlistEntry = { Source: Source; Item: WordlistItem }
+type WordlistEntry = { mutable Source: Source; Item: WordlistItem }
 type WordlistGroup = { Name: string; WordlistNames: ResizeArray<string> }
 type DuplicateEntry = { WordlistName: string; LineNumber: int; Item: WordlistItem }
 
@@ -67,10 +67,10 @@ type WordBank() =
         check_language_duplicate("German", deduplicate_de, vocab.DeutschAsciiIdentifier)
         check_language_duplicate("English", deduplicate_en, vocab.EnglishAsciiIdentifier)
 
-    member private this.AddVocab(source: Source, line_n: int, line: string) : unit =
+    member private this.AddVocab(source: Source, line_n: int, line: string) : WordlistEntry =
         let t = TaggedVocab.FromString(line)
 
-        let inline add_verb () : unit =
+        let inline add_verb () : WordlistEntry =
             let verb = Verb.FromTaggedVocab(t)
 
             match verb.PastParticiple with
@@ -78,9 +78,9 @@ type WordBank() =
             | _ -> ()
 
             this.CheckDuplicate(source, line_n, t.Vocab, Verb verb)
-            entries.Add({ Item = Verb verb; Source = source })
+            { Item = Verb verb; Source = source }
 
-        let inline add_noun () : unit =
+        let inline add_noun () : WordlistEntry =
             let noun = Noun.FromTaggedVocab(t)
 
             match noun.Plural with
@@ -88,27 +88,35 @@ type WordBank() =
             | _ -> ()
 
             this.CheckDuplicate(source, line_n, t.Vocab, Noun noun)
-            entries.Add({ Item = Noun noun; Source = source })
+            { Item = Noun noun; Source = source }
 
-        let inline add_vocab () : unit =
+        let inline add_vocab () : WordlistEntry =
             let vocab = t.Vocab
             this.CheckDuplicate(source, line_n, vocab, Vocab vocab)
-            entries.Add({ Item = Vocab vocab; Source = source })
+            { Item = Vocab vocab; Source = source }
 
-        if t.Vocab.LooksLikeAVerb then add_verb()
-        elif t.Vocab.LooksLikeANoun && t.Tags <> [] then add_noun()
-        else add_vocab()
+        let entry =
+            if t.Vocab.LooksLikeAVerb then add_verb()
+            elif t.Vocab.LooksLikeANoun && t.Tags <> [] then add_noun()
+            else add_vocab()
 
-    member private this.TryAddLine(source: Source, line_n: int, line: string) : Result<unit, string> =
+        entries.Add(entry)
+        entry
+
+    member private this.TryAddLine(source: Source, line_n: int, line: string) : Result<WordlistEntry, WordlistError> =
         try
-            let is_comment = line = "" || line.StartsWith("#")
-
-            if not(is_comment) then
-                this.AddVocab(source, line_n, line)
-
-            Ok()
+            Ok(this.AddVocab(source, line_n, line))
         with err ->
-            Error err.Message
+            let error =
+                {
+                    WordlistName = source.WordlistName
+                    LineNumber = line_n
+                    Line = line
+                    Reason = err.Message
+                }
+
+            errors.Add(error)
+            Error(error)
 
     member this.AddWordList(source: Source, lines: string array) : unit =
 
@@ -123,38 +131,18 @@ type WordBank() =
         let inline ensure_wordlist_added_to_group () : unit =
             let group = get_or_create_group()
 
-            if group.WordlistNames.Contains(source.WordlistName) then
-                failwithf "duplicate word list '%s'" source.WordlistName
+            if not(group.WordlistNames.Contains(source.WordlistName)) then
+                group.WordlistNames.Add(source.WordlistName)
 
-            group.WordlistNames.Add(source.WordlistName)
+        let inline try_add_line (line_n: int, line: string) : unit =
+            let is_comment = line.Trim() = ""
 
-        let inline try_add_line (line_n: int, line: string) : Result<unit, string> =
-            try
-                let is_comment = line = "" || line.StartsWith('#')
-
-                if not(is_comment) then
-                    this.AddVocab(source, line_n, line)
-
-                Ok()
-            with err ->
-                Error(err.Message)
+            if not(is_comment) then
+                this.TryAddLine(source, line_n, line) |> ignore
 
         ensure_wordlist_added_to_group()
 
-        lines
-        |> Seq.iteri(fun line_n line ->
-            match try_add_line(line_n, line) with
-            | Ok() -> ()
-            | Error reason ->
-                errors.Add(
-                    {
-                        WordlistName = source.WordlistName
-                        LineNumber = line_n
-                        Line = line
-                        Reason = reason
-                    }
-                )
-        )
+        lines |> Seq.iteri(fun line_n line -> try_add_line(line_n, line))
 
     member this.Clear() : unit =
         groups.Clear()
@@ -162,6 +150,89 @@ type WordBank() =
         errors.Clear()
         deduplicate_de.Clear()
         deduplicate_en.Clear()
+
+    member this.ReadFromStream(stream: Stream) : unit =
+
+        use br = new BinaryReader(stream, Text.Encoding.UTF8)
+
+        let inline read_wordlist (group_name: string) : string =
+            let wordlist_name = br.ReadString()
+            let entry_count = br.ReadInt32()
+
+            for line_n = 0 to entry_count - 1 do
+                let line = br.ReadString()
+
+                this.TryAddLine({ Group = group_name; WordlistName = wordlist_name }, line_n, line) |> ignore
+
+            wordlist_name
+
+        let inline read_group () : WordlistGroup =
+            let group_name = br.ReadString()
+            let group_list_count = br.ReadInt32()
+            let group_lists = ResizeArray<string>(group_list_count)
+
+            for _ = 1 to group_list_count do
+                let wordlist_name = read_wordlist(group_name)
+
+                if group_lists.Contains(wordlist_name) then
+                    failwithf "duplicate word list '%s'" group_name
+
+                group_lists.Add(wordlist_name)
+
+            { Name = group_name; WordlistNames = group_lists }
+
+        if entries.Count > 0 && OperatingSystem.IsWindows() then
+            failwith "This will OVERWRITE your current entries! Guard rail for now"
+
+        this.Clear()
+        let group_count = br.ReadInt32()
+
+        for _ = 1 to group_count do
+            let next_group = read_group()
+            groups.Add(next_group)
+
+    member this.WriteToStream(stream: Stream) : unit =
+        use bw = new BinaryWriter(stream, Text.Encoding.UTF8, true)
+
+        let wordlist_to_entries =
+            this.Entries
+            |> Seq.groupBy _.Source.WordlistName
+            |> Seq.map(fun (wordlist_name, entries) -> (wordlist_name, Array.ofSeq entries))
+            |> Map.ofSeq
+
+        let wordlist_to_errors =
+            this.Errors
+            |> Seq.groupBy _.WordlistName
+            |> Seq.map(fun (wordlist_name, errors) -> (wordlist_name, Array.ofSeq errors))
+            |> Map.ofSeq
+
+        let inline write_wordlist (wordlist_name: string) : unit =
+            let entries = wordlist_to_entries.[wordlist_name]
+
+            let errors =
+                Map.tryFind wordlist_name wordlist_to_errors |> Option.defaultWith(fun () -> [||])
+
+            bw.Write(wordlist_name)
+            bw.Write(entries.Length + errors.Length)
+
+            for entry in entries do
+                bw.Write(entry.Item.ToString())
+
+            for error in errors do
+                bw.Write(error.Line)
+
+
+        let inline write_group (group: WordlistGroup) : unit =
+            bw.Write(group.Name)
+            bw.Write(group.WordlistNames.Count)
+
+            for wordlist_name in group.WordlistNames do
+                write_wordlist(wordlist_name)
+
+        bw.Write(groups.Count)
+
+        for group in this.Groups do
+            write_group(group)
 
     member this.ReadFromDirectory(path: string) : unit =
 
@@ -195,16 +266,6 @@ type WordBank() =
                 match current_group with
                 | Some group -> load_wordlist_file({ Group = group; WordlistName = wordlist_name })
                 | None -> meta_errors.Add(sprintf "wordlist '%s' is not part of a group" wordlist_name)
-
-    static member CreateFromDirectory(path: string) : WordBank =
-        let words = WordBank()
-        words.ReadFromDirectory(path)
-        words
-
-    member this.Entries: IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
-    member this.Groups: IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
-    member this.Errors: IReadOnlyList<WordlistError> = errors.AsReadOnly()
-    member this.MetaErrors: IReadOnlyList<string> = meta_errors.AsReadOnly()
 
     member this.WriteToDirectory(path: string) : unit =
 
@@ -242,92 +303,12 @@ type WordBank() =
         for wordlist_name, entries in this.Entries |> Seq.groupBy _.Source.WordlistName do
             write_wordlist(wordlist_name, entries)
 
-    member this.WriteToStream(stream: Stream) : unit =
-        use bw = new BinaryWriter(stream, Text.Encoding.UTF8, true)
+    static member CreateFromDirectory(path: string) : WordBank =
+        let words = WordBank()
+        words.ReadFromDirectory(path)
+        words
 
-        let wordlist_to_entries =
-            this.Entries
-            |> Seq.groupBy _.Source.WordlistName
-            |> Seq.map(fun (wordlist_name, entries) -> (wordlist_name, Array.ofSeq entries))
-            |> Map.ofSeq
-
-        let wordlist_to_errors =
-            this.Errors
-            |> Seq.groupBy _.WordlistName
-            |> Seq.map(fun (wordlist_name, errors) -> (wordlist_name, Array.ofSeq errors))
-            |> Map.ofSeq
-
-        let inline write_wordlist (wordlist_name: string) : unit =
-            let entries = wordlist_to_entries.[wordlist_name]
-            let errors = wordlist_to_errors.[wordlist_name]
-            bw.Write(wordlist_name)
-            bw.Write(entries.Length + errors.Length)
-
-            for entry in entries do
-                bw.Write(entry.Item.ToString())
-
-            for error in errors do
-                bw.Write(error.Line)
-
-
-        let inline write_group (group: WordlistGroup) : unit =
-            bw.Write(group.Name)
-            bw.Write(group.WordlistNames.Count)
-
-            for wordlist_name in group.WordlistNames do
-                write_wordlist(wordlist_name)
-
-        bw.Write(groups.Count)
-
-        for group in this.Groups do
-            write_group(group)
-
-    member this.ReadFromStream(stream: Stream) : unit =
-
-        use br = new BinaryReader(stream, Text.Encoding.UTF8)
-
-        let inline read_wordlist (group_name: string) : string =
-            let wordlist_name = br.ReadString()
-            let entry_count = br.ReadInt32()
-
-            for line_n = 0 to entry_count - 1 do
-                let line = br.ReadString()
-
-                match this.TryAddLine({ Group = group_name; WordlistName = wordlist_name }, line_n, line) with
-                | Ok() -> ()
-                | Error reason ->
-                    errors.Add(
-                        {
-                            WordlistName = wordlist_name
-                            LineNumber = line_n
-                            Line = line
-                            Reason = reason
-                        }
-                    )
-
-            wordlist_name
-
-        let inline read_group () : WordlistGroup =
-            let group_name = br.ReadString()
-            let group_list_count = br.ReadInt32()
-            let group_lists = ResizeArray<string>(group_list_count)
-
-            for _ = 1 to group_list_count do
-                let wordlist_name = read_wordlist(group_name)
-
-                if group_lists.Contains(wordlist_name) then
-                    failwithf "duplicate word list '%s'" group_name
-
-                group_lists.Add(wordlist_name)
-
-            { Name = group_name; WordlistNames = group_lists }
-
-        if entries.Count > 0 && OperatingSystem.IsWindows() then
-            failwith "This will OVERWRITE your current entries! Guard rail for now"
-
-        this.Clear()
-        let group_count = br.ReadInt32()
-
-        for _ = 1 to group_count do
-            let next_group = read_group()
-            groups.Add(next_group)
+    member this.Entries: IReadOnlyList<WordlistEntry> = entries.AsReadOnly()
+    member this.Groups: IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
+    member this.Errors: IReadOnlyList<WordlistError> = errors.AsReadOnly()
+    member this.MetaErrors: IReadOnlyList<string> = meta_errors.AsReadOnly()
