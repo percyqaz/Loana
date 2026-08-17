@@ -104,8 +104,7 @@ type BrowserCommands =
         let left_target, lwl =
             match state.LeftTab with
             | Wordlist tab -> tab.Selected, false
-            | Wordlists tab ->
-                last_in_wordlist(tab.Selected), true
+            | Wordlists tab -> last_in_wordlist(tab.Selected), true
 
         let right_target, rwl =
             match state.RightPopup with
@@ -117,7 +116,7 @@ type BrowserCommands =
                 | Wordlists tab -> last_in_wordlist(tab.Selected), true
 
         match left_target, right_target with
-        | Some left, Some right when not(lwl && rwl)->
+        | Some left, Some right when not(lwl && rwl) ->
             state.Words.MoveAfter(right, left)
             state.Refresh()
         | _ -> state.UIContext.StatusLine <- "Not supported"

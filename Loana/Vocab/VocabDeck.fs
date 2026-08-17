@@ -54,33 +54,24 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member private this.AvailableCards(noun: Noun) : Card seq =
         seq {
-            let tier_1 = VocabCard.Tier1RecogniseDE(noun.Translation)
-            let tier_2 = VocabCard.Tier2RecallDE(noun.Translation)
-            let tier_3 = VocabCard.Tier3RecogniseArticleDE(noun)
-            let tier_4 = VocabCard.Tier4RecallArticleDE(noun)
+            let tier_1 = VocabCard.Tier1RecogniseArticleDE(noun)
+            let tier_2 = VocabCard.Tier2RecallArticleDE(noun)
 
-            if this.LevelOf(tier_1) < 2 then
-                yield tier_1
-            elif this.LevelOf(tier_2) < 4 then
-                yield tier_1
+            yield tier_1
+
+            if this.LevelOf(tier_1) >= 2 then
                 yield tier_2
-            elif this.LevelOf(tier_3) < 2 then
-                yield tier_2
-                yield tier_3
-            else
-                yield tier_3
-                yield tier_4
 
             match noun.PluralForm with
             | Some p ->
-                let tier_5 = VocabCard.Tier5RecognisePluralDE(p)
-                let tier_6 = VocabCard.Tier6RecallPluralDE(p)
+                let tier_3 = VocabCard.Tier3RecognisePluralDE(p)
+                let tier_4 = VocabCard.Tier4RecallPluralDE(p)
 
-                if this.LevelOf(tier_4) >= 2 then
-                    yield tier_5
+                if this.LevelOf(tier_2) >= 4 then
+                    yield tier_3
 
-                if this.LevelOf(tier_5) >= 2 then
-                    yield tier_6
+                if this.LevelOf(tier_3) >= 2 then
+                    yield tier_4
             | None -> ()
         }
 
@@ -122,15 +113,13 @@ type VocabDeck(scheduler: ReviewSchedule, words: WordBank) =
 
     member private this.PossibleCards(noun: Noun) : Card seq =
         seq {
-            yield VocabCard.Tier1RecogniseDE(noun.Translation)
-            yield VocabCard.Tier2RecallDE(noun.Translation)
-            yield VocabCard.Tier3RecogniseArticleDE(noun)
-            yield VocabCard.Tier4RecallArticleDE(noun)
+            yield VocabCard.Tier1RecogniseArticleDE(noun)
+            yield VocabCard.Tier2RecallArticleDE(noun)
 
             match noun.PluralForm with
             | Some plural ->
-                yield VocabCard.Tier5RecognisePluralDE(plural)
-                yield VocabCard.Tier6RecallPluralDE(plural)
+                yield VocabCard.Tier3RecognisePluralDE(plural)
+                yield VocabCard.Tier4RecallPluralDE(plural)
             | None -> ()
         }
 
