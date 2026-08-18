@@ -101,23 +101,27 @@ type BrowserCommands =
                 state.Words.Entries |> Seq.where(fun x -> x.Source.WordlistName = wordlist) |> Seq.tryLast
             | _ -> None
 
-        let left_target, lwl =
+        let left_target, left_type =
             match state.LeftTab with
-            | Wordlist tab -> tab.Selected, false
-            | Wordlists tab -> last_in_wordlist(tab.Selected), true
+            | Wordlist tab -> tab.Selected, "Wordlist"
+            | Wordlists tab -> last_in_wordlist(tab.Selected), "Wordlists"
 
-        let right_target, rwl =
+        let right_target, right_type =
             match state.RightPopup with
-            | Search tab -> tab.Selected, false
+            | Search tab -> tab.Selected, "Search"
             | Errors _
             | NoPopup ->
                 match state.RightTab with
-                | Wordlist tab -> tab.Selected, false
-                | Wordlists tab -> last_in_wordlist(tab.Selected), true
+                | Wordlist tab -> tab.Selected, "Wordlist"
+                | Wordlists tab -> last_in_wordlist(tab.Selected), "Wordlists"
 
         match left_target, right_target with
-        | Some left, Some right when not(lwl && rwl) ->
+        | Some left, Some right when not(left_type = "Wordlists" && right_type = "Wordlists") ->
             state.Words.MoveAfter(right, left)
+
+            if state.RightFocused && right_type = "Wordlist" then
+                state.Up()
+
             state.Refresh()
         | _ -> state.UIContext.StatusLine <- "Not supported"
 
@@ -129,23 +133,27 @@ type BrowserCommands =
                 state.Words.Entries |> Seq.where(fun x -> x.Source.WordlistName = wordlist) |> Seq.tryLast
             | _ -> None
 
-        let left_target =
+        let left_target, left_type =
             match state.LeftTab with
-            | Wordlist tab -> tab.Selected
-            | Wordlists tab -> last_in_wordlist(tab.Selected)
+            | Wordlist tab -> tab.Selected, "Wordlist"
+            | Wordlists tab -> last_in_wordlist(tab.Selected), "Wordlists"
 
-        let right_target =
+        let right_target, right_type =
             match state.RightPopup with
-            | Search tab -> tab.Selected
+            | Search tab -> tab.Selected, "Search"
             | Errors _
             | NoPopup ->
                 match state.RightTab with
-                | Wordlist tab -> tab.Selected
-                | Wordlists tab -> last_in_wordlist(tab.Selected)
+                | Wordlist tab -> tab.Selected, "Wordlist"
+                | Wordlists tab -> last_in_wordlist(tab.Selected), "Wordlists"
 
         match left_target, right_target with
-        | Some left, Some right ->
+        | Some left, Some right when not(left_type = "Wordlists" && right_type = "Wordlists") ->
             state.Words.MoveAfter(left, right)
+
+            if not state.RightFocused && left_type = "Wordlist" then
+                state.Up()
+
             state.Refresh()
         | _ -> state.UIContext.StatusLine <- "Not supported"
 
