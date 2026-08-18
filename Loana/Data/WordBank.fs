@@ -323,3 +323,6 @@ type WordBank() =
     member this.Groups: IReadOnlyList<WordlistGroup> = groups.AsReadOnly()
     member this.Errors: IReadOnlyList<WordlistError> = errors.AsReadOnly()
     member this.MetaErrors: IReadOnlyList<string> = meta_errors.AsReadOnly()
+
+    member this.HasErrors() : bool =
+        this.Errors.Count > 0 || this.MetaErrors.Count > 0

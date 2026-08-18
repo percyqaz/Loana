@@ -48,11 +48,12 @@ Console.WriteLine(
     MenuRender.Pad("Loana has loaded!").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
 )
 
-let mysterious_flame = MysteriousFlame()
+if not(state.Words.HasErrors()) then
+    let mysterious_flame = MysteriousFlame()
 
-while not Console.KeyAvailable do
-    System.Threading.Thread.Sleep(20)
-    mysterious_flame.Draw()
+    while not Console.KeyAvailable do
+        System.Threading.Thread.Sleep(20)
+        mysterious_flame.Draw()
 
 Console.ReadKey(true) |> ignore
 
