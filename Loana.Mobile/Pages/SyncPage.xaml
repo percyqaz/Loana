@@ -11,11 +11,12 @@
              x:Name="OverviewPage"
              Title="Sync">
     <VerticalStackLayout>
-        <Grid RowDefinitions="*,*,*,*" RowSpacing="5">
+        <Grid RowDefinitions="*,*,*,*,*" RowSpacing="5">
             <Entry Text="{Binding Address}" Grid.Row="0" HeightRequest="20" />
             <Button Text="Sync (Progress)" Command="{Binding SyncProgressCommand}" Grid.Row="1" />
             <Button Text="Sync (Wordlists)" Command="{Binding DownloadWordsCommand}" Grid.Row="2" />
-            <Label Text="{Binding Status}" Grid.Row="3"/>
+            <Button Text="Reset progress" Command="{Binding ResetCommand}" Grid.Row="3" />
+            <Label Text="{Binding Status}" Grid.Row="4" />
         </Grid>
     </VerticalStackLayout>
 </ContentPage>

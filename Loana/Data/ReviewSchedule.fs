@@ -280,6 +280,8 @@ type ReviewSchedule(path: string) =
         let now = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         this.Schedule(key, f (this.Get(key).Value) now, now)
 
+    member this.Clear() : unit = schedule_data.Clear()
+
     member this.Data = schedule_data.AsReadOnly()
 
     member this.SyncWith(other_data: IReadOnlyDictionary<string, ReviewData>) : int =

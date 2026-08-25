@@ -3,7 +3,7 @@ namespace Loana.Mobile.PageModels;
 public partial class SyncPageModel(LoanaRepository _loanaRepository) : ObservableObject
 {
     [ObservableProperty]
-    private string _address = "192.168.0.69";
+    private string _address = "192.168.0.112";
 
     [ObservableProperty]
     private string _status = "";
@@ -24,5 +24,12 @@ public partial class SyncPageModel(LoanaRepository _loanaRepository) : Observabl
         Status = "";
         _loanaRepository.DownloadWords(Address);
         Status = "Downloaded wordlists!";
+    }
+
+    [RelayCommand]
+    private async Task Reset()
+    {
+        _loanaRepository.Scheduler.Clear();
+        Status = "Reset data!";
     }
 }
