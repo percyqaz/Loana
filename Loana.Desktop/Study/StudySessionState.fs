@@ -27,16 +27,17 @@ type StudySessionState =
         mutable OkCount: int
         mutable GoodCount: int
     }
+    
+    static member val LogLength = 16
 
     member this.LogMessage(message: string) : unit =
-        let LOG_SIZE = 16
 
         let message =
             message.PadRight(MenuRender.Width).BackColor(Color.FromArgb(0xFF_202020))
 
         this.Log.Add(message)
 
-        if this.Log.Count > LOG_SIZE then
+        if this.Log.Count > StudySessionState.LogLength then
             this.Log.RemoveAt(0)
 
     member this.LogMessage(result: ScheduleResult) : unit =

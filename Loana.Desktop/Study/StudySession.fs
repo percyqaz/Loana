@@ -17,16 +17,12 @@ type StudySessionResult =
 
 type StudySession(state: StudySessionState) =
 
-    [<Literal>]
-    let CARD_AREA = 20
-
     let draw_card (side: CardSide) : unit =
 
-        let BG_COLOR = 0xFF_101010
         let edges_width = MenuRender.Width - 12
 
         let inline empty () : unit =
-            MenuRender.Write(("".ClearRestOfLine() + "\n").BackColor(BG_COLOR))
+            MenuRender.Write("".ClearRestOfLine() + "\n")
 
         let inline add_margins (line: string) : string =
             let missing_space = MenuRender.Width - edges_width
@@ -35,12 +31,12 @@ type StudySession(state: StudySessionState) =
                 line
             else
 
-            (String.replicate (missing_space / 2) " ").BackColor(BG_COLOR)
+            (String.replicate (missing_space / 2) " ")
             + line
-            + (String.replicate ((missing_space + 1) / 2) " ").BackColor(BG_COLOR)
+            + (String.replicate ((missing_space + 1) / 2) " ")
 
         let inline line (line: string) : unit =
-            MenuRender.Write(add_margins(line).ClearRestOfLine() + "\n".BackColor(BG_COLOR))
+            MenuRender.Write(add_margins(line).ClearRestOfLine() + "\n")
 
         empty()
         empty()
@@ -50,7 +46,7 @@ type StudySession(state: StudySessionState) =
             line(l)
             lines_displayed <- lines_displayed + 1
 
-        for _ = lines_displayed to CARD_AREA do
+        for _ = lines_displayed to Console.BufferHeight - StudySessionState.LogLength - 4 do
             empty()
 
     let draw_log () =

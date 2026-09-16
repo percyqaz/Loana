@@ -72,7 +72,7 @@ type MenuCommands =
                 let result =
                     StudySession(StudySessionState.Review(cards, state.Scheduler, state.UIContext)).Run()
 
-                Console.WriteLine(
+                Console.Write(
                     MenuRender
                         .Pad(
                             sprintf
@@ -110,7 +110,7 @@ type MenuCommands =
 
                 ignore(session.Run())
 
-                Console.WriteLine(
+                Console.Write(
                     MenuRender.Pad("Session ended.").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
                 )
 
@@ -131,7 +131,7 @@ type MenuCommands =
                 let result =
                     StudySession(StudySessionState.Review(cards, state.Scheduler, state.UIContext)).Run()
 
-                Console.WriteLine(
+                Console.Write(
                     MenuRender
                         .Pad(
                             sprintf
@@ -165,7 +165,7 @@ type MenuCommands =
                 let result =
                     StudySession(StudySessionState.Learn(cards, state.Scheduler, state.UIContext)).Run()
 
-                Console.WriteLine(
+                Console.Write(
                     MenuRender
                         .Pad(
                             sprintf
