@@ -25,7 +25,9 @@ type VerbFile(path: string) =
             | None ->
                 if not current_inflections.IsEmpty then
                     failwith "Inflections above first verb!"
-            | Some v -> entries.Add(v, current_inflections)
+            | Some v ->
+                entries.Add(v, current_inflections)
+                current_inflections <- Map.empty
 
         let handle_line (line: string) =
             let is_inflection = line.[0] = '|'
