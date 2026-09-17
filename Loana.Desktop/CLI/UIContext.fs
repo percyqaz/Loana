@@ -24,7 +24,6 @@ type UIContext =
         keymap.AliasCommand("f", "filter")
         keymap.AliasCommand("-", "batch_down")
         keymap.AliasCommand("=", "batch_up")
-        keymap.AliasCommand("s", "sync")
         keymap.AliasCommand("b", "browse")
         keymap.Alias("<Down>", "j")
         keymap.Alias("<Up>", "k")
