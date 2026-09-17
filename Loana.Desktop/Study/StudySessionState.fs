@@ -27,7 +27,7 @@ type StudySessionState =
         mutable OkCount: int
         mutable GoodCount: int
     }
-    
+
     static member val LogLength = 16
 
     member this.LogMessage(message: string) : unit =

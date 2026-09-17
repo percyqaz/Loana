@@ -31,9 +31,7 @@ type StudySession(state: StudySessionState) =
                 line
             else
 
-            (String.replicate (missing_space / 2) " ")
-            + line
-            + (String.replicate ((missing_space + 1) / 2) " ")
+            (String.replicate (missing_space / 2) " ") + line + (String.replicate ((missing_space + 1) / 2) " ")
 
         let inline line (line: string) : unit =
             MenuRender.Write(add_margins(line).ClearRestOfLine() + "\n")

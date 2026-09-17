@@ -1,4 +1,4 @@
-﻿namespace Loana.Desktop.CLI
+namespace Loana.Desktop.CLI
 
 open System
 
@@ -12,7 +12,10 @@ type TextBuffer() =
         let inline is_displayable () : bool =
             input.KeyChar <> '\u0000'
             && input.Modifiers &&& ConsoleModifiers.Alt <> ConsoleModifiers.Alt
-            && Char.IsAscii(input.KeyChar)
+            && (Char.IsAscii(input.KeyChar)
+                || Char.ToLowerInvariant(input.KeyChar) = 'ä'
+                || Char.ToLowerInvariant(input.KeyChar) = 'ö'
+                || Char.ToLowerInvariant(input.KeyChar) = 'ü')
             && not(Char.IsWhiteSpace(input.KeyChar))
 
         let inline delete_last_key () : unit =
