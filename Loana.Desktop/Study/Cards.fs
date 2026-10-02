@@ -45,7 +45,22 @@ type Cards =
         line
 
     static member GermanVocab(vocab: Vocab, text_color: Color) : CardLine =
-        CardLine.Append(vocab.Deutsch, _.ForeColor(text_color))
+        let words = vocab.Deutsch.Split(' ')
+        let mutable line = CardLine.Empty
+
+        for word in words do
+            let inline case_highlight (case: Case) : unit =
+                line <- line.Append(word.Substring(0, word.Length - 2), _.ForeColor(case.Color))
+
+            if word.EndsWith("+A") then case_highlight(Case.Accusative)
+            elif word.EndsWith("+D") then case_highlight(Case.Dative)
+            elif word.EndsWith("+G") then case_highlight(Case.Genitive)
+            elif word.EndsWith("+N") then case_highlight(Case.Nominative)
+            else line <- line.Append(word, _.ForeColor(text_color))
+
+            line <- line.Append(" ", id)
+
+        line
 
     static member EnglishNoun(noun: Noun, text_color: Color, note_color: Color) : CardLine =
         let mutable line = CardLine.Empty

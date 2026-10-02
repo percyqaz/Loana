@@ -57,18 +57,27 @@ module VerbDownloader =
 
     let fetch_verb_inflections (verb: Verb) : (VerbInflection * string) seq =
 
-        let verb_base = verb.Infinitive.Deutsch
+        let verb_base =
+            verb.Infinitive.Deutsch.Replace("+D", "").Replace("+A", "").Replace("+N", "").Replace("+G", "")
 
-        let has_personal_pronoun, verb_base =
+        let has_reflexive_pronoun, verb_base =
             if verb_base.StartsWith("sich ") then true, verb_base.Substring(5) else false, verb_base
-        // todo: other words lying around before verb
+
+        let verb_objects, verb_base =
+            let words =
+                verb_base.Split(' ', StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
+
+            if words.Length > 1 then
+                Array.truncate (words.Length - 1) words |> String.concat " " |> Some, words.[words.Length - 1]
+            else
+                None, words.[words.Length - 1]
+
         let separated_particle, verb_base =
             if verb_base.Contains(".") then
                 let s = verb_base.Split(".", 2)
                 Some s.[0], s.[1]
             else
                 None, verb_base
-        // todo?: prepositions after
 
         Console.WriteLine("Downloading HTML ...")
         let de_html = download_de_verb_page(AsciiIdentifier.from_deutsch verb_base)
@@ -88,10 +97,15 @@ module VerbDownloader =
                 | SecondPlural -> "ihr"
 
             pronoun_to_inflection.[pronoun]
-            + (if has_personal_pronoun then
+            + (if has_reflexive_pronoun then
                    " " + AnnotationTree.flatten_tree(Deutsch.reflexive_pronoun person verb.Dative)
                else
                    "")
+            + (
+                match verb_objects with
+                | Some objects -> " " + objects
+                | None -> ""
+            )
             + (
                 match separated_particle with
                 | Some x -> " " + x
@@ -109,68 +123,3 @@ module VerbDownloader =
                         yield VerbInflection.SimplePast(InflectionPerson.FromPerson(person)), de de_past_tense person
                 | VerbTense.Imperative -> failwith "nyi"
         }
-
-// let extend_verb_legacy(verb: Verb) : Verb =
-//     Console.WriteLine("Downloading HTML ...")
-//
-//     let verb_base = verb.Infinitive.Deutsch
-//     let sich, verb_base =
-//         if verb_base.StartsWith("sich ") then
-//             true, verb_base.Substring(5)
-//         else
-//             false, verb_base
-//     // todo: other words lying around before verb
-//     let separation, verb_base =
-//         if verb_base.Contains(".") then
-//             let s = verb_base.Split(".", 2)
-//             Some s.[0], s.[1]
-//         else
-//             None, verb_base
-//     // todo?: prepositions after
-//
-//     let en_without_to = verb.Infinitive.English.Text.Substring(3)
-//     let de_html = download_de_verb_page(Key.of_german verb_base)
-//     let en_html = download_en_verb_page(en_without_to)
-//     Console.WriteLine("Parsing HTML ...")
-//     let de_present_tense = find_conjugation_list "Indikativ Präsens" de_html
-//     let de_past_tense = find_conjugation_list "Indikativ Präteritum" de_html
-//     let en_present_tense = find_conjugation_list "Indicative Present" en_html
-//     let en_past_tense = find_conjugation_list "Indicative Preterite" en_html
-//     let de_past_participle = find_participle "Partizip Perfekt" de_html
-//     let de_past_participle_aux = find_participle "Infinitiv Perfekt" de_html
-//     let en_past_participle = find_participle "Participle Past" en_html
-//     let en_infinitive = (find_participle "Infinitive" en_html).Replace("to ", "").Trim()
-//
-//     let de (m: Map<string, string>) (person: Person) =
-//         let key =
-//             match TensePerson.OfPerson person with
-//             | FirstSingular -> "ich"
-//             | FirstThirdPluralFormal -> "Sie"
-//             | ThirdSingular -> "er/sie/es"
-//             | SecondSingular -> "du"
-//             | SecondPlural -> "ihr"
-//         AnnotationTree.flatten_tree(Deutsch.personal_pronoun person Case.Nominative)
-//         + " " + m.[key]
-//         + (if sich then " " + AnnotationTree.flatten_tree(Deutsch.reflexive_pronoun person false) else "") // ideally verbs could specify if they are dative verbs
-//         + (match separation with Some s -> " " + s | None -> "")
-//
-//     let en (m: Map<string, string>) (person: Person) =
-//         let key =
-//             match TensePerson.OfPerson person with
-//             | FirstSingular -> "I"
-//             | FirstThirdPluralFormal -> "we"
-//             | ThirdSingular -> "he/she/it"
-//             | SecondSingular -> "you"
-//             | SecondPlural -> "you"
-//         AnnotationTree.flatten_tree(English.personal_pronoun person Case.Nominative)
-//         + " " + en_without_to.Replace(en_infinitive, m.[key])
-//         + (match person with Person.Second true -> " [plural]" | Person.Formal -> " [formal]" | _ -> "")
-//
-//     let present person = { Deutsch = de de_present_tense person; English = Annotation.Parse (en en_present_tense person); EnglishAlternatives = [] }
-//     let past person = { Deutsch = de de_past_tense person; English = Annotation.Parse (en en_past_tense person); EnglishAlternatives = [] }
-//
-//     verb
-//     |> List.foldBack (fun p v -> v.WithInflection(present p)) (List.rev Person.LIST)
-//     |> List.foldBack (fun p v -> v.WithInflection(past p)) (List.rev Person.LIST)
-//     |> fun v -> v.WithInflection({ Deutsch = (Option.defaultValue "" separation) + de_past_participle; English = Annotation.Parse (en_without_to.Replace(en_infinitive, en_past_participle)); EnglishAlternatives = [] })
-//     |> fun v -> v.WithInflection({ Deutsch = (Option.defaultValue "" separation) + de_past_participle_aux; English = Annotation.Parse ("to have " + en_without_to.Replace(en_infinitive, en_past_participle)); EnglishAlternatives = [] })
