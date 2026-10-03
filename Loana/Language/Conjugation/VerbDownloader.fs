@@ -55,7 +55,7 @@ module VerbDownloader =
         + Regex.Match(div_matching_title, "<i class=\"verbtxt\">(.*?)<\/i>").Groups.[1].Value
         + Regex.Match(div_matching_title, "<i class=\"auxgraytxt\">(.*?)<\/i>").Groups.[1].Value
 
-    let fetch_verb_inflections (verb: Verb) : (VerbInflection * string) seq =
+    let conjugate_verb (verb: Verb) : (Conjugation * string) seq =
 
         let verb_base =
             verb.Infinitive.Deutsch.Replace("+D", "").Replace("+A", "").Replace("+N", "").Replace("+G", "")
@@ -89,7 +89,7 @@ module VerbDownloader =
 
         let de (pronoun_to_inflection: Map<string, string>) (person: Person) =
             let pronoun =
-                match InflectionPerson.FromPerson(person) with
+                match ConjugationPerson.FromPerson(person) with
                 | FirstSingular -> "ich"
                 | FirstThirdPluralFormal -> "Sie"
                 | ThirdSingular -> "er/sie/es"
@@ -117,9 +117,9 @@ module VerbDownloader =
                 match q with
                 | VerbTense.Present ->
                     for person in Person.LIST do
-                        yield VerbInflection.Present(InflectionPerson.FromPerson(person)), de de_present_tense person
+                        yield Conjugation.Present(ConjugationPerson.FromPerson(person)), de de_present_tense person
                 | VerbTense.SimplePast ->
                     for person in Person.LIST do
-                        yield VerbInflection.SimplePast(InflectionPerson.FromPerson(person)), de de_past_tense person
+                        yield Conjugation.SimplePast(ConjugationPerson.FromPerson(person)), de de_past_tense person
                 | VerbTense.Imperative -> failwith "nyi"
         }

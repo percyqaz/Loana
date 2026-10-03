@@ -5,7 +5,7 @@ type CardType =
     | RecallDE of vocab: Vocab
     | RecogniseArticleDE of noun: Noun
     | RecallArticleDE of noun: Noun
-    | Inflection of verb: Verb * inflection: VerbInflection * inflected_text: string
+    | ConjugateVerb of verb: Verb * conjugation: Conjugation * conjugated_text: string
 
 type Card =
     {

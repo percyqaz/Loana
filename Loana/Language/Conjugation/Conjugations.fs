@@ -18,7 +18,7 @@ type ImperativePerson =
         | "2p" -> SecondPlural
         | _ -> failwithf "Unrecognised imperative person '%s'" value
 
-type InflectionPerson =
+type ConjugationPerson =
     | FirstSingular
     | FirstThirdPluralFormal
     | SecondSingular
@@ -33,7 +33,7 @@ type InflectionPerson =
         | SecondPlural -> "2p"
         | ThirdSingular -> "3"
 
-    static member FromString(value: string) : InflectionPerson =
+    static member FromString(value: string) : ConjugationPerson =
         match value with
         | "1" -> FirstSingular
         | "F1p3p" -> FirstThirdPluralFormal
@@ -42,7 +42,7 @@ type InflectionPerson =
         | "3" -> ThirdSingular
         | _ -> failwithf "Unrecognised tense person '%s'" value
 
-    static member FromPerson(person: Person) : InflectionPerson =
+    static member FromPerson(person: Person) : ConjugationPerson =
         match person with
         | Person.First false -> FirstSingular
         | Person.First true
@@ -52,9 +52,9 @@ type InflectionPerson =
         | Person.Second true -> SecondPlural
         | Person.Third _ -> ThirdSingular
 
-type VerbInflection =
-    | Present of InflectionPerson
-    | SimplePast of InflectionPerson
+type Conjugation =
+    | Present of ConjugationPerson
+    | SimplePast of ConjugationPerson
     | Imperative of ImperativePerson
 
     member this.ToTense: VerbTense =
@@ -69,8 +69,8 @@ type VerbInflection =
         | SimplePast person -> sprintf "pa/%O" person
         | Imperative person -> sprintf "im/%O" person
 
-    static member FromString(value: string) : VerbInflection =
-        if value.StartsWith("pr/") then InflectionPerson.FromString(value.Substring(3)) |> Present
-        elif value.StartsWith("pa/") then InflectionPerson.FromString(value.Substring(3)) |> SimplePast
+    static member FromString(value: string) : Conjugation =
+        if value.StartsWith("pr/") then ConjugationPerson.FromString(value.Substring(3)) |> Present
+        elif value.StartsWith("pa/") then ConjugationPerson.FromString(value.Substring(3)) |> SimplePast
         elif value.StartsWith("im/") then ImperativePerson.FromString(value.Substring(3)) |> Imperative
         else failwithf "Unrecognised verb inflection '%s'" value

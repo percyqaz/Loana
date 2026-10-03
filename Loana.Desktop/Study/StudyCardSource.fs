@@ -91,10 +91,10 @@ type VerbCardSource(verbs: VerbCacheEntry array, verb_bank: VerbBank) =
     inherit StudyCardSource()
 
     let cards_for_verb (verb: VerbCacheEntry) : ResizeArray<Card> =
-        verb_bank.EnsureAllInflectionsAvailable(verb.Verb)
+        verb_bank.EnsureAllConjugationsAvailable(verb.Verb)
         |> Map.toSeq
         |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-        |> Seq.map(fun (i, text) -> VerbCard.Inflection(verb.Verb, i, text))
+        |> Seq.map(fun (i, text) -> VerbCard.ConjugateVerb(verb.Verb, i, text))
         |> Seq.randomShuffle
         |> ResizeArray
 

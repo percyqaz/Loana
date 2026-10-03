@@ -99,16 +99,16 @@ type Cards =
 
         CardLine.Append(article + " ", _.ForeColor(note_color)).Append(noun.Deutsch, _.ForeColor(text_color))
 
-    static member RenderInflection(v: Verb, i: VerbInflection, inflected_text: string) : CardSide * CardSide =
+    static member ConjugateVerb(v: Verb, c: Conjugation, conjugated_text: string) : CardSide * CardSide =
 
         let answer_bg, quiz_hint =
-            match i with
+            match c with
             | Present _ -> PRESENT_BG, " [present] "
             | SimplePast _ -> SIMPLE_PAST_BG, " [simple past] "
             | Imperative _ -> IMPERATIVE_BG, " [imperative] "
 
         let pronoun =
-            match i with
+            match c with
             | Present p
             | SimplePast p ->
                 match p with
@@ -125,15 +125,15 @@ type Cards =
 
         let question_line =
             CardLine
-                .Append((if i.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
+                .Append((if c.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
                 .Append(quiz_hint, _.ForeColor(ENGLISH_TEXT))
-                .Append((if i.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
+                .Append((if c.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
 
         let reveal_line =
             CardLine
-                .Append((if i.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
-                .Append(" " + inflected_text + " ", _.ForeColor(ENGLISH_TEXT))
-                .Append((if i.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
+                .Append((if c.IsImperative then "" else pronoun), _.ForeColor(ANSWER_NOTE))
+                .Append(" " + conjugated_text + " ", _.ForeColor(ENGLISH_TEXT))
+                .Append((if c.IsImperative then pronoun else ""), _.ForeColor(ANSWER_NOTE))
 
         CardSide.Create(
             [
@@ -239,4 +239,4 @@ type Cards =
         | RecallDE v -> Cards.RecallDE(v)
         | RecogniseArticleDE n -> Cards.RecogniseArticleDE(n)
         | RecallArticleDE n -> Cards.RecallArticleDE(n)
-        | Inflection(verb, inflection, inflected_text) -> Cards.RenderInflection(verb, inflection, inflected_text)
+        | ConjugateVerb(verb, conjugation, conjugated_text) -> Cards.ConjugateVerb(verb, conjugation, conjugated_text)
