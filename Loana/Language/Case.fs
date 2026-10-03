@@ -1,6 +1,7 @@
-﻿namespace Loana.Language
+namespace Loana.Language
 
 open System.Drawing
+open System.Runtime.CompilerServices
 
 [<RequireQualifiedAccess>]
 type Case =
@@ -24,3 +25,7 @@ type Case =
         | Genitive -> Color.Gold
 
     static member LIST: Case list = [ Nominative; Accusative; Dative; Genitive ]
+
+    [<Extension>]
+    static member RemoveCaseAnnotations(text: string) : string =
+        text.Replace("+D", "").Replace("+A", "").Replace("+N", "").Replace("+G", "")

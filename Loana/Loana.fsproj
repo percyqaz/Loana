@@ -18,11 +18,12 @@
     <Compile Include="Language\Vocab\Noun.fs" />
     <Compile Include="Language\Vocab\Adjective.fs" />
     <Compile Include="Language\Vocab\Verb.fs" />
+    <Compile Include="Language\Vocab\Conjugation.fs" />
     <Compile Include="Language\AnnotationTree.fs" />
     <Compile Include="Language\Declension\Deutsch.fs" />
     <Compile Include="Language\Declension\English.fs" />
-    <Compile Include="Language\Conjugation\Conjugations.fs" />
-    <Compile Include="Language\Conjugation\VerbDownloader.fs" />
+    <Compile Include="Language\Conjugation\Conjugator.fs" />
+    <Compile Include="Language\Conjugation\ConjugationDownloader.fs" />
     <Compile Include="Language\Card.fs" />
     <Compile Include="Data\WordBank.fs" />
     <Compile Include="Data\VerbBank.fs" />

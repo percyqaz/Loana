@@ -128,7 +128,10 @@ type VerbBank(path: string) =
             has_missing
 
         let download_missing () =
-            for conjugation, conjugated_text in VerbDownloader.conjugate_verb(verb) do
+            let parsed = ParsedVerb.FromVerb(verb)
+            let ctx = ConjugationDownloader.fetch_conjugations(parsed)
+
+            for conjugation, conjugated_text in ctx.ConjugateAll(verb) do
                 conjugations <- conjugations.Add(conjugation, conjugated_text)
 
             this.Update(verb, conjugations)

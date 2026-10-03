@@ -20,7 +20,8 @@ type ImperativePerson =
 
 type ConjugationPerson =
     | FirstSingular
-    | FirstThirdPluralFormal
+    | FirstPlural
+    | ThirdPlural_Formal
     | SecondSingular
     | SecondPlural
     | ThirdSingular
@@ -28,7 +29,8 @@ type ConjugationPerson =
     override this.ToString() : string =
         match this with
         | FirstSingular -> "1"
-        | FirstThirdPluralFormal -> "F1p3p"
+        | FirstPlural -> "1p"
+        | ThirdPlural_Formal -> "F3p"
         | SecondSingular -> "2"
         | SecondPlural -> "2p"
         | ThirdSingular -> "3"
@@ -36,7 +38,8 @@ type ConjugationPerson =
     static member FromString(value: string) : ConjugationPerson =
         match value with
         | "1" -> FirstSingular
-        | "F1p3p" -> FirstThirdPluralFormal
+        | "1p" -> FirstPlural
+        | "F3p" -> ThirdPlural_Formal
         | "2" -> SecondSingular
         | "2p" -> SecondPlural
         | "3" -> ThirdSingular
@@ -45,12 +48,22 @@ type ConjugationPerson =
     static member FromPerson(person: Person) : ConjugationPerson =
         match person with
         | Person.First false -> FirstSingular
-        | Person.First true
+        | Person.First true -> FirstPlural
         | Person.Third Gender.Plural
-        | Person.Formal -> FirstThirdPluralFormal
+        | Person.Formal -> ThirdPlural_Formal
         | Person.Second false -> SecondSingular
         | Person.Second true -> SecondPlural
         | Person.Third _ -> ThirdSingular
+
+    static member val LIST: ConjugationPerson list =
+        [
+            FirstSingular
+            FirstPlural
+            ThirdPlural_Formal
+            SecondSingular
+            SecondPlural
+            ThirdSingular
+        ]
 
 type Conjugation =
     | Present of ConjugationPerson
@@ -73,4 +86,4 @@ type Conjugation =
         if value.StartsWith("pr/") then ConjugationPerson.FromString(value.Substring(3)) |> Present
         elif value.StartsWith("pa/") then ConjugationPerson.FromString(value.Substring(3)) |> SimplePast
         elif value.StartsWith("im/") then ImperativePerson.FromString(value.Substring(3)) |> Imperative
-        else failwithf "Unrecognised verb inflection '%s'" value
+        else failwithf "Unrecognised verb conjugation '%s'" value

@@ -16,7 +16,7 @@ type Person =
         | Third g -> "3" + g.ToString()
         | Formal -> "F"
 
-    static member LIST: Person list =
+    static member val LIST: Person list =
         [
             First false
             First true

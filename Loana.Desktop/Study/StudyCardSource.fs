@@ -91,11 +91,21 @@ type VerbCardSource(verbs: VerbCacheEntry array, verb_bank: VerbBank) =
     inherit StudyCardSource()
 
     let cards_for_verb (verb: VerbCacheEntry) : ResizeArray<Card> =
+
+        // merge wir ... and Sie ... into one if the inflection is the same
+        // can only be different for reflexive verbs e.g. wir treffen uns, Sie treffen sich
+        let inline distinct_key (conjugation: Conjugation, text: string) : string =
+            conjugation
+                .ToString()
+                .Replace(ConjugationPerson.FirstPlural.ToString(), ConjugationPerson.ThirdPlural_Formal.ToString())
+            + text
+
         verb_bank.EnsureAllConjugationsAvailable(verb.Verb)
         |> Map.toSeq
-        |> Seq.filter(fun (i, _) -> i.ToTense = verb.Tense)
-        |> Seq.map(fun (i, text) -> VerbCard.ConjugateVerb(verb.Verb, i, text))
+        |> Seq.filter(fun (conjugation, _) -> conjugation.ToTense = verb.Tense)
         |> Seq.randomShuffle
+        |> Seq.distinctBy distinct_key
+        |> Seq.map(fun (conjugation, text) -> VerbCard.ConjugateVerb(verb.Verb, conjugation, text))
         |> ResizeArray
 
     let verbs = verbs |> Seq.randomShuffle |> ResizeArray

@@ -23,7 +23,6 @@ type Verb =
     {
         Infinitive: Vocab
         PastParticiple: Knowledge<Vocab>
-        Dative: bool
         Tenses: VerbTense list
     }
 
@@ -41,7 +40,6 @@ type Verb =
     static member internal FromTaggedVocab(t: TaggedVocab) : Verb =
         let mutable remaining_tags = t.Tags
         let mutable verb_tenses: VerbTense list = []
-        let mutable is_dative = false
 
         let mutable past_participle: Knowledge<Vocab> =
             if t.Tags <> [] then KnownNothing else Unknown
@@ -51,14 +49,6 @@ type Verb =
             | "pa"
             | "pr"
             | "im" -> verb_tenses <- verb_tenses @ [ VerbTense.FromString(next) ]
-            | "dat" ->
-                if is_dative then
-                    failwith "Dative specified twice"
-
-                if verb_tenses <> [] then
-                    failwith "Dative must be specified before quizzes"
-
-                is_dative <- true
             | "pp" ->
                 past_participle <- KnownValue(Vocab.FromString(String.concat " " remaining_tags))
                 remaining_tags <- []
@@ -69,12 +59,7 @@ type Verb =
             remaining_tags <- remaining_tags.Tail
             read_tag(next)
 
-        {
-            Infinitive = t.Vocab
-            PastParticiple = past_participle
-            Tenses = verb_tenses |> List.distinct
-            Dative = is_dative
-        }
+        { Infinitive = t.Vocab; PastParticiple = past_participle; Tenses = verb_tenses |> List.distinct }
 
     static member FromString(line: string) : Verb =
         Verb.FromTaggedVocab(TaggedVocab.FromString(line))

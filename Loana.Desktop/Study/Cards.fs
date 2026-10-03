@@ -113,7 +113,8 @@ type Cards =
             | SimplePast p ->
                 match p with
                 | FirstSingular -> "ich"
-                | FirstThirdPluralFormal -> List.randomChoice [ "wir"; "Sie" ]
+                | FirstPlural -> "wir"
+                | ThirdPlural_Formal -> "Sie"
                 | SecondSingular -> "du"
                 | SecondPlural -> "ihr"
                 | ThirdSingular -> List.randomChoice [ "er"; "es" ] // todo: tag verbs that use only es

@@ -4,10 +4,7 @@ module AsciiIdentifier =
 
     let from_deutsch (deutsch: string) : string =
         deutsch
-            .Replace("+N", "")
-            .Replace("+A", "")
-            .Replace("+D", "")
-            .Replace("+G", "")
+            .RemoveCaseAnnotations()
             .Replace("ö", "oe")
             .Replace("ä", "ae")
             .Replace("ü", "ue")
