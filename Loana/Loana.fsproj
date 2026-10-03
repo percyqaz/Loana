@@ -21,8 +21,8 @@
     <Compile Include="Language\AnnotationTree.fs" />
     <Compile Include="Language\Declension\Deutsch.fs" />
     <Compile Include="Language\Declension\English.fs" />
-    <Compile Include="Language\VerbInflections.fs" />
-    <Compile Include="Language\VerbDownloader.fs" />
+    <Compile Include="Language\Conjugation\VerbInflections.fs" />
+    <Compile Include="Language\Conjugation\VerbDownloader.fs" />
     <Compile Include="Language\Card.fs" />
     <Compile Include="Data\WordBank.fs" />
     <Compile Include="Data\VerbBank.fs" />
