@@ -11,7 +11,7 @@ type ParsedVerb =
     }
 
     static member FromVerb(verb: Verb) : ParsedVerb =
-        let verb_base = verb.Infinitive.Deutsch.RemoveCaseAnnotations()
+        let verb_base = verb.Infinitive.Deutsch
 
         let reflexive_pronoun, verb_base =
             if verb_base.StartsWith("sich+D ") then Some Case.Dative, verb_base.Substring(7)

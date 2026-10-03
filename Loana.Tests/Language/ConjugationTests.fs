@@ -63,3 +63,39 @@ module ConjugationTests =
             TestContext.Out.WriteLine(sprintf "%O: %s" conj text)
 
         Assert.That(result, Is.EqualTo("bereitet euch auf etwas vor"))
+
+    [<Test>]
+    let Dative_Verb_Example () =
+        let verb =
+            Verb.FromString("sich+D etwas+A aus.denken = to come up with something :pa")
+
+        let parsed = ParsedVerb.FromVerb(verb)
+
+        Assert.That(parsed.ReflexivePronoun, Is.EqualTo(Some Case.Dative))
+        Assert.That(parsed.Objects, Is.EqualTo(Some "etwas"))
+        Assert.That(parsed.SeparableParticle, Is.EqualTo(Some "aus"))
+        Assert.That(parsed.Base, Is.EqualTo("denken"))
+
+        let ctx =
+            {
+                ParsedVerb = parsed
+                Present = Map.empty
+                SimplePast =
+                    Map.ofArray
+                        [|
+                            FirstSingular, "dachte"
+                            SecondSingular, "dachtest"
+                            SecondPlural, "dachtet"
+                            ThirdSingular, "dachte"
+                            FirstPlural, "dachten"
+                            ThirdPlural_Formal, "dachten"
+                        |]
+                Imperative = Map.empty
+            }
+
+        let result = ctx.Conjugate(Conjugation.SimplePast(ConjugationPerson.SecondSingular))
+
+        for conj, text in ctx.ConjugateAll(verb) do
+            TestContext.Out.WriteLine(sprintf "%O: %s" conj text)
+
+        Assert.That(result, Is.EqualTo("dachtest dir etwas aus"))
