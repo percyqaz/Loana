@@ -1,8 +1,9 @@
-namespace Loana.Language
+namespace Loana.Data
 
 open System
 open System.Text.RegularExpressions
 open System.Net.Http
+open Loana.Language
 
 module ConjugationDownloader =
 

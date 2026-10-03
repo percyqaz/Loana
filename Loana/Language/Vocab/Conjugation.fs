@@ -35,6 +35,17 @@ type ConjugationPerson =
         | SecondPlural -> "2p"
         | ThirdSingular -> "3"
 
+    member this.ReflexivePronoun(is_dative: bool) : string =
+        match this, is_dative with
+        | ConjugationPerson.FirstSingular, false -> "mich"
+        | ConjugationPerson.FirstSingular, true -> "mir"
+        | ConjugationPerson.FirstPlural, _ -> "uns"
+        | ConjugationPerson.SecondSingular, false -> "dich"
+        | ConjugationPerson.SecondSingular, true -> "dir"
+        | ConjugationPerson.ThirdSingular, _ -> "sich"
+        | ConjugationPerson.ThirdPlural_Formal, _ -> "sich"
+        | ConjugationPerson.SecondPlural, _ -> "euch"
+
     static member FromString(value: string) : ConjugationPerson =
         match value with
         | "1" -> FirstSingular
@@ -87,3 +98,48 @@ type Conjugation =
         elif value.StartsWith("pa/") then ConjugationPerson.FromString(value.Substring(3)) |> SimplePast
         elif value.StartsWith("im/") then ImperativePerson.FromString(value.Substring(3)) |> Imperative
         else failwithf "Unrecognised verb conjugation '%s'" value
+
+type ConjugationTense = Map<ConjugationPerson, string>
+type ConjugationImperative = Map<ImperativePerson, string>
+
+type ConjugationContext =
+    {
+        ParsedVerb: ParsedVerb
+        Present: ConjugationTense
+        SimplePast: ConjugationTense
+        Imperative: ConjugationImperative
+    }
+
+    member this.Conjugate(conjugation: Conjugation) : string =
+
+        let inline reflexive_pronoun (person: ConjugationPerson) =
+            match this.ParsedVerb.ReflexivePronoun with
+            | Some Case.Dative -> " " + person.ReflexivePronoun(true)
+            | Some Case.Accusative -> " " + person.ReflexivePronoun(false)
+            | _ -> ""
+
+        let conjugated, reflexive_pronoun =
+            match conjugation with
+            | Conjugation.Present person -> this.Present.[person], reflexive_pronoun(person)
+            | Conjugation.SimplePast person -> this.SimplePast.[person], reflexive_pronoun(person)
+            | Conjugation.Imperative person -> failwithf "nyi %O" person
+
+        let inline spaced (text: string option) =
+            text |> Option.map(fun s -> " " + s) |> Option.defaultValue ""
+
+        conjugated + reflexive_pronoun + spaced this.ParsedVerb.Objects + spaced this.ParsedVerb.SeparableParticle
+
+    member this.ConjugateAll(verb: Verb) : (Conjugation * string) seq =
+        seq {
+            for q in verb.Tenses do
+                match q with
+                | VerbTense.Present ->
+                    for person in ConjugationPerson.LIST do
+                        let c = Conjugation.Present(person)
+                        yield c, this.Conjugate(c)
+                | VerbTense.SimplePast ->
+                    for person in ConjugationPerson.LIST do
+                        let c = Conjugation.SimplePast(person)
+                        yield c, this.Conjugate(c)
+                | VerbTense.Imperative -> failwith "nyi"
+        }

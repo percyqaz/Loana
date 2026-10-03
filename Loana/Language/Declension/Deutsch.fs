@@ -159,17 +159,6 @@ module Deutsch =
         | Person.Formal, _ -> Text "sich"
         |> fun x -> [ Case((if is_dative then Case.Dative else Case.Accusative), [ x ]) ]
 
-    let reflexive_pronoun_conjugation_person (person: ConjugationPerson) (is_dative: bool) : string =
-        match person, is_dative with
-        | ConjugationPerson.FirstSingular, false -> "mich"
-        | ConjugationPerson.FirstSingular, true -> "mir"
-        | ConjugationPerson.FirstPlural, _ -> "uns"
-        | ConjugationPerson.SecondSingular, false -> "dich"
-        | ConjugationPerson.SecondSingular, true -> "dir"
-        | ConjugationPerson.ThirdSingular, _ -> "sich"
-        | ConjugationPerson.ThirdPlural_Formal, _ -> "sich"
-        | ConjugationPerson.SecondPlural, _ -> "euch"
-
     let possessive_pronoun (person: Person) (gender: Gender) (case: Case) : AnnotationTree * bool =
         let ending, needs_strong_declension = ein_declension gender case
 
