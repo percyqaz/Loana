@@ -386,6 +386,7 @@ type MenuCommands =
         let command, args = split.[0], if split.Length > 1 then split.[1] else ""
 
         match command with
+        | "flame" -> MysteriousFlame.Show()
         | "exit" -> state.Exit()
         | "echo" -> state.Echo(args)
         | "up" -> state.PreviousSelection()

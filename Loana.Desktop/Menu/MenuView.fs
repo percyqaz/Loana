@@ -196,6 +196,8 @@ type MenuView(state: MenuState) =
 
     member this.Run() : unit =
 
+        Console.Write(AnsiCodes.CursorInvisible)
+
         while state.Running do
             MenuRender.UpdateWidth()
             this.RenderVocabDashboard()
@@ -212,3 +214,5 @@ type MenuView(state: MenuState) =
 
             state.UIContext.Buffer.AddKey(Console.ReadKey(true))
             state.UIContext.Buffer.Dispatch(state.DispatchMessage, state.UIContext.MenuKeymap)
+
+        Console.Write(AnsiCodes.CursorVisible)

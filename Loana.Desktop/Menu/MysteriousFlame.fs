@@ -1,8 +1,10 @@
 namespace Loana.Desktop
 
 open System
+open System.Diagnostics
 open System.Text
 open System.Drawing
+open System.Threading
 open Loana.Desktop.CLI
 
 type MysteriousFlame() =
@@ -43,3 +45,23 @@ type MysteriousFlame() =
 
         Console.SetCursorPosition(x, y)
         Console.Write(sb.ToString())
+
+    static member Show() : unit =
+        Console.Write(AnsiCodes.ClearScreen + AnsiCodes.CursorToOrigin + AnsiCodes.CursorInvisible)
+        let mysterious_flame = MysteriousFlame()
+
+        let inline now () = Stopwatch.GetTimestamp()
+        let freq = Stopwatch.Frequency / 30L
+
+        let sw = SpinWait()
+        let mutable next_frame = now()
+
+        while not Console.KeyAvailable do
+            while next_frame >= now() do
+                sw.SpinOnce()
+
+            mysterious_flame.Draw()
+            next_frame <- next_frame + freq
+
+        Console.ReadKey(true) |> ignore
+        Console.Write(AnsiCodes.CursorVisible)

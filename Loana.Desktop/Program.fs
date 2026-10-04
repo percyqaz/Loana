@@ -1,6 +1,5 @@
 open System
 open System.IO
-open System.Drawing
 open Loana.Data
 open Loana.Desktop
 open Loana.Desktop.CLI
@@ -29,14 +28,7 @@ let data_path =
 
     config.[0]
 
-Console.CursorVisible <- false
 Console.Clear()
-
-MenuRender.UpdateWidth()
-
-Console.WriteLine(
-    MenuRender.Pad($"Loading ({data_path})").ForeColor(Color.White).BackColor(Color.FromArgb(0xFF_303030))
-)
 
 let state = LoanaState.Create(data_path)
 
@@ -44,21 +36,10 @@ for error in state.Words.Errors do
     Console.WriteLine($" {error.WordlistName}:{error.LineNumber} ".BackColor(0x101010) + " " + error.Reason)
     Console.WriteLine(error.Line.ForeColor(0xFF8888))
 
-Console.WriteLine(
-    MenuRender.Pad("Loana has loaded!").ForeColor(Color.LightGreen).BackColor(Color.FromArgb(0xFF_303030))
-)
-
-if not(state.Words.HasErrors()) then
-    let mysterious_flame = MysteriousFlame()
-
-    while not Console.KeyAvailable do
-        System.Threading.Thread.Sleep(20)
-        mysterious_flame.Draw()
-
-Console.ReadKey(true) |> ignore
+if state.Words.HasErrors() then
+    Console.ReadKey(true) |> ignore
 
 let ctx = UIContext.Create()
-
 MenuView(MenuState.Create(state, ctx)).Run()
 
 state.Scheduler.Save()
