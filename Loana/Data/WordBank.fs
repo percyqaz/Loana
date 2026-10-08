@@ -162,6 +162,8 @@ type WordBank() =
         deduplicate_de.Clear()
         deduplicate_en.Clear()
 
+    member this.RemoveError(error: WordlistError) : unit = ignore(errors.Remove(error))
+
     member this.ReadFromStream(stream: Stream) : unit =
 
         use br = new BinaryReader(stream, Text.Encoding.UTF8)
@@ -311,8 +313,12 @@ type WordBank() =
         ensure_directory_exists_and_empty()
         write_wordlist_meta()
 
-        for wordlist_name, entries in this.Entries |> Seq.groupBy _.Source.WordlistName do
-            write_wordlist(wordlist_name, entries)
+        for group in this.Groups do
+            for wordlist_name in group.WordlistNames do
+                let wordlist_entries =
+                    this.Entries |> Seq.where(fun entry -> entry.Source.WordlistName = wordlist_name)
+
+                write_wordlist(wordlist_name, wordlist_entries)
 
     static member CreateFromDirectory(path: string) : WordBank =
         let words = WordBank()
