@@ -24,11 +24,19 @@ type BrowserView(state: BrowserState) =
 
         for i = start_index to end_index do
             let result = tab.Items.[i]
+            let is_selected = tab.Position = i
 
-            let line =
-                pad_to_width(result.HighlightString(), result.ToString(), panel_width) + "\n"
+            let background =
+                match result with
+                | WordlistGroupsSelection.WordlistGroup _ -> 0xFF_303030
+                | WordlistGroupsSelection.Wordlist _ -> 0xFF_202020
 
-            panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
+            let text =
+                if is_selected then result.ToString().ForeColor(Color.Yellow) else result.HighlightString()
+
+            let line = pad_to_width(text, result.ToString(), panel_width) + "\n"
+
+            panel.Write(line.BackColor(background))
 
         for i = end_index + 1 to HEIGHT - 1 do
             panel.Write("".PadLeft(panel_width) + "\n")
