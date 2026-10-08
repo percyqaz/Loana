@@ -387,7 +387,8 @@ type MenuCommands =
 
         match command with
         | "flame" -> MysteriousFlame.Show()
-        | "exit" -> state.Exit()
+        | "exit"
+        | "q" -> state.Exit()
         | "echo" -> state.Echo(args)
         | "up" -> state.PreviousSelection()
         | "down" -> state.NextSelection()

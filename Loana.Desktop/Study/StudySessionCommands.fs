@@ -66,7 +66,8 @@ type StudySessionCommands =
         let command, args = split.[0], if split.Length > 1 then split.[1] else ""
 
         match command with
-        | "exit" -> state.Exit()
+        | "exit"
+        | "q" -> state.Exit()
         | "echo" -> state.Echo(args)
         | "reveal" -> state.Reveal()
         | "forgot" -> state.Forgot()
