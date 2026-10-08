@@ -223,6 +223,20 @@ type BrowserCommands =
         state.UIContext.StatusLine <- sprintf "Saved (%s)" (DateTime.Now.ToShortTimeString())
 
     [<Extension>]
+    static member Delete(state: BrowserState) : unit =
+        if state.RightFocused then
+            match state.RightPopup with
+            | Errors tab ->
+                match tab.Selected with
+                | Some error ->
+                    state.Words.RemoveError(error)
+                    state.Refresh()
+                | None -> ()
+            | _ -> state.UIContext.StatusLine <- "Not supported"
+        else
+            state.UIContext.StatusLine <- "Not supported"
+
+    [<Extension>]
     static member DispatchCommand(state: BrowserState, command: string) : unit =
         let split =
             command.Split(' ', 2, StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
@@ -243,6 +257,7 @@ type BrowserCommands =
         | "move_right" -> state.MoveRight()
         | "search" -> state.Search()
         | "errors" -> state.Errors()
+        | "delete" -> state.Delete()
         | "select" -> state.Select()
         | "save" -> state.Save()
         | _ -> state.UIContext.StatusLine <- sprintf "Unrecognised command '%s'" command
