@@ -98,6 +98,25 @@ type BrowserView(state: BrowserState) =
         for i = end_index + 1 to HEIGHT - 1 do
             panel.Write("".PadLeft(panel_width) + "\n")
 
+    member this.DrawErrorsTab(tab: ErrorsTab, panel: PanelRender, active: bool) : unit =
+
+        let HEIGHT = Console.BufferHeight - 2
+        let start_index = max 0 (min (tab.Items.Count - HEIGHT) (tab.Position - HEIGHT / 2))
+        let end_index = min tab.Items.Count (start_index + HEIGHT) - 1
+        let panel_width = MenuRender.Width / 2
+
+        panel.Write(
+            ((sprintf "Errors - %i items" tab.Items.Count).PadRight(panel_width) + "\n")
+                .BackColor(if active then 0xFF_204020 else 0xFF_202020)
+        )
+
+        for i = start_index to end_index do
+            let line = pad_to_width(tab.Items.[i].Line, tab.Items.[i].Line, panel_width) + "\n"
+            panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
+
+        for i = end_index + 1 to HEIGHT - 1 do
+            panel.Write("".PadLeft(panel_width) + "\n")
+
     member this.Run() : unit =
         while state.Running do
             MenuRender.UpdateWidth()
@@ -111,7 +130,7 @@ type BrowserView(state: BrowserState) =
 
             match state.RightPopup with
             | Search tab -> this.DrawSearchTab(tab, right, state.RightFocused)
-            | Errors _ -> ()
+            | Errors tab -> this.DrawErrorsTab(tab, right, state.RightFocused)
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> this.DrawWordlistTab(tab, right, state.RightFocused)

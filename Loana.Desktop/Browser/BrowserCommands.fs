@@ -28,7 +28,7 @@ type BrowserCommands =
         if state.RightFocused then
             match state.RightPopup with
             | Search tab -> tab.Up()
-            | Errors _ -> ()
+            | Errors tab -> tab.Up()
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Up()
@@ -43,7 +43,7 @@ type BrowserCommands =
         if state.RightFocused then
             match state.RightPopup with
             | Search tab -> tab.Down()
-            | Errors _ -> ()
+            | Errors tab -> tab.Down()
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist tab -> tab.Down()
@@ -161,7 +161,7 @@ type BrowserCommands =
     static member Refresh(state: BrowserState) : unit =
         match state.RightPopup with
         | Search tab -> tab.Refresh(state.Words)
-        | Errors _ -> ()
+        | Errors tab -> tab.Refresh(state.Words)
         | NoPopup -> ()
 
         match state.RightTab with
@@ -206,6 +206,11 @@ type BrowserCommands =
         | _ -> state.RightPopup <- Search(SearchTab.Create(state.Words))
 
     [<Extension>]
+    static member Errors(state: BrowserState) : unit =
+        state.RightFocused <- true
+        state.RightPopup <- Errors(ErrorsTab.Create(state.Words))
+
+    [<Extension>]
     static member Save(state: BrowserState) : unit =
         state.Words.WriteToDirectory(state.Data.Path)
         state.UIContext.StatusLine <- sprintf "Saved (%s)" (DateTime.Now.ToShortTimeString())
@@ -230,6 +235,7 @@ type BrowserCommands =
         | "move_left" -> state.MoveLeft()
         | "move_right" -> state.MoveRight()
         | "search" -> state.Search()
+        | "errors" -> state.Errors()
         | "select" -> state.Select()
         | "save" -> state.Save()
         | _ -> state.UIContext.StatusLine <- sprintf "Unrecognised command '%s'" command
