@@ -111,8 +111,16 @@ type BrowserView(state: BrowserState) =
         )
 
         for i = start_index to end_index do
-            let line = pad_to_width(tab.Items.[i].Line, tab.Items.[i].Line, panel_width) + "\n"
-            panel.Write(if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line)
+            let error = tab.Items.[i]
+            let location = $" {error.WordlistName}:{error.LineNumber} "
+            let line_width = max 0 (panel_width - location.Length - 1)
+            let line = pad_to_width(error.Line, error.Line, line_width) + " "
+
+            let selected_line =
+                if tab.Position = i then line.BackColor(if active then 0xFF_404020 else 0xFF_101010) else line
+
+            panel.Write(selected_line)
+            panel.Write(location.ForeColor(Color.LightBlue).BackColor(Color.DarkBlue) + "\n")
 
         for i = end_index + 1 to HEIGHT - 1 do
             panel.Write("".PadLeft(panel_width) + "\n")

@@ -2,6 +2,8 @@ namespace Loana.Desktop.Browser
 
 open System
 open System.Runtime.CompilerServices
+open Loana.Data
+open Loana.Desktop.CLI
 
 type BrowserCommands =
 
@@ -174,10 +176,15 @@ type BrowserCommands =
 
     [<Extension>]
     static member Select(state: BrowserState) : unit =
+        let inline display_error (error: WordlistError) : unit =
+            Console.Clear()
+            Console.WriteLine(error.Reason.ForeColor(0xFF8888))
+            Console.ReadKey(true) |> ignore
+
         if state.RightFocused then
             match state.RightPopup with
             | Search _ -> state.UIContext.StatusLine <- "Not supported"
-            | Errors _ -> state.UIContext.StatusLine <- "Not supported"
+            | Errors tab -> tab.Selected |> Option.iter(display_error)
             | NoPopup ->
                 match state.RightTab with
                 | Wordlist _ -> state.UIContext.StatusLine <- "Not supported"
