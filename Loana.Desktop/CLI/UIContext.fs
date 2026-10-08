@@ -52,6 +52,7 @@ type UIContext =
         keymap.AliasCommand("<A-l>", "move_right")
         keymap.AliasCommand("<Tab>", "search")
         keymap.AliasCommand("<Enter>", "select")
+        keymap.AliasCommand(".", "edit")
         keymap.AliasCommand("dd", "delete")
         keymap.AliasCommand("e", "errors")
         keymap.Alias("<Left>", "h")

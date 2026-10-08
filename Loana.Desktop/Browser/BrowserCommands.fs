@@ -1,6 +1,8 @@
 namespace Loana.Desktop.Browser
 
 open System
+open System.Diagnostics
+open System.IO
 open System.Runtime.CompilerServices
 open Loana.Data
 open Loana.Desktop.CLI
@@ -213,11 +215,6 @@ type BrowserCommands =
         | _ -> state.RightPopup <- Search(SearchTab.Create(state.Words))
 
     [<Extension>]
-    static member Errors(state: BrowserState) : unit =
-        state.RightFocused <- true
-        state.RightPopup <- Errors(ErrorsTab.Create(state.Words))
-
-    [<Extension>]
     static member Save(state: BrowserState) : unit =
         state.Words.WriteToDirectory(state.Data.Path)
         state.UIContext.StatusLine <- sprintf "Saved (%s)" (DateTime.Now.ToShortTimeString())
@@ -235,6 +232,75 @@ type BrowserCommands =
             | _ -> state.UIContext.StatusLine <- "Not supported"
         else
             state.UIContext.StatusLine <- "Not supported"
+
+    [<Extension>]
+    static member Reload(state: BrowserState) : unit =
+        state.Data.Reload()
+        state.Refresh()
+        state.UIContext.StatusLine <- "Reloaded all wordlists!"
+
+    [<Extension>]
+    static member Edit(state: BrowserState) : unit =
+        let inline target_for_entry (entry: WordlistEntry) : (string * int) option =
+            let line_number =
+                state.Words.Entries
+                |> Seq.where(fun item -> item.Source.WordlistName = entry.Source.WordlistName)
+                |> Seq.tryFindIndex((=) entry)
+                |> Option.map(fun index -> index + 1)
+
+            line_number |> Option.map(fun line -> entry.Source.WordlistName, line)
+
+        let inline target_for_tab (tab: Tab) : (string * int) option =
+            match tab with
+            | Wordlist tab -> tab.Selected |> Option.bind target_for_entry
+            | Wordlists tab ->
+                match tab.Selected with
+                | Some(WordlistGroupsSelection.Wordlist(_, wordlist)) -> Some(wordlist, 1)
+                | _ -> None
+
+        let inline error_target (error: WordlistError) =
+            let entries_in_wordlist =
+                state.Words.Entries
+                |> Seq.where(fun entry -> entry.Source.WordlistName = error.WordlistName)
+                |> Seq.length
+
+            let earlier_errors_in_wordlist =
+                state.Words.Errors
+                |> Seq.where(fun earlier -> earlier.Line < error.Line && earlier.WordlistName = error.WordlistName)
+                |> Seq.length
+
+            error.WordlistName, entries_in_wordlist + earlier_errors_in_wordlist + 1
+
+        let target =
+            if state.RightFocused then
+                match state.RightPopup with
+                | Errors tab -> tab.Selected |> Option.map error_target
+                | Search tab -> tab.Selected |> Option.bind target_for_entry
+                | NoPopup -> target_for_tab(state.RightTab)
+            else
+                target_for_tab(state.LeftTab)
+
+        let inline edit_with_vim (path: string, line_number: int) : unit =
+            let start_info = ProcessStartInfo("vim")
+            start_info.UseShellExecute <- false
+            start_info.ArgumentList.Add($"+{line_number}")
+            start_info.ArgumentList.Add(path)
+            Console.Clear()
+            use editor = Process.Start(start_info)
+            editor.WaitForExit()
+
+        match target with
+        | Some(wordlist, line_number) ->
+            state.Save()
+            let path = Path.Combine(state.Data.Path, wordlist + ".wordlist")
+            edit_with_vim(path, line_number)
+            state.Reload()
+        | None -> ()
+
+    [<Extension>]
+    static member Errors(state: BrowserState) : unit =
+        state.RightFocused <- true
+        state.RightPopup <- Errors(ErrorsTab.Create(state.Words))
 
     [<Extension>]
     static member DispatchCommand(state: BrowserState, command: string) : unit =
@@ -256,10 +322,12 @@ type BrowserCommands =
         | "move_left" -> state.MoveLeft()
         | "move_right" -> state.MoveRight()
         | "search" -> state.Search()
-        | "errors" -> state.Errors()
-        | "delete" -> state.Delete()
         | "select" -> state.Select()
         | "save" -> state.Save()
+        | "delete" -> state.Delete()
+        | "reload" -> state.Reload()
+        | "edit" -> state.Edit()
+        | "errors" -> state.Errors()
         | _ -> state.UIContext.StatusLine <- sprintf "Unrecognised command '%s'" command
 
     [<Extension>]
