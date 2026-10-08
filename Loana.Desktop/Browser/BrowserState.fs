@@ -27,14 +27,16 @@ type BrowserState =
     member this.Words = this.Data.Words
 
     static member Create(data: LoanaState, ui_ctx: UIContext) : BrowserState =
+        let has_errors = data.Words.Errors.Count > 0
+
         {
             Running = true
             UIContext = ui_ctx
             Data = data
             LeftTab = Wordlists(WordlistGroupsTab.Create(data.Words))
             RightTab = Wordlists(WordlistGroupsTab.Create(data.Words))
-            RightPopup = NoPopup
-            RightFocused = false
+            RightPopup = if has_errors then Errors(ErrorsTab.Create(data.Words)) else NoPopup
+            RightFocused = has_errors
         }
 
     member this.AddKey(key: ConsoleKeyInfo) : unit =
